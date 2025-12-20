@@ -36,7 +36,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
   const quickLogins = [
     { id: 'admin', label: 'Admin', icon: ShieldCheck, desc: 'Full Access' },
     { id: 'partner', label: 'Partner', icon: HeartHandshake, desc: 'Global Mgmt' },
-    { id: 'user', label: 'User', icon: UserIcon, desc: 'Booking' },
+    { id: 'patient', label: 'User', icon: UserIcon, desc: 'Booking' }, // Changed id from 'user' to 'patient'
   ];
 
   return (

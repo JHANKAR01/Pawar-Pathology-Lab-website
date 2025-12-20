@@ -11,7 +11,8 @@ const DB_KEYS = {
 const MOCK_USERS: User[] = [
   { id: 'admin', name: 'Admin Head', email: 'admin', role: UserRole.ADMIN },
   { id: 'partner', name: 'Lab Partner', email: 'partner', role: UserRole.PARTNER },
-  { id: 'user', name: 'Regular User', email: 'user', role: UserRole.PATIENT }
+  // Changed id/email from 'user' to 'patient' to ensure distinct separation
+  { id: 'patient', name: 'Regular Patient', email: 'patient', role: UserRole.PATIENT }
 ];
 
 export const mockApi = {

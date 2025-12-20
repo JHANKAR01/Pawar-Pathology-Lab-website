@@ -125,8 +125,8 @@ const Hero3D = () => {
       {/* Dynamic background glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(225,29,72,0.18),transparent_80%)] pointer-events-none" />
 
-      {/* Main Content Container - Added padding-top to clear navbar */}
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-6 pointer-events-none pt-20 md:pt-0">
+      {/* Main Content Container - Increased padding top to prevent navbar overlap on mobile */}
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-6 pointer-events-none pt-40 md:pt-0">
         <span className="mb-4 md:mb-8 px-4 md:px-6 py-2 rounded-full border border-rose-900/40 bg-rose-950/20 text-rose-500 text-[10px] md:text-xs font-black uppercase tracking-[0.4em] animate-pulse">
           NABL Accredited Excellence • Betul
         </span>

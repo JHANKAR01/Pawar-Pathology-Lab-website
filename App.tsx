@@ -26,7 +26,13 @@ const App: React.FC = () => {
     const handleScroll = () => setIsScrolled(window.scrollY > 40);
     window.addEventListener('scroll', handleScroll);
     const user = mockApi.getCurrentUser();
-    if (user) setCurrentUser(user);
+    if (user) {
+      setCurrentUser(user);
+      // Ensure users stay on home view if they are just patients
+      if (view === 'home' && user.role !== UserRole.PATIENT) {
+        // Optional: Auto-redirect admins/partners if needed, but staying on home is fine too
+      }
+    }
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -48,7 +54,18 @@ const App: React.FC = () => {
     setView('home');
   };
 
-  if (view === 'login') return <LoginPage onLoginSuccess={(u) => { setCurrentUser(u); setView(u.role === UserRole.ADMIN ? 'admin' : 'partner'); }} onBack={() => setView('home')} />;
+  const handleLoginSuccess = (u: UserType) => {
+    setCurrentUser(u);
+    if (u.role === UserRole.ADMIN) {
+      setView('admin');
+    } else if (u.role === UserRole.PARTNER) {
+      setView('partner');
+    } else {
+      setView('home'); // Default to home for patients
+    }
+  };
+
+  if (view === 'login') return <LoginPage onLoginSuccess={handleLoginSuccess} onBack={() => setView('home')} />;
   if (view === 'admin') return <AdminDashboard onLogout={handleLogout} />;
   if (view === 'partner') return <PartnerDashboard onLogout={handleLogout} />;
 
@@ -77,12 +94,22 @@ const App: React.FC = () => {
 
           <div className="flex items-center gap-2 md:gap-4">
             {currentUser ? (
-              <button 
-                onClick={() => setView(currentUser.role === UserRole.ADMIN ? 'admin' : 'partner')}
-                className="flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2 md:py-3 bg-slate-900 text-white rounded-[1rem] md:rounded-[1.4rem] text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-xl shadow-slate-200"
-              >
-                <Activity className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden sm:inline">Workstation</span>
-              </button>
+              <div className="flex items-center gap-2">
+                {(currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.PARTNER) && (
+                  <button 
+                    onClick={() => setView(currentUser.role === UserRole.ADMIN ? 'admin' : 'partner')}
+                    className="flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2 md:py-3 bg-slate-900 text-white rounded-[1rem] md:rounded-[1.4rem] text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-xl shadow-slate-200"
+                  >
+                    <Activity className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden sm:inline">Workstation</span>
+                  </button>
+                )}
+                <button 
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 border border-slate-200 text-slate-500 rounded-[1rem] md:rounded-[1.4rem] text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all"
+                >
+                  <LogOut className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                </button>
+              </div>
             ) : (
               <button 
                 onClick={() => setView('login')}
@@ -175,17 +202,21 @@ const App: React.FC = () => {
                 className="block bg-slate-900 h-[350px] md:h-[500px] rounded-[2.5rem] md:rounded-[3.5rem] relative flex items-center justify-center overflow-hidden border border-white/5 group cursor-pointer"
               >
                 <div className="flex flex-col items-center gap-4 md:gap-6 z-10">
-                  <div className="w-20 h-20 md:w-24 md:h-24 bg-rose-600/10 rounded-full flex items-center justify-center animate-pulse group-hover:bg-rose-600/20 transition-colors">
+                  <div className="w-20 h-20 md:w-24 md:h-24 bg-rose-600/10 rounded-full flex items-center justify-center animate-pulse group-hover:bg-rose-600/20 transition-colors shadow-2xl shadow-rose-900/50 backdrop-blur-sm">
                      <MapPin className="text-rose-600 w-10 h-10 md:w-12 md:h-12" />
                   </div>
-                  <div className="text-center">
-                    <p className="text-slate-500 font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-[9px] md:text-[11px] group-hover:text-white transition-colors">System Geolocation Active</p>
-                    <p className="text-white/50 text-[10px] mt-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">Click to Navigate</p>
+                  <div className="text-center bg-black/50 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/10">
+                    <p className="text-white font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-[9px] md:text-[11px] group-hover:text-rose-400 transition-colors">System Geolocation Active</p>
+                    <p className="text-white/50 text-[10px] mt-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0 font-bold uppercase tracking-widest">Click to Navigate</p>
                   </div>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-br from-rose-600/10 via-transparent to-transparent pointer-events-none group-hover:opacity-75 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-br from-rose-900/40 via-slate-950/40 to-slate-950/80 pointer-events-none group-hover:opacity-50 transition-opacity duration-500" />
                 {/* Background Map Effect */}
-                <div className="absolute inset-0 opacity-10 bg-[url('https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Google_Maps_Logo_2020.svg/2275px-Google_Maps_Logo_2020.svg.png')] bg-cover bg-center grayscale mix-blend-overlay"></div>
+                <img 
+                  src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=800" 
+                  alt="Map Location" 
+                  className="absolute inset-0 w-full h-full object-cover opacity-30 grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700"
+                />
               </a>
             </div>
           </div>
