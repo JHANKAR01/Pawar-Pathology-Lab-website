@@ -256,6 +256,12 @@ export default function PartnerPage() {
                     <input required className="w-full bg-slate-50 p-4 rounded-xl outline-none font-bold" value={newPatient.phone} maxLength={10} onChange={e => setNewPatient({...newPatient, phone: e.target.value})} />
                  </div>
               </div>
+              
+              <div>
+                 <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Email Address (Optional)</label>
+                 <input className="w-full bg-slate-50 p-4 rounded-xl outline-none font-bold" placeholder="For reporting" value={newPatient.email} onChange={e => setNewPatient({...newPatient, email: e.target.value})} />
+              </div>
+
               <div>
                 <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Test Panel</label>
                 <input className="w-full bg-slate-50 p-4 rounded-xl outline-none font-bold" value={newPatient.testTitle} onChange={e => setNewPatient({...newPatient, testTitle: e.target.value})} />

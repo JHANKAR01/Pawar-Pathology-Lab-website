@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Check, Calendar, CreditCard, User, CheckCircle, MapPin, Loader2, Navigation, Ticket, UserPlus, X, AlertTriangle, DollarSign } from 'lucide-react';
+import { Check, Calendar, CreditCard, User, CheckCircle, MapPin, Loader2, Navigation, Ticket, UserPlus, X, AlertTriangle, DollarSign, Mail } from 'lucide-react';
 import { Test, CollectionType } from '../types';
 import { mockApi } from '../lib/mockApi';
 
@@ -86,6 +86,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     if (step === 2) {
       if (!formData.name) return "Patient name is required.";
       if (!formData.phone || formData.phone.length !== 10) return "Please enter a valid 10-digit phone number.";
+      // Email is optional for guests, but mandatory if user wants digital report
     }
     if (step === 3) {
       if (!formData.date) return "Please select a preferred date.";
@@ -176,7 +177,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                     value={formData.name} 
                     onChange={e => setFormData({...formData, name: e.target.value})} 
                     placeholder="Full name" 
-                    readOnly={isBookingForSelf} // Read-only if self, ensuring typing bug doesn't occur
+                    readOnly={isBookingForSelf}
                   />
                 </div>
                 <div>
@@ -192,6 +193,20 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                       readOnly={isBookingForSelf}
                     />
                   </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 ml-2">Email Address</label>
+                <div className="relative">
+                  <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                  <input 
+                    className="w-full pl-16 pr-6 py-4 bg-slate-50 border-2 border-transparent focus:border-rose-600 focus:bg-white rounded-2xl outline-none transition-all font-bold" 
+                    value={formData.email} 
+                    onChange={e => setFormData({...formData, email: e.target.value})} 
+                    placeholder="For report delivery (Optional)" 
+                    readOnly={isBookingForSelf}
+                  />
                 </div>
               </div>
             </div>
