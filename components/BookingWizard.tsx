@@ -32,8 +32,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
 
   const currentUser = useMemo(() => mockApi.getCurrentUser(), []);
 
-  // Fix: Only run pre-fill logic on initial mount or when specifically toggling self-booking ON.
-  // This prevents overwriting user input while they type if 'isBookingForSelf' is false.
+  // Only pre-fill logic on initial mount or when specifically toggling self-booking ON.
   useEffect(() => {
     if (isBookingForSelf && currentUser) {
       setFormData(prev => ({
@@ -46,7 +45,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
       // Clear data only when explicitly switching to "someone else"
       setFormData(prev => ({ ...prev, name: '', email: '', phone: '' }));
     }
-  }, [isBookingForSelf]);
+  }, [isBookingForSelf, currentUser]);
 
   const baseTotal = selectedTests.reduce((acc, t) => acc + t.price, 0);
   const finalTotal = Math.max(0, baseTotal - discount);
@@ -86,7 +85,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     if (step === 2) {
       if (!formData.name) return "Patient name is required.";
       if (!formData.phone || formData.phone.length !== 10) return "Please enter a valid 10-digit phone number.";
-      // Email is optional for guests, but mandatory if user wants digital report
+      // Email is optional for guests, but mandatory if user wants digital report, enforced by logic downstream or optional here.
     }
     if (step === 3) {
       if (!formData.date) return "Please select a preferred date.";
