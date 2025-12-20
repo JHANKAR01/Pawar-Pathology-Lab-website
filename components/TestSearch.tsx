@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Zap, ChevronRight, Clock, ShieldCheck, FlaskConical, CheckCircle } from 'lucide-react';
 import { Test } from '../types';
-import { CATEGORIES } from '../constants';
+import { CATEGORIES } from '../lib/constants';
 
 interface TestSearchProps {
   tests: Test[];
