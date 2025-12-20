@@ -1,19 +1,29 @@
 
 import React, { useState, useEffect } from 'react';
-import { Phone, MapPin, Mail, Instagram, Facebook, Clock, FlaskConical, User, ShieldCheck, ChevronRight, Briefcase, Home } from 'lucide-react';
+import { Phone, MapPin, Mail, Instagram, Facebook, Clock, FlaskConical, User, ShieldCheck, ChevronRight, Briefcase, Home, LogOut, HeartHandshake } from 'lucide-react';
 import Hero3D from './components/3D/Hero3D';
 import TestSearch from './components/TestSearch';
 import BookingWizard from './components/BookingWizard';
+import LoginPage from './components/LoginPage';
 import AdminDashboard from './components/Dashboard/AdminDashboard';
-import WorkerDashboard from './components/Dashboard/WorkerDashboard';
-import { Test, UserRole } from './types';
+import PartnerDashboard from './components/Dashboard/PartnerDashboard';
+import { Test, UserRole, User as UserType } from './types';
 import { LAB_INFO } from './constants';
 import { mockApi } from './lib/mockApi';
 
 const App: React.FC = () => {
   const [selectedTests, setSelectedTests] = useState<Test[]>([]);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
-  const [view, setView] = useState<'home' | 'admin' | 'worker'>('home');
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+  const [view, setView] = useState<'home' | 'login' | 'admin' | 'partner'>('home');
+
+  // Check for existing session on mount
+  useEffect(() => {
+    const user = mockApi.getCurrentUser();
+    if (user) {
+      setCurrentUser(user);
+    }
+  }, []);
 
   const mockTests: Test[] = [
     { id: '1', title: 'CBC - Complete Blood Count', category: 'Hematology', price: 350, description: 'Measures your red cells, white cells, and platelets. Vital for infection check.', isHomeCollectionAvailable: true, fastingRequired: false },
@@ -40,11 +50,50 @@ const App: React.FC = () => {
     });
     setSelectedTests([]);
     setIsWizardOpen(false);
-    alert("Booking Saved! Switch to Admin or Worker view to manage it.");
+    alert("Booking Saved! Our staff will confirm your slot shortly.");
   };
 
-  if (view === 'admin') return <AdminDashboard onLogout={() => setView('home')} />;
-  if (view === 'worker') return <WorkerDashboard onLogout={() => setView('home')} />;
+  const handleLoginSuccess = (user: UserType) => {
+    setCurrentUser(user);
+    if (user.role === UserRole.ADMIN) setView('admin');
+    else if (user.role === UserRole.PARTNER) setView('partner');
+    else setView('home');
+  };
+
+  const handleLogout = () => {
+    mockApi.logout();
+    setCurrentUser(null);
+    setView('home');
+  };
+
+  const handlePortalClick = () => {
+    if (currentUser) {
+      if (currentUser.role === UserRole.ADMIN) setView('admin');
+      else if (currentUser.role === UserRole.PARTNER) setView('partner');
+      else setView('home');
+    } else {
+      setView('login');
+    }
+  };
+
+  // RBAC Component Guarding
+  if (view === 'login') return <LoginPage onLoginSuccess={handleLoginSuccess} onBack={() => setView('home')} />;
+  
+  if (view === 'admin') {
+    if (!currentUser || currentUser.role !== UserRole.ADMIN) {
+      setView('login');
+      return null;
+    }
+    return <AdminDashboard onLogout={handleLogout} />;
+  }
+
+  if (view === 'partner') {
+    if (!currentUser || (currentUser.role !== UserRole.PARTNER && currentUser.role !== UserRole.ADMIN)) {
+      setView('login');
+      return null;
+    }
+    return <PartnerDashboard onLogout={handleLogout} />;
+  }
 
   return (
     <div className="flex flex-col min-h-screen animate-in fade-in duration-700">
@@ -56,7 +105,7 @@ const App: React.FC = () => {
         </div>
         <div className="flex gap-6">
            <span>Owner: {LAB_INFO.owner}</span>
-           <span className="opacity-80">Medical Head: {LAB_INFO.medicalHead.split(' ')[0]} {LAB_INFO.medicalHead.split(' ')[1]}</span>
+           <span className="opacity-80">Medical Head: {LAB_INFO.medicalHead}</span>
         </div>
       </div>
 
@@ -81,19 +130,24 @@ const App: React.FC = () => {
         <div className="flex items-center gap-4">
           <div className="flex bg-gray-100 p-1 rounded-xl">
             <button 
-              onClick={() => setView('worker')} 
-              className="p-2 text-gray-400 hover:text-red-600 hover:bg-white rounded-lg transition-all"
-              title="Staff Portal"
+              onClick={handlePortalClick}
+              className={`p-2 rounded-lg transition-all flex items-center gap-2 font-bold text-sm ${
+                currentUser ? 'text-red-600 bg-white shadow-sm' : 'text-gray-400 hover:text-red-600'
+              }`}
+              title={currentUser ? `Logged in as ${currentUser.name}` : "Portal Login"}
             >
-              <Briefcase className="w-5 h-5" />
+              {currentUser?.role === UserRole.PARTNER ? <HeartHandshake className="w-5 h-5" /> : <Briefcase className="w-5 h-5" />}
+              {currentUser && <span className="hidden lg:inline">{currentUser.role === UserRole.ADMIN ? 'Admin' : currentUser.role === UserRole.PARTNER ? 'Partner' : 'Account'}</span>}
             </button>
-            <button 
-              onClick={() => setView('admin')} 
-              className="p-2 text-gray-400 hover:text-red-600 hover:bg-white rounded-lg transition-all"
-              title="Admin Hub"
-            >
-              <User className="w-5 h-5" />
-            </button>
+            {currentUser && (
+              <button 
+                onClick={handleLogout}
+                className="p-2 text-gray-400 hover:text-red-600 hover:bg-white rounded-lg transition-all"
+                title="Logout"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            )}
           </div>
           
           {selectedTests.length > 0 && (
@@ -170,7 +224,7 @@ const App: React.FC = () => {
               <li><a href="#home" className="hover:text-red-500 transition-colors">Home</a></li>
               <li><a href="#tests" className="hover:text-red-500 transition-colors">Test Pricing</a></li>
               <li><a href="#" className="hover:text-red-500 transition-colors">Book Home Sample</a></li>
-              <li><a href="#" className="hover:text-red-500 transition-colors">Doctor Portal</a></li>
+              <li><button onClick={() => setView('login')} className="hover:text-red-500 transition-colors text-left">Staff Portal Login</button></li>
             </ul>
           </div>
 

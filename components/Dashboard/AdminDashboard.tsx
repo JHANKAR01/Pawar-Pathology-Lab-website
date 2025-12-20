@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, User, FlaskConical, FileText, Plus, DollarSign, Clock, AlertCircle, LogOut, Home, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Users, User, FlaskConical, FileText, Plus, DollarSign, Clock, AlertCircle, LogOut, Home, ArrowLeft, HeartHandshake } from 'lucide-react';
 import { Booking, BookingStatus } from '../../types';
 import { mockApi } from '../../lib/mockApi';
 
@@ -36,7 +36,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
         </div>
         
         <nav className="flex-1 p-6 space-y-2 overflow-x-auto md:overflow-y-auto no-scrollbar flex md:block">
-          {['Overview', 'Test Manager', 'Bookings', 'Staff'].map(tab => (
+          {['Overview', 'Test Manager', 'Bookings', 'Partners'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -49,7 +49,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
               {tab === 'Overview' && <LayoutDashboard className="w-5 h-5" />}
               {tab === 'Test Manager' && <FlaskConical className="w-5 h-5" />}
               {tab === 'Bookings' && <FileText className="w-5 h-5" />}
-              {tab === 'Staff' && <Users className="w-5 h-5" />}
+              {tab === 'Partners' && <HeartHandshake className="w-5 h-5" />}
               {tab}
             </button>
           ))}
@@ -144,17 +144,17 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
           </div>
         )}
 
-        {activeTab !== 'Overview' && (activeTab === 'Staff' ? (
+        {activeTab !== 'Overview' && (activeTab === 'Partners' ? (
            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {['Rahul Verma', 'Anita Singh', 'Sanjay Kumar'].map(name => (
+              {['Partner Alpha', 'Partner Beta', 'Partner Gamma'].map(name => (
                 <div key={name} className="bg-white p-8 rounded-[2rem] border border-gray-100 flex items-center gap-6">
-                   <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400"><User /></div>
+                   <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center"><HeartHandshake /></div>
                    <div>
                       <h4 className="font-bold text-lg">{name}</h4>
-                      <p className="text-sm text-gray-500">Laboratory Technician</p>
+                      <p className="text-sm text-gray-500">Diagnostic Partner</p>
                       <div className="mt-3 flex gap-2">
-                         <span className="text-[10px] font-bold px-2 py-1 bg-green-50 text-green-600 rounded">Online</span>
-                         <span className="text-[10px] font-bold px-2 py-1 bg-gray-50 text-gray-400 rounded">4/8 Tasks Done</span>
+                         <span className="text-[10px] font-bold px-2 py-1 bg-green-50 text-green-600 rounded">Verified</span>
+                         <span className="text-[10px] font-bold px-2 py-1 bg-gray-50 text-gray-400 rounded">Active Sync</span>
                       </div>
                    </div>
                 </div>

@@ -1,17 +1,12 @@
 
 import React, { useRef, useMemo } from 'react';
-import { Canvas, useFrame, ThreeElements } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Environment, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 
-// Fix: Augment the global JSX namespace with Three.js elements. 
-// Using ThreeElements from @react-three/fiber provides comprehensive typing for all Three.js elements
-// and resolves "Property does not exist on type 'JSX.IntrinsicElements'" errors.
-declare global {
-  namespace JSX {
-    interface IntrinsicElements extends ThreeElements {}
-  }
-}
+// The previous JSX augmentation was removed as it shadowed the default React JSX namespace,
+// causing "Property does not exist on type 'JSX.IntrinsicElements'" errors for standard tags (div, h1, etc.)
+// across the entire project.
 
 const RedBloodCell = ({ position }: { position: [number, number, number] }) => {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -49,7 +44,9 @@ const DNAHelix = () => {
     for (let i = 0; i < 40; i++) {
       const angle = (i / 10) * Math.PI;
       const y = (i - 20) * 0.3;
+      // Strand 1
       points.push({ x: Math.sin(angle), z: Math.cos(angle), y });
+      // Strand 2 - Fix: Removed corrupted logic and duplicate 'z' property
       points.push({ x: -Math.sin(angle), z: -Math.cos(angle), y });
     }
     return points;

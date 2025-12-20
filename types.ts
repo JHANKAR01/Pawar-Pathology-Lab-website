@@ -1,7 +1,7 @@
 
 export enum UserRole {
   ADMIN = 'admin',
-  WORKER = 'worker',
+  PARTNER = 'partner',
   PATIENT = 'patient'
 }
 
@@ -22,9 +22,14 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  phone: string;
   role: UserRole;
-  address?: string;
+  token?: string;
+}
+
+export interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 export interface Test {
@@ -39,7 +44,7 @@ export interface Test {
 
 export interface Booking {
   id: string;
-  patientId: string;
+  patientId?: string;
   patientName: string;
   tests: Test[];
   totalAmount: number;
@@ -50,4 +55,5 @@ export interface Booking {
   paymentStatus: 'paid' | 'unpaid';
   reportFileUrl?: string;
   assignedWorkerId?: string;
+  createdAt: string;
 }
