@@ -85,7 +85,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     if (step === 2) {
       if (!formData.name) return "Patient name is required.";
       if (!formData.phone || formData.phone.length !== 10) return "Please enter a valid 10-digit phone number.";
-      // Email is optional for guests, but mandatory if user wants digital report, enforced by logic downstream or optional here.
+      // Email is optional for guests, but good to collect
     }
     if (step === 3) {
       if (!formData.date) return "Please select a preferred date.";
@@ -194,7 +194,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                   </div>
                 </div>
               </div>
-
+              
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 ml-2">Email Address</label>
                 <div className="relative">
