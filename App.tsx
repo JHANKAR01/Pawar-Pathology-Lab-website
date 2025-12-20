@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Phone, MapPin, FlaskConical, LogOut, LogIn, Activity, 
@@ -87,7 +88,7 @@ const App: React.FC = () => {
                 onClick={() => setView('login')}
                 className="flex items-center gap-2 md:gap-3 px-4 md:px-7 py-2 md:py-3.5 border-2 border-slate-100 rounded-[1rem] md:rounded-[1.4rem] text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-500 hover:border-rose-600 hover:text-rose-600 transition-all"
               >
-                <LogIn className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden sm:inline">Portal</span>
+                <LogIn className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden sm:inline">Login</span>
               </button>
             )}
             
@@ -165,16 +166,27 @@ const App: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="glass-dark p-2 md:p-3 rounded-[3rem] md:rounded-[4rem] shadow-3xl">
-              <div className="bg-slate-900 h-[350px] md:h-[500px] rounded-[2.5rem] md:rounded-[3.5rem] relative flex items-center justify-center overflow-hidden border border-white/5">
-                <div className="flex flex-col items-center gap-4 md:gap-6">
-                  <div className="w-20 h-20 md:w-24 md:h-24 bg-rose-600/10 rounded-full flex items-center justify-center animate-pulse">
+            
+            <div className="glass-dark p-2 md:p-3 rounded-[3rem] md:rounded-[4rem] shadow-3xl hover:scale-[1.02] transition-transform duration-500">
+              <a 
+                href="https://maps.app.goo.gl/z4s13hUU7qKsxcLNA" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block bg-slate-900 h-[350px] md:h-[500px] rounded-[2.5rem] md:rounded-[3.5rem] relative flex items-center justify-center overflow-hidden border border-white/5 group cursor-pointer"
+              >
+                <div className="flex flex-col items-center gap-4 md:gap-6 z-10">
+                  <div className="w-20 h-20 md:w-24 md:h-24 bg-rose-600/10 rounded-full flex items-center justify-center animate-pulse group-hover:bg-rose-600/20 transition-colors">
                      <MapPin className="text-rose-600 w-10 h-10 md:w-12 md:h-12" />
                   </div>
-                  <p className="text-slate-500 font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-[9px] md:text-[11px]">System Geolocation Active</p>
+                  <div className="text-center">
+                    <p className="text-slate-500 font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-[9px] md:text-[11px] group-hover:text-white transition-colors">System Geolocation Active</p>
+                    <p className="text-white/50 text-[10px] mt-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">Click to Navigate</p>
+                  </div>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-br from-rose-600/10 via-transparent to-transparent pointer-events-none" />
-              </div>
+                <div className="absolute inset-0 bg-gradient-to-br from-rose-600/10 via-transparent to-transparent pointer-events-none group-hover:opacity-75 transition-opacity" />
+                {/* Background Map Effect */}
+                <div className="absolute inset-0 opacity-10 bg-[url('https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Google_Maps_Logo_2020.svg/2275px-Google_Maps_Logo_2020.svg.png')] bg-cover bg-center grayscale mix-blend-overlay"></div>
+              </a>
             </div>
           </div>
         </section>
@@ -256,7 +268,9 @@ const App: React.FC = () => {
               tests: selectedTests,
               totalAmount: selectedTests.reduce((acc, t) => acc + t.price, 0),
               collectionType: formData.collectionType,
-              scheduledDate: formData.date
+              scheduledDate: formData.date,
+              paymentMode: formData.paymentMethod,
+              paymentStatus: formData.paymentMethod === 'online' ? 'paid' : 'unpaid'
             });
             setSelectedTests([]);
             setIsWizardOpen(false);

@@ -53,6 +53,7 @@ export interface Booking {
   scheduledDate: string;
   status: BookingStatus;
   paymentStatus: 'paid' | 'unpaid';
+  paymentMode?: 'online' | 'cash';
   reportFileUrl?: string;
   assignedWorkerId?: string;
   createdAt: string;

@@ -1,4 +1,5 @@
-import React, { useRef, useMemo } from 'react';
+
+import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Environment, Stars, ContactShadows, PresentationControls } from '@react-three/drei';
 import * as THREE from 'three';
@@ -64,7 +65,7 @@ const DNAHelix = () => {
   return (
     <group ref={helixRef}>
       {helixData.points.map((d, i) => (
-        <group key={`point-group-${i}`}>
+        <group key={`dna-group-${i}`}>
           <mesh position={[d.p1.x, d.p1.y, d.p1.z]}>
             <sphereGeometry args={[0.1, 16, 16]} />
             <meshStandardMaterial color="#E11D48" emissive="#E11D48" emissiveIntensity={1.2} />
@@ -86,6 +87,15 @@ const DNAHelix = () => {
 };
 
 const Hero3D = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const scrollToTests = () => {
     const element = document.getElementById('directory');
     if (element) element.scrollIntoView({ behavior: 'smooth' });
@@ -93,7 +103,7 @@ const Hero3D = () => {
 
   const cells = useMemo(() => {
     const data = [];
-    const count = typeof window !== 'undefined' && window.innerWidth < 768 ? 40 : 80;
+    const count = isMobile ? 35 : 70;
     for (let i = 0; i < count; i++) {
       data.push({
         id: i,
@@ -108,14 +118,15 @@ const Hero3D = () => {
       });
     }
     return data;
-  }, []);
+  }, [isMobile]);
 
   return (
     <div className="relative h-[90vh] md:h-screen w-full overflow-hidden bg-[#050505]">
       {/* Dynamic background glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(225,29,72,0.18),transparent_80%)] pointer-events-none" />
 
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-6 pointer-events-none">
+      {/* Main Content Container - Added padding-top to clear navbar */}
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-6 pointer-events-none pt-20 md:pt-0">
         <span className="mb-4 md:mb-8 px-4 md:px-6 py-2 rounded-full border border-rose-900/40 bg-rose-950/20 text-rose-500 text-[10px] md:text-xs font-black uppercase tracking-[0.4em] animate-pulse">
           NABL Accredited Excellence • Betul
         </span>
@@ -148,7 +159,7 @@ const Hero3D = () => {
 
       <div className="absolute inset-0 z-10 opacity-70 md:opacity-100">
         <Canvas 
-          camera={{ position: [0, 0, 12], fov: 40 }}
+          camera={{ position: [0, 0, 12], fov: isMobile ? 55 : 40 }}
           gl={{ antialias: true, alpha: true }}
           dpr={[1, 2]}
         >
