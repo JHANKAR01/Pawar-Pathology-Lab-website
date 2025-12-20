@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Phone, MapPin, FlaskConical, LogOut, LogIn, Activity, 
@@ -28,10 +27,6 @@ const App: React.FC = () => {
     const user = mockApi.getCurrentUser();
     if (user) {
       setCurrentUser(user);
-      // Ensure users stay on home view if they are just patients
-      if (view === 'home' && user.role !== UserRole.PATIENT) {
-        // Optional: Auto-redirect admins/partners if needed, but staying on home is fine too
-      }
     }
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -61,7 +56,7 @@ const App: React.FC = () => {
     } else if (u.role === UserRole.PARTNER) {
       setView('partner');
     } else {
-      setView('home'); // Default to home for patients
+      setView('home'); 
     }
   };
 
@@ -71,7 +66,6 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen selection:bg-rose-100 selection:text-rose-600">
-      {/* Premium Floating Navigation */}
       <div className={`fixed top-0 left-0 w-full z-50 transition-all duration-700 px-4 md:px-12 ${isScrolled ? 'pt-2 md:pt-4' : 'pt-4 md:pt-8'}`}>
         <nav className={`max-w-[1440px] mx-auto glass-pro rounded-[1.5rem] md:rounded-[2.5rem] px-4 md:px-8 py-3 flex justify-between items-center shadow-2xl shadow-slate-200/50 transition-all ${isScrolled ? 'py-2.5 md:py-3.5 shadow-slate-300/60' : 'py-4 md:py-6'}`}>
           <div className="flex items-center gap-3 md:gap-4 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
@@ -132,13 +126,15 @@ const App: React.FC = () => {
       </div>
 
       <main className="flex-1">
-        {/* Cinematic Hero */}
         <section className="section-mask">
           <Hero3D />
         </section>
 
-        {/* Integrated Service Grid */}
-        <section id="services" className="relative z-30 -mt-16 md:-mt-24 px-4 md:px-12">
+        {/* 
+            LAYOUT ADJUSTMENT:
+            Reduced negative margin from -mt-24 to -mt-8 on desktop to avoid overlap with hero buttons 
+        */}
+        <section id="services" className="relative z-30 -mt-8 md:-mt-8 px-4 md:px-12">
           <div className="max-w-[1440px] mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               {[
@@ -158,12 +154,10 @@ const App: React.FC = () => {
           </div>
         </section>
 
-        {/* Unified Search Directory */}
         <section id="directory" className="py-24 md:py-40 bg-white/40">
           <TestSearch tests={mockTests} onSelect={handleTestSelect} />
         </section>
 
-        {/* Geographical Node */}
         <section id="network" className="py-24 md:py-40 px-4 md:px-12 bg-slate-950 overflow-hidden relative">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(225,29,72,0.08),transparent_70%)]" />
           <div className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 md:gap-32 items-center relative z-10">
@@ -211,7 +205,6 @@ const App: React.FC = () => {
                   </div>
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-br from-rose-900/40 via-slate-950/40 to-slate-950/80 pointer-events-none group-hover:opacity-50 transition-opacity duration-500" />
-                {/* Background Map Effect */}
                 <img 
                   src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=800" 
                   alt="Map Location" 
@@ -223,7 +216,6 @@ const App: React.FC = () => {
         </section>
       </main>
 
-      {/* Modern High-End Footer */}
       <footer className="bg-slate-950 text-white pt-24 md:pt-40 pb-12 md:pb-16 px-4 md:px-12 border-t border-white/5">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12 md:gap-24">
           <div className="sm:col-span-2 md:col-span-1">

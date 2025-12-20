@@ -1,15 +1,18 @@
-
-
 import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { Canvas, useFrame, ThreeElements } from '@react-three/fiber';
 import { Float, Environment, Stars, ContactShadows, PresentationControls } from '@react-three/drei';
 import * as THREE from 'three';
 
 // Enhanced type definitions for Three.js intrinsic elements to the global JSX namespace
-// This fixes errors like "Property 'mesh' does not exist on type 'JSX.IntrinsicElements'"
+// This fixes errors where Three.js elements like 'mesh', 'group', 'torusGeometry', etc. are not recognized in JSX
 declare global {
   namespace JSX {
     interface IntrinsicElements extends ThreeElements {}
+  }
+  namespace React {
+    namespace JSX {
+      interface IntrinsicElements extends ThreeElements {}
+    }
   }
 }
 
@@ -26,16 +29,12 @@ const Cell: React.FC<{ position: [number, number, number], speed?: number, type?
 
   return (
     <Float speed={2 * speed} rotationIntensity={1.5} floatIntensity={1.5}>
-      {/* @ts-ignore - Suppressing intrinsic element check for 'mesh' */}
       <mesh ref={meshRef} position={position} scale={scale}>
         {type === 'rbc' ? (
-          /* @ts-ignore - Suppressing intrinsic element check for 'torusGeometry' */
           <torusGeometry args={[0.3, 0.15, 12, 24]} />
         ) : (
-          /* @ts-ignore - Suppressing intrinsic element check for 'sphereGeometry' */
           <sphereGeometry args={[0.25, 32, 32]} />
         )}
-        {/* @ts-ignore - Suppressing intrinsic element check for 'meshStandardMaterial' */}
         <meshStandardMaterial 
           color={type === 'rbc' ? "#E11D48" : "#F8FAFC"} 
           roughness={type === 'rbc' ? 0.2 : 0.4} 
@@ -60,10 +59,11 @@ const DNAHelix = () => {
       const y = (i - count/2) * 0.4;
       
       const p1 = { x: Math.sin(angle) * 2, z: Math.cos(angle) * 2, y };
-      const p2 = { x: -Math.sin(angle) * 2, z: -Math.cos(angle) * 2, y };
+      // Fix: Removed the problematic line with 'Math.opacity' typo and used p2Calc for the second strand.
+      const p2Calc = { x: -Math.sin(angle) * 2, z: -Math.cos(angle) * 2, y };
       
-      points.push({ p1, p2 });
-      if (i % 2 === 0) rungs.push({ p1, p2 });
+      points.push({ p1, p2: p2Calc });
+      if (i % 2 === 0) rungs.push({ p1, p2: p2Calc });
     }
     return { points, rungs };
   }, []);
@@ -76,33 +76,22 @@ const DNAHelix = () => {
   });
 
   return (
-    /* @ts-ignore - Suppressing intrinsic element check for 'group' */
     <group ref={helixRef}>
       {helixData.points.map((d, i) => (
-        /* @ts-ignore - Suppressing intrinsic element check for 'group' */
         <group key={`dna-group-${i}`}>
-          {/* @ts-ignore - Suppressing intrinsic element check for 'mesh' */}
           <mesh position={[d.p1.x, d.p1.y, d.p1.z]}>
-            {/* @ts-ignore - Suppressing intrinsic element check for 'sphereGeometry' */}
             <sphereGeometry args={[0.1, 16, 16]} />
-            {/* @ts-ignore - Suppressing intrinsic element check for 'meshStandardMaterial' */}
             <meshStandardMaterial color="#E11D48" emissive="#E11D48" emissiveIntensity={1.2} />
           </mesh>
-          {/* @ts-ignore - Suppressing intrinsic element check for 'mesh' */}
           <mesh position={[d.p2.x, d.p2.y, d.p2.z]}>
-            {/* @ts-ignore - Suppressing intrinsic element check for 'sphereGeometry' */}
             <sphereGeometry args={[0.1, 16, 16]} />
-            {/* @ts-ignore - Suppressing intrinsic element check for 'meshStandardMaterial' */}
             <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.5} />
           </mesh>
         </group>
       ))}
       {helixData.rungs.map((r, i) => (
-        /* @ts-ignore - Suppressing intrinsic element check for 'mesh' */
         <mesh key={`rung-${i}`} position={[(r.p1.x + r.p2.x)/2, r.p1.y, (r.p1.z + r.p2.z)/2]} rotation={[0, 0, Math.atan2(r.p2.x - r.p1.x, r.p2.z - r.p1.z)]}>
-          {/* @ts-ignore - Suppressing intrinsic element check for 'boxGeometry' */}
           <boxGeometry args={[4, 0.02, 0.02]} />
-          {/* @ts-ignore - Suppressing intrinsic element check for 'meshStandardMaterial' */}
           <meshStandardMaterial color="#ffffff" transparent opacity={0.15} />
         </mesh>
       ))}
@@ -146,35 +135,38 @@ const Hero3D = () => {
 
   return (
     <div className="relative h-[90vh] md:h-screen w-full overflow-hidden bg-[#050505]">
-      {/* Dynamic background glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(225,29,72,0.18),transparent_80%)] pointer-events-none" />
 
-      {/* Main Content Container - Increased padding top to prevent navbar overlap on mobile */}
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-6 pointer-events-none pt-40 md:pt-0">
-        <span className="mb-4 md:mb-8 px-4 md:px-6 py-2 rounded-full border border-rose-900/40 bg-rose-950/20 text-rose-500 text-[10px] md:text-xs font-black uppercase tracking-[0.4em] animate-pulse">
+      {/* 
+          LAYOUT FIX:
+          - Changed justify-center to justify-start to prevent content from expanding upwards into navbar.
+          - Increased md:pt-44 to ensure the NABL badge is safely below the fixed header.
+      */}
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-start text-center px-6 pointer-events-none pt-28 md:pt-44">
+        <span className="mb-4 md:mb-6 px-4 md:px-6 py-2 rounded-full border border-rose-900/40 bg-rose-950/20 text-rose-50 text-[10px] md:text-xs font-black uppercase tracking-[0.4em] animate-pulse">
           NABL Accredited Excellence • Betul
         </span>
-        <h1 className="font-heading text-4xl sm:text-7xl md:text-9xl font-black text-white mb-6 tracking-tighter leading-[0.85] md:leading-[0.8]">
+        <h1 className="font-heading text-4xl sm:text-7xl md:text-8xl font-black text-white mb-6 tracking-tighter leading-[0.85] md:leading-[0.85]">
           PRECISION <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-600 via-rose-300 to-white text-glow">
             DIAGNOSTICS
           </span>
         </h1>
-        <p className="text-gray-400 max-w-lg md:max-w-2xl text-xs md:text-xl font-medium leading-relaxed opacity-90 mb-10 md:mb-16">
+        <p className="text-gray-400 max-w-lg md:max-w-xl text-xs md:text-lg font-medium leading-relaxed opacity-90 mb-8 md:mb-12">
           Pioneering molecular intelligence and high-throughput pathology for advanced clinical insight across Madhya Pradesh.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-5 pointer-events-auto w-full sm:w-auto px-6 sm:px-0">
           <button 
             onClick={scrollToTests}
-            className="group relative bg-rose-600 text-white px-10 md:px-16 py-4 md:py-6 rounded-2xl font-black text-[10px] md:text-sm uppercase tracking-widest overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-rose-900/40"
+            className="group relative bg-rose-600 text-white px-10 md:px-14 py-4 md:py-5 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-rose-900/40"
           >
             <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
             <span className="relative">Book Appointment</span>
           </button>
           <button 
             onClick={scrollToTests}
-            className="group px-10 md:px-16 py-4 md:py-6 rounded-2xl font-black text-[10px] md:text-sm uppercase tracking-widest text-white border border-white/20 bg-white/5 backdrop-blur-2xl hover:bg-white/15 transition-all"
+            className="group px-10 md:px-14 py-4 md:py-5 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest text-white border border-white/20 bg-white/5 backdrop-blur-2xl hover:bg-white/15 transition-all"
           >
             Investigation Menu
           </button>
@@ -187,9 +179,7 @@ const Hero3D = () => {
           gl={{ antialias: true, alpha: true }}
           dpr={[1, 2]}
         >
-          {/* @ts-ignore - Suppressing intrinsic element check for 'color' */}
           <color attach="background" args={['#050505']} />
-          {/* @ts-ignore - Suppressing intrinsic element check for 'fog' */}
           <fog attach="fog" args={['#050505', 10, 25]} />
           
           <PresentationControls 
@@ -199,7 +189,6 @@ const Hero3D = () => {
             azimuth={[-0.1, 0.1]}
             config={{ mass: 2, tension: 500 }}
           >
-            {/* @ts-ignore - Suppressing intrinsic element check for 'group' */}
             <group scale={1}>
               <DNAHelix />
               {cells.map(cell => (
@@ -215,11 +204,8 @@ const Hero3D = () => {
           </PresentationControls>
 
           <Stars radius={70} depth={50} count={4000} factor={5} saturation={0} fade speed={2} />
-          {/* @ts-ignore - Suppressing intrinsic element check for 'ambientLight' */}
           <ambientLight intensity={0.6} />
-          {/* @ts-ignore - Suppressing intrinsic element check for 'spotLight' */}
           <spotLight position={[10, 20, 10]} angle={0.25} penumbra={1} intensity={5} color="#E11D48" />
-          {/* @ts-ignore - Suppressing intrinsic element check for 'pointLight' */}
           <pointLight position={[-20, -10, -10]} intensity={3} color="#ffffff" />
           <ContactShadows opacity={0.5} scale={25} blur={2.5} far={15} />
           <Environment preset="night" />

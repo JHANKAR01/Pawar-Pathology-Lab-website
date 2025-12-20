@@ -6,9 +6,11 @@ import { CATEGORIES } from '../constants';
 interface TestSearchProps {
   tests: Test[];
   onSelect: (test: Test) => void;
+  // Fix: Added selectedIds to the props interface to resolve type mismatch in app/page.tsx
+  selectedIds?: string[];
 }
 
-const TestSearch: React.FC<TestSearchProps> = ({ tests, onSelect }) => {
+const TestSearch: React.FC<TestSearchProps> = ({ tests, onSelect, selectedIds }) => {
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
 
@@ -72,44 +74,47 @@ const TestSearch: React.FC<TestSearchProps> = ({ tests, onSelect }) => {
             <p className="text-slate-400 font-black text-lg md:text-xl tracking-tight">No investigations match your query.</p>
           </div>
         ) : (
-          filteredTests.map(test => (
-            <div key={test.id} className="group bg-white p-8 md:p-12 rounded-[2.5rem] md:rounded-[4rem] shadow-sm hover:shadow-2xl hover:-translate-y-2 md:hover:-translate-y-3 transition-all duration-500 border border-slate-50 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-40 h-40 md:w-48 md:h-48 bg-rose-50 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-1000 opacity-40 pointer-events-none" />
-              
-              <div className="flex justify-between items-start mb-10 md:mb-14 relative z-10">
-                <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-50 text-slate-900 rounded-xl md:rounded-2xl flex items-center justify-center group-hover:bg-rose-600 group-hover:text-white transition-all duration-500 shadow-sm">
-                  <Zap className="w-6 h-6 md:w-8 md:h-8" />
-                </div>
-                <div className="text-right">
-                  <span className="text-[9px] md:text-[10px] font-black text-slate-300 uppercase tracking-widest block mb-1 md:mb-2">Investigative Fee</span>
-                  <span className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter group-hover:text-rose-600 transition-colors">₹{test.price}</span>
-                </div>
-              </div>
-
-              <h3 className="font-heading text-2xl md:text-3xl font-black text-slate-900 mb-4 md:mb-6 tracking-tight leading-[1.1] relative z-10">{test.title}</h3>
-              <p className="text-slate-400 text-xs md:text-sm font-medium leading-relaxed mb-8 md:mb-12 h-12 md:h-16 overflow-hidden relative z-10">{test.description}</p>
-              
-              <div className="flex flex-wrap gap-2 md:gap-3 mb-10 md:mb-14 relative z-10">
-                {test.fastingRequired && (
-                  <div className="flex items-center gap-2 text-[8px] md:text-[9px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 px-3 md:px-5 py-2 md:py-3 rounded-lg md:rounded-xl border border-amber-100/50">
-                    <Clock className="w-3 h-3 md:w-4 md:h-4" /> Fasting
+          filteredTests.map(test => {
+            const isSelected = selectedIds?.includes(test.id);
+            return (
+              <div key={test.id} className={`group bg-white p-8 md:p-12 rounded-[2.5rem] md:rounded-[4rem] shadow-sm hover:shadow-2xl hover:-translate-y-2 md:hover:-translate-y-3 transition-all duration-500 border border-slate-50 relative overflow-hidden ${isSelected ? 'ring-2 ring-rose-500' : ''}`}>
+                <div className="absolute top-0 right-0 w-40 h-40 md:w-48 md:h-48 bg-rose-50 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-1000 opacity-40 pointer-events-none" />
+                
+                <div className="flex justify-between items-start mb-10 md:mb-14 relative z-10">
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-50 text-slate-900 rounded-xl md:rounded-2xl flex items-center justify-center group-hover:bg-rose-600 group-hover:text-white transition-all duration-500 shadow-sm">
+                    <Zap className="w-6 h-6 md:w-8 md:h-8" />
                   </div>
-                )}
-                {test.isHomeCollectionAvailable && (
-                  <div className="flex items-center gap-2 text-[8px] md:text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 px-3 md:px-5 py-2 md:py-3 rounded-lg md:rounded-xl border border-blue-100/50">
-                    <ShieldCheck className="w-3 h-3 md:w-4 md:h-4" /> Home Collection
+                  <div className="text-right">
+                    <span className="text-[9px] md:text-[10px] font-black text-slate-300 uppercase tracking-widest block mb-1 md:mb-2">Investigative Fee</span>
+                    <span className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter group-hover:text-rose-600 transition-colors">₹{test.price}</span>
                   </div>
-                )}
-              </div>
+                </div>
 
-              <button 
-                onClick={() => onSelect(test)}
-                className="w-full py-4 md:py-6 rounded-[1.5rem] md:rounded-[2.2rem] bg-slate-900 text-white font-black uppercase text-[9px] md:text-[10px] tracking-[0.3em] md:tracking-[0.4em] flex items-center justify-center gap-3 md:gap-4 hover:bg-rose-600 transition-all active:scale-95 shadow-lg md:shadow-xl shadow-slate-100 hover:shadow-rose-200"
-              >
-                Schedule Analysis <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          ))
+                <h3 className="font-heading text-2xl md:text-3xl font-black text-slate-900 mb-4 md:mb-6 tracking-tight leading-[1.1] relative z-10">{test.title}</h3>
+                <p className="text-slate-400 text-xs md:text-sm font-medium leading-relaxed mb-8 md:mb-12 h-12 md:h-16 overflow-hidden relative z-10">{test.description}</p>
+                
+                <div className="flex flex-wrap gap-2 md:gap-3 mb-10 md:mb-14 relative z-10">
+                  {test.fastingRequired && (
+                    <div className="flex items-center gap-2 text-[8px] md:text-[9px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 px-3 md:px-5 py-2 md:py-3 rounded-lg md:rounded-xl border border-amber-100/50">
+                      <Clock className="w-3 h-3 md:w-4 md:h-4" /> Fasting
+                    </div>
+                  )}
+                  {test.isHomeCollectionAvailable && (
+                    <div className="flex items-center gap-2 text-[8px] md:text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 px-3 md:px-5 py-2 md:py-3 rounded-lg md:rounded-xl border border-blue-100/50">
+                      <ShieldCheck className="w-3 h-3 md:w-4 md:h-4" /> Home Collection
+                    </div>
+                  )}
+                </div>
+
+                <button 
+                  onClick={() => onSelect(test)}
+                  className={`w-full py-4 md:py-6 rounded-[1.5rem] md:rounded-[2.2rem] font-black uppercase text-[9px] md:text-[10px] tracking-[0.3em] md:tracking-[0.4em] flex items-center justify-center gap-3 md:gap-4 transition-all active:scale-95 shadow-lg md:shadow-xl ${isSelected ? 'bg-rose-600 text-white' : 'bg-slate-900 text-white hover:bg-rose-600 shadow-slate-100 hover:shadow-rose-200'}`}
+                >
+                  {isSelected ? 'Remove from Schedule' : 'Schedule Analysis'} <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            );
+          })
         )}
       </div>
     </div>

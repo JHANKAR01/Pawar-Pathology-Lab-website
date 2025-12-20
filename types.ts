@@ -1,5 +1,4 @@
 
-
 export enum UserRole {
   ADMIN = 'admin',
   PARTNER = 'partner',
@@ -42,12 +41,14 @@ export interface Test {
 
 export interface Booking {
   _id: string;
-  id: string; // Added id property to unify mock and database representations
+  id: string;
   patientName: string;
   contactNumber?: string;
   email?: string;
   tests: Test[];
   totalAmount: number;
+  amountTaken: number;      // New financial field
+  balanceAmount: number;    // New financial field
   collectionType: CollectionType;
   scheduledDate: string;
   status: BookingStatus;

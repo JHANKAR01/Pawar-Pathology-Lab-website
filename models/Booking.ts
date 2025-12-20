@@ -1,13 +1,14 @@
+
 import mongoose, { Schema, Document, models, model } from 'mongoose';
 
 export enum BookingStatus {
-  PENDING = 'pending',                // Booking created by patient
-  ACCEPTED = 'accepted',              // Admin accepted the booking
-  ASSIGNED = 'assigned',              // Admin assigned a partner
-  REACHED = 'reached',                // Partner reached patient location
-  SAMPLE_COLLECTED = 'sample_collected', // Partner collected sample
-  REPORT_UPLOADED = 'report_uploaded',   // Partner uploaded report
-  COMPLETED = 'completed'             // Admin verified and released
+  PENDING = 'pending',
+  ACCEPTED = 'accepted',
+  ASSIGNED = 'assigned',
+  REACHED = 'reached',
+  SAMPLE_COLLECTED = 'sample_collected',
+  REPORT_UPLOADED = 'report_uploaded',
+  COMPLETED = 'completed'
 }
 
 export enum CollectionType {
@@ -33,6 +34,8 @@ export interface IBooking extends Document {
   email?: string;
   tests: IBookingTest[];
   totalAmount: number;
+  amountTaken: number;
+  balanceAmount: number;
   collectionType: CollectionType;
   address?: string; 
   coordinates?: {
@@ -44,7 +47,7 @@ export interface IBooking extends Document {
   paymentMode: 'online' | 'cash';
   paymentStatus: PaymentStatus;
   reportFileUrl?: string; 
-  assignedPartnerId?: string; // ID of the partner assigned to this booking
+  assignedPartnerId?: string;
   assignedPartnerName?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -63,6 +66,8 @@ const BookingSchema = new Schema<IBooking>(
       category: String
     }],
     totalAmount: { type: Number, required: true },
+    amountTaken: { type: Number, default: 0 },
+    balanceAmount: { type: Number, default: 0 },
     collectionType: {
       type: String,
       enum: Object.values(CollectionType),
