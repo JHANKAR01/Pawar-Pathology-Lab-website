@@ -11,10 +11,10 @@
   "dependencies": {
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "@react-three/fiber": "^9.4.2",
-    "@react-three/drei": "^10.7.7",
-    "lucide-react": "^0.562.0",
-    "three": "^0.182.0"
+    "three": "0.160.0",
+    "@react-three/fiber": "8.15.11",
+    "@react-three/drei": "9.89.0",
+    "lucide-react": "0.344.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

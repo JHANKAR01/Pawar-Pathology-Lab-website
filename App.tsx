@@ -1,19 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
-import { Phone, MapPin, Mail, Instagram, Facebook, Clock, FlaskConical, User, ShieldCheck, ChevronRight } from 'lucide-react';
+import { Phone, MapPin, Mail, Instagram, Facebook, Clock, FlaskConical, User, ShieldCheck, ChevronRight, Briefcase, Home } from 'lucide-react';
 import Hero3D from './components/3D/Hero3D';
 import TestSearch from './components/TestSearch';
 import BookingWizard from './components/BookingWizard';
 import AdminDashboard from './components/Dashboard/AdminDashboard';
+import WorkerDashboard from './components/Dashboard/WorkerDashboard';
 import { Test, UserRole } from './types';
 import { LAB_INFO } from './constants';
+import { mockApi } from './lib/mockApi';
 
 const App: React.FC = () => {
   const [selectedTests, setSelectedTests] = useState<Test[]>([]);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [view, setView] = useState<'home' | 'admin' | 'worker'>('home');
 
-  // Sample Mock Data
   const mockTests: Test[] = [
     { id: '1', title: 'CBC - Complete Blood Count', category: 'Hematology', price: 350, description: 'Measures your red cells, white cells, and platelets. Vital for infection check.', isHomeCollectionAvailable: true, fastingRequired: false },
     { id: '2', title: 'Lipid Profile', category: 'Biochemistry', price: 750, description: 'Comprehensive cholesterol test including HDL, LDL, and Triglycerides.', isHomeCollectionAvailable: true, fastingRequired: true },
@@ -29,51 +30,76 @@ const App: React.FC = () => {
     }
   };
 
-  const removeTest = (id: string) => {
-    setSelectedTests(selectedTests.filter(t => t.id !== id));
+  const handleBookingComplete = (formData: any) => {
+    mockApi.saveBooking({
+      patientName: formData.name,
+      tests: selectedTests,
+      totalAmount: selectedTests.reduce((acc, t) => acc + t.price, 0),
+      collectionType: formData.collectionType,
+      scheduledDate: formData.date
+    });
+    setSelectedTests([]);
+    setIsWizardOpen(false);
+    alert("Booking Saved! Switch to Admin or Worker view to manage it.");
   };
 
-  if (view === 'admin') return <AdminDashboard />;
+  if (view === 'admin') return <AdminDashboard onLogout={() => setView('home')} />;
+  if (view === 'worker') return <WorkerDashboard onLogout={() => setView('home')} />;
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Top Bar */}
-      <div className="bg-red-600 text-white py-2 px-4 text-[10px] md:text-xs font-bold uppercase tracking-widest flex flex-col md:flex-row justify-between items-center gap-2">
-        <div className="flex gap-4">
-          <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {LAB_INFO.contact}</span>
-          <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> Tikari, Betul</span>
+    <div className="flex flex-col min-h-screen animate-in fade-in duration-700">
+      {/* Top Contact Bar */}
+      <div className="bg-red-600 text-white py-2 px-6 text-[10px] md:text-xs font-bold uppercase tracking-widest flex flex-col md:flex-row justify-between items-center gap-2">
+        <div className="flex gap-6">
+          <span className="flex items-center gap-1.5"><Phone className="w-3 h-3" /> {LAB_INFO.contact}</span>
+          <span className="flex items-center gap-1.5"><MapPin className="w-3 h-3" /> {LAB_INFO.location.split(',')[0]}</span>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-6">
            <span>Owner: {LAB_INFO.owner}</span>
-           <span className="opacity-70">Medical Head: {LAB_INFO.medicalHead}</span>
+           <span className="opacity-80">Medical Head: {LAB_INFO.medicalHead.split(' ')[0]} {LAB_INFO.medicalHead.split(' ')[1]}</span>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-gray-100 px-6 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
-          <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
+      {/* Main Navigation */}
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100 px-6 py-4 flex justify-between items-center">
+        <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setView('home')}>
+          <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform">
             <FlaskConical className="text-white w-6 h-6" />
           </div>
           <div>
-            <h2 className="font-black text-xl leading-none">PAWAR</h2>
-            <p className="text-[10px] font-bold text-gray-400">LAB BETUL</p>
+            <h2 className="font-black text-xl leading-none tracking-tight">PAWAR</h2>
+            <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Pathology Lab</p>
           </div>
         </div>
-        <div className="hidden md:flex gap-8 text-sm font-bold text-gray-600">
-          <a href="#home" className="hover:text-red-600">Home</a>
-          <a href="#tests" className="hover:text-red-600">Tests</a>
-          <a href="#about" className="hover:text-red-600">About Us</a>
-          <a href="#contact" className="hover:text-red-600">Contact</a>
+
+        <div className="hidden md:flex gap-10 text-sm font-bold text-gray-500">
+          <a href="#home" className="hover:text-red-600 transition-colors">Home</a>
+          <a href="#tests" className="hover:text-red-600 transition-colors">Test Directory</a>
+          <a href="#" className="hover:text-red-600 transition-colors">About Us</a>
         </div>
+
         <div className="flex items-center gap-4">
-          <button onClick={() => setView('admin')} className="text-gray-400 hover:text-red-600 transition-colors p-2 rounded-full hover:bg-red-50">
-            <User className="w-6 h-6" />
-          </button>
+          <div className="flex bg-gray-100 p-1 rounded-xl">
+            <button 
+              onClick={() => setView('worker')} 
+              className="p-2 text-gray-400 hover:text-red-600 hover:bg-white rounded-lg transition-all"
+              title="Staff Portal"
+            >
+              <Briefcase className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={() => setView('admin')} 
+              className="p-2 text-gray-400 hover:text-red-600 hover:bg-white rounded-lg transition-all"
+              title="Admin Hub"
+            >
+              <User className="w-5 h-5" />
+            </button>
+          </div>
+          
           {selectedTests.length > 0 && (
             <button 
               onClick={() => setIsWizardOpen(true)}
-              className="bg-red-600 text-white px-6 py-2 rounded-full font-bold shadow-lg shadow-red-200 animate-pulse flex items-center gap-2"
+              className="bg-red-600 text-white px-6 py-2.5 rounded-full font-bold shadow-xl shadow-red-100 flex items-center gap-2 hover:bg-red-700 hover:scale-105 active:scale-95 transition-all"
             >
               Checkout ({selectedTests.length}) <ChevronRight className="w-4 h-4" />
             </button>
@@ -81,138 +107,101 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section id="home">
-        <Hero3D />
-      </section>
+      {/* Page Content */}
+      <main>
+        <section id="home">
+          <Hero3D />
+        </section>
 
-      {/* Trust Badges */}
-      <section className="py-12 bg-white px-4">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-          <div className="flex flex-col items-center text-center">
-            <div className="w-14 h-14 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mb-4">
-              <ShieldCheck className="w-8 h-8" />
-            </div>
-            <h4 className="font-bold">NABL Certified</h4>
-            <p className="text-xs text-gray-500">Highest quality standards</p>
+        <section className="py-16 bg-white border-y border-gray-50">
+          <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-12">
+            {[
+              { icon: ShieldCheck, title: "NABL Certified", sub: "Global Standards" },
+              { icon: Clock, title: "Same Day Result", sub: "Speed & Accuracy" },
+              { icon: MapPin, title: "Home Collection", sub: "Doorstep Service" },
+              { icon: User, title: "Expert MD Dr.", sub: "Verified Reports" }
+            ].map((item, idx) => (
+              <div key={idx} className="flex flex-col items-center text-center group">
+                <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-sm">
+                  <item.icon className="w-8 h-8" />
+                </div>
+                <h4 className="font-bold text-gray-900">{item.title}</h4>
+                <p className="text-sm text-gray-400 font-medium">{item.sub}</p>
+              </div>
+            ))}
           </div>
-          <div className="flex flex-col items-center text-center">
-            <div className="w-14 h-14 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mb-4">
-              <Clock className="w-8 h-8" />
-            </div>
-            <h4 className="font-bold">Fast Results</h4>
-            <p className="text-xs text-gray-500">Report in 12-24 hours</p>
-          </div>
-          <div className="flex flex-col items-center text-center">
-            <div className="w-14 h-14 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mb-4">
-              <MapPin className="w-8 h-8" />
-            </div>
-            <h4 className="font-bold">Home Sample</h4>
-            <p className="text-xs text-gray-500">Convenience at your door</p>
-          </div>
-          <div className="flex flex-col items-center text-center">
-            <div className="w-14 h-14 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mb-4">
-              <FlaskConical className="w-8 h-8" />
-            </div>
-            <h4 className="font-bold">Expert Pathologist</h4>
-            <p className="text-xs text-gray-500">Verified by Dr. Rahul Karode</p>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Test Catalog */}
-      <TestSearch tests={mockTests} onSelect={handleTestSelect} />
+        <section id="tests" className="bg-gray-50 pb-20">
+          <TestSearch tests={mockTests} onSelect={handleTestSelect} />
+        </section>
+      </main>
 
-      {/* Cart Drawer (Visible on Mobile/Floating) */}
-      {selectedTests.length > 0 && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <div className="bg-gray-900 text-white p-4 rounded-3xl shadow-2xl flex items-center gap-6 border border-white/10 glass max-w-sm">
-             <div>
-               <p className="text-[10px] text-gray-400 uppercase font-black">Selection</p>
-               <p className="text-lg font-bold">{selectedTests.length} Items</p>
-             </div>
-             <button 
-                onClick={() => setIsWizardOpen(true)}
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-2xl font-bold transition-all"
-             >
-                Book Now
-             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Booking Wizard Modal */}
+      {/* Modals */}
       {isWizardOpen && (
         <BookingWizard 
           selectedTests={selectedTests} 
           onCancel={() => setIsWizardOpen(false)}
-          onComplete={(data) => {
-            console.log("Booking Completed:", data);
-            alert("Booking Confirmed! (Demo Mode - Check Console for Payload)");
-            setIsWizardOpen(false);
-            setSelectedTests([]);
-          }}
+          onComplete={handleBookingComplete}
         />
       )}
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-16 px-6 mt-auto">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
-          <div className="space-y-4">
+      <footer className="bg-[#111] text-white py-20 px-6 mt-auto">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16">
+          <div className="space-y-6">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-red-600 rounded flex items-center justify-center font-bold">P</div>
-              <h2 className="text-xl font-bold uppercase">Pawar Lab</h2>
+              <FlaskConical className="text-red-600 w-8 h-8" />
+              <h2 className="text-2xl font-black">PAWAR LAB</h2>
             </div>
-            <p className="text-gray-400 text-sm leading-relaxed">
-              Betul's trusted diagnostic partner. We provide precise, reliable and affordable laboratory services using world-class technology.
+            <p className="text-gray-500 text-sm leading-relaxed font-medium">
+              Betul's leading diagnostic center, dedicated to precision and patient care. 
+              Advanced technology meets expert medical analysis.
             </p>
             <div className="flex gap-4">
-              <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-red-600 transition-colors"><Facebook className="w-5 h-5" /></a>
-              <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-red-600 transition-colors"><Instagram className="w-5 h-5" /></a>
+              <a href="#" className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-red-600 transition-colors"><Instagram className="w-5 h-5" /></a>
+              <a href="#" className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-red-600 transition-colors"><Facebook className="w-5 h-5" /></a>
             </div>
           </div>
           
           <div>
-            <h4 className="font-bold mb-6 text-lg">Quick Links</h4>
-            <ul className="space-y-3 text-gray-400 text-sm">
-              <li><a href="#" className="hover:text-red-600 transition-colors">Check Reports</a></li>
-              <li><a href="#" className="hover:text-red-600 transition-colors">Test Prices</a></li>
-              <li><a href="#" className="hover:text-red-600 transition-colors">Health Packages</a></li>
-              <li><a href="#" className="hover:text-red-600 transition-colors">Terms of Service</a></li>
+            <h4 className="font-bold mb-8 text-white/90 uppercase tracking-widest text-xs">Navigation</h4>
+            <ul className="space-y-4 text-gray-500 text-sm font-medium">
+              <li><a href="#home" className="hover:text-red-500 transition-colors">Home</a></li>
+              <li><a href="#tests" className="hover:text-red-500 transition-colors">Test Pricing</a></li>
+              <li><a href="#" className="hover:text-red-500 transition-colors">Book Home Sample</a></li>
+              <li><a href="#" className="hover:text-red-500 transition-colors">Doctor Portal</a></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-bold mb-6 text-lg">Contact Info</h4>
-            <ul className="space-y-4 text-gray-400 text-sm">
-              <li className="flex items-start gap-3">
-                <MapPin className="text-red-600 w-5 h-5 flex-shrink-0" />
-                <span>{LAB_INFO.location}</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Phone className="text-red-600 w-5 h-5" />
-                <span>{LAB_INFO.contact}</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Mail className="text-red-600 w-5 h-5" />
-                <span>info@pawarlabs.in</span>
-              </li>
-            </ul>
+            <h4 className="font-bold mb-8 text-white/90 uppercase tracking-widest text-xs">Our Center</h4>
+            <div className="space-y-6 text-gray-500 text-sm font-medium">
+              <div className="flex items-start gap-3">
+                <MapPin className="text-red-600 w-5 h-5 mt-0.5 shrink-0" />
+                <p>{LAB_INFO.location}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Phone className="text-red-600 w-5 h-5 shrink-0" />
+                <p>+91 {LAB_INFO.contact}</p>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <h4 className="font-bold mb-6 text-lg">Operating Hours</h4>
-            <ul className="space-y-3 text-gray-400 text-sm">
-              <li className="flex justify-between"><span>Mon - Sat:</span> <span>08:00 AM - 08:00 PM</span></li>
-              <li className="flex justify-between"><span>Sunday:</span> <span>08:00 AM - 01:00 PM</span></li>
-              <li className="mt-4 p-4 bg-red-600/10 border border-red-600/20 rounded-xl text-xs text-red-500 font-bold text-center">
-                Emergency services available on call
-              </li>
-            </ul>
+          <div className="bg-white/5 p-8 rounded-3xl border border-white/10">
+            <h4 className="font-bold mb-4 text-lg">Lab Hours</h4>
+            <div className="space-y-3 text-sm text-gray-400 font-medium">
+              <div className="flex justify-between"><span>Mon - Sat</span> <span className="text-white">8:00 AM - 8:00 PM</span></div>
+              <div className="flex justify-between"><span>Sunday</span> <span className="text-white">8:00 AM - 2:00 PM</span></div>
+              <div className="pt-4 border-t border-white/10 flex items-center gap-2 text-green-400 font-bold">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" /> Open Now
+              </div>
+            </div>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto border-t border-gray-800 mt-16 pt-8 text-center text-gray-500 text-xs">
-          © {new Date().getFullYear()} Pawar Pathology Lab. All rights reserved. Designed for Excellence in Diagnostics.
+        
+        <div className="max-w-7xl mx-auto border-t border-white/5 mt-20 pt-8 text-center text-gray-600 text-[10px] font-black uppercase tracking-widest">
+          &copy; {new Date().getFullYear()} Pawar Pathology Lab. Built for Precision & Reliability.
         </div>
       </footer>
     </div>
