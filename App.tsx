@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Phone, MapPin, Mail, Instagram, Facebook, Clock, FlaskConical, User, ShieldCheck, ChevronRight, Briefcase, Home, LogOut, HeartHandshake } from 'lucide-react';
+import { Phone, MapPin, Mail, Instagram, Facebook, Clock, FlaskConical, User, ShieldCheck, ChevronRight, Briefcase, Home, LogOut, HeartHandshake, LogIn } from 'lucide-react';
 import Hero3D from './components/3D/Hero3D';
 import TestSearch from './components/TestSearch';
 import BookingWizard from './components/BookingWizard';
@@ -129,23 +129,31 @@ const App: React.FC = () => {
 
         <div className="flex items-center gap-4">
           <div className="flex bg-gray-100 p-1 rounded-xl">
-            <button 
-              onClick={handlePortalClick}
-              className={`p-2 rounded-lg transition-all flex items-center gap-2 font-bold text-sm ${
-                currentUser ? 'text-red-600 bg-white shadow-sm' : 'text-gray-400 hover:text-red-600'
-              }`}
-              title={currentUser ? `Logged in as ${currentUser.name}` : "Portal Login"}
-            >
-              {currentUser?.role === UserRole.PARTNER ? <HeartHandshake className="w-5 h-5" /> : <Briefcase className="w-5 h-5" />}
-              {currentUser && <span className="hidden lg:inline">{currentUser.role === UserRole.ADMIN ? 'Admin' : currentUser.role === UserRole.PARTNER ? 'Partner' : 'Account'}</span>}
-            </button>
-            {currentUser && (
+            {currentUser ? (
+              <div className="flex items-center">
+                <button 
+                  onClick={handlePortalClick}
+                  className="p-2 rounded-lg transition-all flex items-center gap-2 font-bold text-sm text-red-600 bg-white shadow-sm"
+                  title={`Logged in as ${currentUser.name}`}
+                >
+                  {currentUser.role === UserRole.PARTNER ? <HeartHandshake className="w-5 h-5" /> : currentUser.role === UserRole.ADMIN ? <ShieldCheck className="w-5 h-5" /> : <User className="w-5 h-5" />}
+                  <span className="hidden lg:inline">{currentUser.role === UserRole.ADMIN ? 'Admin' : currentUser.role === UserRole.PARTNER ? 'Partner' : 'Account'}</span>
+                </button>
+                <button 
+                  onClick={handleLogout}
+                  className="p-2 ml-1 text-gray-400 hover:text-red-600 hover:bg-white rounded-lg transition-all"
+                  title="Logout"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </div>
+            ) : (
               <button 
-                onClick={handleLogout}
-                className="p-2 text-gray-400 hover:text-red-600 hover:bg-white rounded-lg transition-all"
-                title="Logout"
+                onClick={() => setView('login')}
+                className="p-2 px-4 rounded-lg transition-all flex items-center gap-2 font-bold text-sm text-gray-500 hover:text-red-600 hover:bg-white"
               >
-                <LogOut className="w-5 h-5" />
+                <LogIn className="w-5 h-5" />
+                <span>Portal Login</span>
               </button>
             )}
           </div>

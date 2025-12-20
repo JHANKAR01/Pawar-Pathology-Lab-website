@@ -1,18 +1,13 @@
 
-/**
- * Note: These are standard Mongoose schema definitions for use in a Node.js/Mongoose environment.
- */
+import mongoose from 'mongoose';
 
-// import mongoose from 'mongoose';
-
-/*
 // --- USER SCHEMA ---
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   phone: { type: String, required: true },
-  password: { type: String, required: true }, // Should be hashed
-  role: { type: String, enum: ['patient', 'admin', 'worker'], default: 'patient' },
+  password: { type: String, required: true }, // Should be hashed in production
+  role: { type: String, enum: ['patient', 'admin', 'partner'], default: 'patient' },
   address: { type: String, default: 'Betul, Madhya Pradesh' },
 }, { timestamps: true });
 
@@ -28,8 +23,9 @@ const testSchema = new mongoose.Schema({
 
 // --- BOOKING SCHEMA ---
 const bookingSchema = new mongoose.Schema({
-  patientId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  tests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Test' }],
+  patientId: { type: String, required: true }, // Linking to User or Guest ID
+  patientName: { type: String, required: true },
+  tests: [{ type: Object }], // Store test snapshots to prevent price-change issues
   totalAmount: { type: Number, required: true },
   discountApplied: { type: Number, default: 0 },
   collectionType: { type: String, enum: ['home', 'lab_visit'], required: true },
@@ -41,20 +37,17 @@ const bookingSchema = new mongoose.Schema({
   },
   paymentStatus: { type: String, enum: ['paid', 'unpaid'], default: 'unpaid' },
   reportFileUrl: { type: String },
-  assignedWorkerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  assignedPartnerId: { type: String },
+  verifiedBy: { type: String }, // Admin ID who verified the report
 }, { timestamps: true });
 
-// --- COUPON SCHEMA ---
-const couponSchema = new mongoose.Schema({
-  code: { type: String, required: true, unique: true, uppercase: true },
-  discountPercentage: { type: Number, required: true },
-  maxDiscountAmount: { type: Number, required: true },
-  expiryDate: { type: Date, required: true },
-  isActive: { type: Boolean, default: true },
-});
+// --- SETTINGS SCHEMA (New for Admin controls) ---
+const settingsSchema = new mongoose.Schema({
+  requireVerification: { type: Boolean, default: true },
+  updatedBy: { type: String },
+}, { timestamps: true });
 
 export const User = mongoose.models.User || mongoose.model('User', userSchema);
 export const Test = mongoose.models.Test || mongoose.model('Test', testSchema);
 export const Booking = mongoose.models.Booking || mongoose.model('Booking', bookingSchema);
-export const Coupon = mongoose.models.Coupon || mongoose.model('Coupon', couponSchema);
-*/
+export const Settings = mongoose.models.Settings || mongoose.model('Settings', settingsSchema);

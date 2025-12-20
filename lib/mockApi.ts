@@ -3,10 +3,11 @@ import { Booking, BookingStatus, User, UserRole } from '../types';
 
 const DB_KEYS = {
   BOOKINGS: 'pawar_lab_bookings',
-  AUTH_TOKEN: 'pawar_lab_auth_token'
+  AUTH_TOKEN: 'pawar_lab_auth_token',
+  SETTINGS: 'pawar_lab_settings'
 };
 
-// Updated Mock user database with requested credentials
+// Initial Mock Users
 const MOCK_USERS: User[] = [
   { id: 'admin', name: 'Admin Head', email: 'admin', role: UserRole.ADMIN },
   { id: 'partner', name: 'Lab Partner', email: 'partner', role: UserRole.PARTNER },
@@ -18,19 +19,15 @@ export const mockApi = {
   login: async (email: string, password: string): Promise<User> => {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
-        // Find user by matching email (used as ID in the prompt request)
         const user = MOCK_USERS.find(u => u.email === email);
-        
-        // Match credentials based on user request (id/pass match)
-        // admin/admin, partner/partner, user/user
         if (user && password === email) {
           const sessionUser = { ...user, token: `mock-jwt-${user.id}-${Date.now()}` };
           localStorage.setItem(DB_KEYS.AUTH_TOKEN, JSON.stringify(sessionUser));
           resolve(sessionUser);
         } else {
-          reject(new Error('Invalid credentials. Please use the assigned ID and Password.'));
+          reject(new Error('Invalid credentials.'));
         }
-      }, 800);
+      }, 500);
     });
   },
 
@@ -43,7 +40,18 @@ export const mockApi = {
     return data ? JSON.parse(data) : null;
   },
 
-  // --- Booking Methods ---
+  // --- Settings Methods ---
+  getSettings: () => {
+    const data = localStorage.getItem(DB_KEYS.SETTINGS);
+    return data ? JSON.parse(data) : { requireVerification: true };
+  },
+
+  updateSettings: (settings: { requireVerification: boolean }) => {
+    localStorage.setItem(DB_KEYS.SETTINGS, JSON.stringify(settings));
+    return settings;
+  },
+
+  // --- Booking Methods (Global Pool) ---
   getBookings: (): Booking[] => {
     const data = localStorage.getItem(DB_KEYS.BOOKINGS);
     return data ? JSON.parse(data) : [];
@@ -54,7 +62,7 @@ export const mockApi = {
     const newBooking = {
       ...booking,
       id: 'PL-' + Math.random().toString(36).substr(2, 6).toUpperCase(),
-      status: BookingStatus.PENDING,
+      status: booking.status || BookingStatus.PENDING,
       paymentStatus: 'unpaid',
       createdAt: new Date().toISOString()
     } as Booking;
@@ -65,16 +73,24 @@ export const mockApi = {
 
   updateBookingStatus: (id: string, status: BookingStatus) => {
     const currentUser = mockApi.getCurrentUser();
+    const settings = mockApi.getSettings();
     
-    // API Route Protection Logic
     if (!currentUser || (currentUser.role !== UserRole.ADMIN && currentUser.role !== UserRole.PARTNER)) {
-      throw new Error('Unauthorized: Only Partners and Admins can update booking statuses.');
+      throw new Error('Unauthorized');
     }
 
     const bookings = mockApi.getBookings();
-    const updated = bookings.map(b => 
-      b.id === id ? { ...b, status } : b
-    );
+    const updated = bookings.map(b => {
+      if (b.id === id) {
+        // Verification Logic
+        if (status === BookingStatus.REPORT_UPLOADED && !settings.requireVerification) {
+          return { ...b, status: BookingStatus.COMPLETED };
+        }
+        return { ...b, status };
+      }
+      return b;
+    });
     localStorage.setItem(DB_KEYS.BOOKINGS, JSON.stringify(updated));
+    return updated.find(b => b.id === id);
   }
 };
