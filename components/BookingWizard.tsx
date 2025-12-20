@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Check, Calendar, CreditCard, User, CheckCircle, MapPin, Loader2, Navigation, Ticket, UserPlus, X, AlertTriangle } from 'lucide-react';
 import { Test, CollectionType } from '../types';
 import { mockApi } from '../lib/mockApi';
@@ -30,9 +29,11 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     coordinates: null as { lat: number; lng: number } | null
   });
 
-  const currentUser = mockApi.getCurrentUser();
+  // Fix: Memoize currentUser so the object reference doesn't change on every render
+  const currentUser = useMemo(() => mockApi.getCurrentUser(), []);
 
   useEffect(() => {
+    // Only pre-fill if switching TO self-booking
     if (isBookingForSelf && currentUser) {
       setFormData(prev => ({
         ...prev,
@@ -40,7 +41,9 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
         email: currentUser.email || '',
         phone: currentUser.phone || ''
       }));
-    } else {
+    } else if (!isBookingForSelf) {
+      // Clear data only when explicitly switching to "someone else"
+      // This prevents the "typing wipe" because isBookingForSelf is static during typing
       setFormData(prev => ({ ...prev, name: '', email: '', phone: '' }));
     }
   }, [isBookingForSelf, currentUser]);

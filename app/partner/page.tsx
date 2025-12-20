@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -158,7 +157,7 @@ export default function PartnerPage() {
                   
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">{task.patientName}</h3>
                   <div className="flex gap-2 mb-6">
-                    {task.tests.map((t: any) => (
+                    {task.tests?.map((t: any) => (
                       <span key={t.id} className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg text-xs font-bold text-slate-600">{t.title}</span>
                     ))}
                   </div>
@@ -181,7 +180,7 @@ export default function PartnerPage() {
                     <>
                       {task.coordinates && (
                         <a 
-                          href={`http://googleusercontent.com/maps.google.com/4${task.coordinates.lat},${task.coordinates.lng}`}
+                          href={`https://www.google.com/maps?q=${task.coordinates.lat},${task.coordinates.lng}`}
                           target="_blank"
                           className="flex items-center gap-3 px-6 py-4 bg-white border border-gray-100 text-gray-900 rounded-2xl font-bold text-sm shadow-sm hover:bg-gray-50"
                         >
