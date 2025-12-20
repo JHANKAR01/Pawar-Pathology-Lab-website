@@ -31,8 +31,7 @@ export default function PartnerPage() {
       const res = await fetch('/api/bookings');
       if (res.ok) {
         const data = await res.json();
-        // Mock filter: In production, this would filter by the logged-in partner's ID
-        // For now, we show all assigned/active tasks suitable for field ops
+        // For the demo, we show tasks assigned or in progress
         setTasks(data.filter((b: any) => 
           ['assigned', 'reached', 'sample_collected', 'report_uploaded'].includes(b.status)
         ));
@@ -53,7 +52,7 @@ export default function PartnerPage() {
   };
 
   const handleCollectSample = (id: string) => {
-    if (window.confirm('Safety Check: Are you sure you have acquired the correct specimen for this patient?')) {
+    if (window.confirm('Safety Check: Confirm specimen acquisition for this patient?')) {
       handleUpdateStatus(id, 'sample_collected');
     }
   };
@@ -76,7 +75,7 @@ export default function PartnerPage() {
           balanceAmount: balance,
           collectionType: 'lab_visit',
           scheduledDate: new Date().toISOString(),
-          status: 'sample_collected', // Walk-ins usually have sample taken immediately
+          status: 'sample_collected',
           paymentMode: 'cash',
           paymentStatus: balance === 0 ? 'paid' : 'unpaid',
           bookedByEmail: 'partner-direct'
@@ -113,14 +112,14 @@ export default function PartnerPage() {
             <Package className="text-white w-6 h-6" />
           </div>
           <div>
-            <h1 className="font-black text-lg">FIELD OPS HUB</h1>
+            <h1 className="font-black text-lg uppercase tracking-tight">FIELD OPS HUB</h1>
             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Secure Logistics Node</p>
           </div>
         </div>
         <div className="flex gap-4">
           <button 
             onClick={() => setIsRegisterOpen(true)}
-            className="flex items-center gap-2 bg-slate-900 text-white px-6 py-2 rounded-xl text-xs font-black uppercase"
+            className="flex items-center gap-2 bg-slate-900 text-white px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest"
           >
             <Plus size={16} /> Direct Add
           </button>
@@ -133,8 +132,8 @@ export default function PartnerPage() {
       <main className="p-8 max-w-5xl mx-auto w-full">
         <div className="mb-12 flex justify-between items-end">
           <div>
-            <h2 className="text-3xl font-black text-gray-900 tracking-tight">Assigned Dispatches</h2>
-            <p className="text-gray-500 font-medium">Verified diagnostic tasks awaiting clinical intervention.</p>
+            <h2 className="text-3xl font-black text-gray-900 tracking-tight uppercase">Assigned Tasks</h2>
+            <p className="text-gray-500 font-medium">Specimens requiring immediate clinical acquisition.</p>
           </div>
           <button onClick={fetchBookings} className="p-3 bg-white border border-gray-100 rounded-full hover:bg-gray-50 shadow-sm">
             <RefreshCw className={`w-5 h-5 text-gray-400 ${loading ? 'animate-spin' : ''}`} />
@@ -185,7 +184,7 @@ export default function PartnerPage() {
                     <>
                       {task.coordinates && (
                         <a 
-                          href={`https://www.google.com/maps?q=${task.coordinates.lat},${task.coordinates.lng}`}
+                          href={`http://www.google.com/maps/search/?api=1&query=${task.coordinates.lat},${task.coordinates.lng}`}
                           target="_blank"
                           className="flex items-center gap-3 px-6 py-4 bg-white border border-gray-100 text-gray-900 rounded-2xl font-bold text-sm shadow-sm hover:bg-gray-50"
                         >
@@ -234,13 +233,12 @@ export default function PartnerPage() {
         </div>
       </main>
 
-      {/* Direct Registration Modal */}
       {isRegisterOpen && (
         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-6">
-          <div className="bg-white w-full max-w-xl rounded-[3rem] shadow-2xl overflow-hidden">
+          <div className="bg-white w-full max-w-xl rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300">
             <div className="bg-slate-900 p-10 text-white flex justify-between items-center">
               <div>
-                 <h3 className="text-2xl font-black">Direct Entry</h3>
+                 <h3 className="text-2xl font-black uppercase tracking-tight">Direct Entry</h3>
                  <p className="text-slate-400 font-medium">Walk-in or Immediate acquisition</p>
               </div>
               <button onClick={() => setIsRegisterOpen(false)}><X size={24} /></button>
@@ -263,7 +261,7 @@ export default function PartnerPage() {
               </div>
 
               <div>
-                <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Test Panel</label>
+                <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Investigation Panel</label>
                 <input className="w-full bg-slate-50 p-4 rounded-xl outline-none font-bold" value={newPatient.testTitle} onChange={e => setNewPatient({...newPatient, testTitle: e.target.value})} />
               </div>
               <div className="grid grid-cols-2 gap-6 p-6 bg-slate-50 rounded-3xl">
@@ -280,7 +278,7 @@ export default function PartnerPage() {
                  <span className="text-slate-400">Balance Calculated:</span>
                  <span className="text-rose-600 text-lg">₹{newPatient.totalAmount - newPatient.amountTaken}</span>
               </div>
-              <button className="w-full bg-rose-600 text-white py-6 rounded-2xl font-black uppercase tracking-widest">Confirm & Log Specimen</button>
+              <button className="w-full bg-rose-600 text-white py-6 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-rose-900/20">Confirm & Log Specimen</button>
             </form>
           </div>
         </div>
