@@ -1,6 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
-import { Phone, MapPin, Mail, Instagram, Facebook, Clock, FlaskConical, User, ShieldCheck, ChevronRight, Briefcase, Home, LogOut, HeartHandshake, LogIn, Activity, Globe, Award, Zap } from 'lucide-react';
+import { 
+  Phone, MapPin, FlaskConical, LogOut, LogIn, Activity, 
+  Award, Zap, Globe, ShieldCheck, ChevronRight, Instagram, Facebook,
+  Clock, HeartHandshake, User as UserIcon
+} from 'lucide-react';
 import Hero3D from './components/3D/Hero3D';
 import TestSearch from './components/TestSearch';
 import BookingWizard from './components/BookingWizard';
@@ -19,7 +22,7 @@ const App: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 50);
+    const handleScroll = () => setIsScrolled(window.scrollY > 40);
     window.addEventListener('scroll', handleScroll);
     const user = mockApi.getCurrentUser();
     if (user) setCurrentUser(user);
@@ -27,29 +30,15 @@ const App: React.FC = () => {
   }, []);
 
   const mockTests: Test[] = [
-    { id: '1', title: 'CBC - Complete Blood Count', category: 'Hematology', price: 350, description: 'High-precision automated cellular analysis measuring 24 vital parameters.', isHomeCollectionAvailable: true, fastingRequired: false },
-    { id: '2', title: 'Comprehensive Lipid Panel', category: 'Biochemistry', price: 750, description: 'Evaluation of total cholesterol, HDL, LDL, and VLDL using enzymatic methods.', isHomeCollectionAvailable: true, fastingRequired: true },
-    { id: '3', title: 'HbA1c - Glycated Hemoglobin', category: 'Biochemistry', price: 550, description: 'Gold standard for 3-month glycemic control monitoring using HPLC technology.', isHomeCollectionAvailable: true, fastingRequired: false },
-    { id: '4', title: 'Thyroid Function (Ultra-Sensitive)', category: 'Hormones', price: 600, description: 'Third-generation CLIA assay for T3, T4, and ultra-sensitive TSH monitoring.', isHomeCollectionAvailable: true, fastingRequired: false },
-    { id: '5', title: 'Vitamin B12 (Active)', category: 'Special Tests', price: 1200, description: 'Direct measurement of active cobalamin vital for neuro-muscular health.', isHomeCollectionAvailable: true, fastingRequired: true },
-    { id: '6', title: 'Advanced LFT Profile', category: 'Biochemistry', price: 900, description: 'Comprehensive enzymatic and metabolic assessment of hepatic function.', isHomeCollectionAvailable: true, fastingRequired: false },
+    { id: '1', title: 'CBC - Hematology Profile', category: 'Hematology', price: 350, description: 'High-precision automated cellular analysis of 24 vital blood parameters.', isHomeCollectionAvailable: true, fastingRequired: false },
+    { id: '2', title: 'Lipid Management Panel', category: 'Biochemistry', price: 750, description: 'Evaluation of total cholesterol, HDL, LDL, and VLDL using enzymatic methods.', isHomeCollectionAvailable: true, fastingRequired: true },
+    { id: '3', title: 'HbA1c - Glycemic Control', category: 'Biochemistry', price: 550, description: '3-month glycemic control monitoring using HPLC technology.', isHomeCollectionAvailable: true, fastingRequired: false },
+    { id: '4', title: 'Thyroid Ultra-Sensitive Profile', category: 'Hormones', price: 600, description: 'Third-generation CLIA assay for T3, T4, and ultra-sensitive TSH.', isHomeCollectionAvailable: true, fastingRequired: false },
+    { id: '5', title: 'Vitamin B12 Assay', category: 'Special Tests', price: 1200, description: 'Direct measurement of active cobalamin for neuro-metabolic health.', isHomeCollectionAvailable: true, fastingRequired: true },
   ];
 
   const handleTestSelect = (test: Test) => {
     if (!selectedTests.find(t => t.id === test.id)) setSelectedTests([...selectedTests, test]);
-  };
-
-  const handleBookingComplete = (formData: any) => {
-    mockApi.saveBooking({
-      patientName: formData.name,
-      tests: selectedTests,
-      totalAmount: selectedTests.reduce((acc, t) => acc + t.price, 0),
-      collectionType: formData.collectionType,
-      scheduledDate: formData.date
-    });
-    setSelectedTests([]);
-    setIsWizardOpen(false);
-    // Real app would use a toast notification here
   };
 
   const handleLogout = () => {
@@ -63,51 +52,51 @@ const App: React.FC = () => {
   if (view === 'partner') return <PartnerDashboard onLogout={handleLogout} />;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FAFAFB]">
-      {/* Dynamic Nav Island */}
-      <div className={`fixed top-0 left-0 w-full z-50 transition-all duration-700 px-4 md:px-8 ${isScrolled ? 'pt-4' : 'pt-8'}`}>
-        <nav className={`max-w-7xl mx-auto glass-pro rounded-[2.5rem] px-8 py-5 flex justify-between items-center shadow-2xl shadow-slate-200/50 transition-all ${isScrolled ? 'py-4' : 'py-6'}`}>
-          <div className="flex items-center gap-4 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="w-12 h-12 bg-rose-600 rounded-[1.25rem] flex items-center justify-center shadow-lg shadow-rose-500/30 group-hover:rotate-6 transition-all duration-500">
-              <FlaskConical className="text-white w-6 h-6" />
+    <div className="flex flex-col min-h-screen selection:bg-rose-100 selection:text-rose-600">
+      {/* Premium Floating Navigation */}
+      <div className={`fixed top-0 left-0 w-full z-50 transition-all duration-700 px-4 md:px-12 ${isScrolled ? 'pt-2 md:pt-4' : 'pt-4 md:pt-8'}`}>
+        <nav className={`max-w-[1440px] mx-auto glass-pro rounded-[1.5rem] md:rounded-[2.5rem] px-4 md:px-8 py-3 flex justify-between items-center shadow-2xl shadow-slate-200/50 transition-all ${isScrolled ? 'py-2.5 md:py-3.5 shadow-slate-300/60' : 'py-4 md:py-6'}`}>
+          <div className="flex items-center gap-3 md:gap-4 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-rose-600 rounded-[1rem] md:rounded-[1.25rem] flex items-center justify-center shadow-lg shadow-rose-500/30 group-hover:rotate-6 transition-all duration-500">
+              <FlaskConical className="text-white w-5 h-5 md:w-6 md:h-6" />
             </div>
-            <div className="hidden sm:block">
-              <h2 className="font-heading font-black text-2xl leading-none tracking-tight text-slate-900">PAWAR<span className="text-rose-600">LAB</span></h2>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-1">Advanced Diagnostics</p>
+            <div className="block">
+              <h2 className="font-heading font-black text-lg md:text-2xl leading-none tracking-tight text-slate-900 uppercase">PAWAR<span className="text-rose-600">LAB</span></h2>
+              <p className="text-[8px] md:text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] md:tracking-[0.3em] mt-1 hidden sm:block">Diagnostic Intelligence</p>
             </div>
           </div>
 
-          <div className="hidden md:flex gap-12">
-            {['Services', 'Directory', 'Network', 'Support'].map(item => (
-              <a key={item} href={`#${item.toLowerCase()}`} className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-rose-600 transition-colors">
+          <div className="hidden lg:flex gap-14">
+            {['Directory', 'Services', 'Network', 'Support'].map(item => (
+              <a key={item} href={`#${item.toLowerCase()}`} className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.25em] text-slate-400 hover:text-rose-600 transition-all">
                 {item}
               </a>
             ))}
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             {currentUser ? (
               <button 
                 onClick={() => setView(currentUser.role === UserRole.ADMIN ? 'admin' : 'partner')}
-                className="flex items-center gap-3 px-6 py-3 bg-slate-900 text-white rounded-[1.5rem] text-xs font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-xl shadow-slate-200"
+                className="flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2 md:py-3 bg-slate-900 text-white rounded-[1rem] md:rounded-[1.4rem] text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-xl shadow-slate-200"
               >
-                <Activity className="w-4 h-4" /> Management Portal
+                <Activity className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden sm:inline">Workstation</span>
               </button>
             ) : (
               <button 
                 onClick={() => setView('login')}
-                className="flex items-center gap-3 px-7 py-3.5 border-2 border-slate-100 rounded-[1.5rem] text-xs font-black uppercase tracking-widest text-slate-500 hover:border-rose-600 hover:text-rose-600 transition-all"
+                className="flex items-center gap-2 md:gap-3 px-4 md:px-7 py-2 md:py-3.5 border-2 border-slate-100 rounded-[1rem] md:rounded-[1.4rem] text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-500 hover:border-rose-600 hover:text-rose-600 transition-all"
               >
-                <LogIn className="w-4 h-4" /> Portal
+                <LogIn className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden sm:inline">Portal</span>
               </button>
             )}
             
             {selectedTests.length > 0 && (
               <button 
                 onClick={() => setIsWizardOpen(true)}
-                className="bg-rose-600 text-white px-7 py-3.5 rounded-[1.5rem] font-black text-xs uppercase tracking-widest shadow-xl shadow-rose-200 flex items-center gap-3 animate-pulse hover:animate-none"
+                className="bg-rose-600 text-white px-4 md:px-7 py-2 md:py-3.5 rounded-[1rem] md:rounded-[1.4rem] font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-xl shadow-rose-300 flex items-center gap-2 md:gap-3 animate-in slide-in-from-right"
               >
-                Checkout <span className="bg-white/20 px-2 py-0.5 rounded-lg">{selectedTests.length}</span>
+                Book <span className="bg-white/20 px-1.5 md:px-2 py-0.5 rounded-lg font-bold">{selectedTests.length}</span>
               </button>
             )}
           </div>
@@ -115,130 +104,135 @@ const App: React.FC = () => {
       </div>
 
       <main className="flex-1">
-        <section className="section-mask-bottom">
+        {/* Cinematic Hero */}
+        <section className="section-mask">
           <Hero3D />
         </section>
 
-        {/* The Integration Bridge */}
-        <section id="services" className="relative z-30 -mt-32 px-4 md:px-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Integrated Service Grid */}
+        <section id="services" className="relative z-30 -mt-16 md:-mt-24 px-4 md:px-12">
+          <div className="max-w-[1440px] mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               {[
-                { icon: Award, title: "NABL Accredited", desc: "Rigorous quality control matching international clinical standards.", color: "rose" },
-                { icon: Zap, title: "Next-Day Results", desc: "Advanced molecular processing for industry-leading turnaround times.", color: "blue" },
-                { icon: Globe, title: "Global Logistics", desc: "Temperature-controlled specimen transport across all networks.", color: "emerald" }
+                { icon: Award, title: "NABL Accredited", desc: "Rigorous quality protocols matching global clinical standards for precision diagnostic reporting.", color: "rose" },
+                { icon: Zap, title: "Molecular Speed", desc: "Proprietary high-throughput processing ensures result delivery within the shortest clinical window.", color: "blue" },
+                { icon: Globe, title: "Global Network", desc: "Integrated specimen logistics and digital report access for a seamless patient experience.", color: "emerald" }
               ].map((item, idx) => (
-                <div key={idx} className="glass-pro p-10 rounded-[3rem] shadow-2xl shadow-slate-200/40 hover:-translate-y-2 transition-all duration-500 group">
-                  <div className={`w-16 h-16 rounded-2xl bg-${item.color}-50 text-${item.color}-600 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform`}>
-                    <item.icon className="w-8 h-8" />
+                <div key={idx} className="glass-pro p-8 md:p-12 rounded-[2.5rem] md:rounded-[3rem] shadow-xl hover:-translate-y-2 transition-all duration-500 group border border-white/50">
+                  <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-${item.color}-50 text-${item.color}-600 flex items-center justify-center mb-6 md:mb-8 group-hover:scale-110 transition-transform duration-500 shadow-sm`}>
+                    <item.icon className="w-6 h-6 md:w-8 md:h-8" />
                   </div>
-                  <h3 className="font-heading text-2xl font-black text-slate-900 mb-4">{item.title}</h3>
-                  <p className="text-slate-500 text-sm leading-relaxed font-medium">{item.desc}</p>
+                  <h3 className="font-heading text-xl md:text-2xl font-black text-slate-900 mb-3 md:mb-4">{item.title}</h3>
+                  <p className="text-slate-500 text-xs md:text-sm leading-relaxed font-medium">{item.desc}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        <section id="directory" className="py-32">
+        {/* Unified Search Directory */}
+        <section id="directory" className="py-24 md:py-40 bg-white/40">
           <TestSearch tests={mockTests} onSelect={handleTestSelect} />
         </section>
 
-        {/* Location Section */}
-        <section className="py-32 px-4 md:px-8 bg-slate-900 overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-1/2 h-full opacity-10 pointer-events-none">
-            <Hero3D /> {/* Reusing the component as a background element */}
-          </div>
-          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-24 items-center relative z-10">
+        {/* Geographical Node */}
+        <section id="network" className="py-24 md:py-40 px-4 md:px-12 bg-slate-950 overflow-hidden relative">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(225,29,72,0.08),transparent_70%)]" />
+          <div className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 md:gap-32 items-center relative z-10">
             <div>
-              <span className="text-rose-500 font-black uppercase tracking-[0.4em] text-[10px] mb-6 block">Clinical Center</span>
-              <h2 className="font-heading text-5xl font-black text-white tracking-tighter mb-8 leading-none">
-                Betul's Flagship <br /> <span className="text-rose-500">Diagnostic Hub</span>
+              <span className="text-rose-500 font-black uppercase tracking-[0.4em] md:tracking-[0.5em] text-[9px] md:text-[10px] mb-6 md:mb-8 block">Regional Diagnostic Node</span>
+              <h2 className="font-heading text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tighter mb-8 md:mb-10 leading-[1] md:leading-[0.9]">
+                Pawar Lab <br /> <span className="text-rose-500">Flagship Facility</span>
               </h2>
-              <div className="space-y-8">
-                <div className="flex items-start gap-6">
-                  <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                    <MapPin className="text-rose-500 w-6 h-6" />
+              <div className="space-y-8 md:space-y-12">
+                <div className="flex items-start gap-6 md:gap-8 group">
+                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-[1.2rem] md:rounded-[1.5rem] bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-rose-600 transition-colors duration-500">
+                    <MapPin className="text-rose-500 w-5 h-5 md:w-7 md:h-7 group-hover:text-white" />
                   </div>
                   <div>
-                    <h4 className="text-white font-bold text-lg mb-2">Primary Center</h4>
-                    <p className="text-slate-400 text-sm font-medium leading-relaxed">{LAB_INFO.location}</p>
+                    <h4 className="text-white font-bold text-lg md:text-xl mb-2 md:mb-3 tracking-tight">Clinical Headquarters</h4>
+                    <p className="text-slate-400 text-xs md:text-sm font-medium leading-relaxed max-w-sm">{LAB_INFO.location}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
-                  <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                    <Phone className="text-rose-500 w-6 h-6" />
+                <div className="flex items-center gap-6 md:gap-8 group">
+                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-[1.2rem] md:rounded-[1.5rem] bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-rose-600 transition-colors duration-500">
+                    <Phone className="text-rose-500 w-5 h-5 md:w-7 md:h-7 group-hover:text-white" />
                   </div>
                   <div>
-                    <h4 className="text-white font-bold text-lg mb-1">Direct Helpline</h4>
-                    <p className="text-slate-400 font-medium">+91 {LAB_INFO.contact}</p>
+                    <h4 className="text-white font-bold text-lg md:text-xl mb-1 md:mb-2 tracking-tight">Direct Helpline</h4>
+                    <p className="text-slate-400 font-medium tracking-wide text-sm md:text-base">+91 {LAB_INFO.contact}</p>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="glass-dark p-2 rounded-[3.5rem] shadow-3xl">
-              <div className="bg-slate-800 h-[400px] rounded-[3rem] relative flex items-center justify-center overflow-hidden">
-                <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-xs">Dynamic Map Interface</p>
-                <div className="absolute inset-0 bg-gradient-to-br from-rose-500/20 to-transparent pointer-events-none" />
+            <div className="glass-dark p-2 md:p-3 rounded-[3rem] md:rounded-[4rem] shadow-3xl">
+              <div className="bg-slate-900 h-[350px] md:h-[500px] rounded-[2.5rem] md:rounded-[3.5rem] relative flex items-center justify-center overflow-hidden border border-white/5">
+                <div className="flex flex-col items-center gap-4 md:gap-6">
+                  <div className="w-20 h-20 md:w-24 md:h-24 bg-rose-600/10 rounded-full flex items-center justify-center animate-pulse">
+                     <MapPin className="text-rose-600 w-10 h-10 md:w-12 md:h-12" />
+                  </div>
+                  <p className="text-slate-500 font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-[9px] md:text-[11px]">System Geolocation Active</p>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-br from-rose-600/10 via-transparent to-transparent pointer-events-none" />
               </div>
             </div>
           </div>
         </section>
       </main>
 
-      {/* Luxury Footer */}
-      <footer className="bg-slate-950 text-white pt-32 pb-16 px-4 md:px-8 border-t border-white/5">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-20">
-          <div className="col-span-1 md:col-span-1">
-            <div className="flex items-center gap-4 mb-10">
-              <FlaskConical className="text-rose-600 w-10 h-10" />
-              <h2 className="font-heading font-black text-2xl tracking-tighter">PAWAR<span className="text-rose-600">LAB</span></h2>
+      {/* Modern High-End Footer */}
+      <footer className="bg-slate-950 text-white pt-24 md:pt-40 pb-12 md:pb-16 px-4 md:px-12 border-t border-white/5">
+        <div className="max-w-[1440px] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12 md:gap-24">
+          <div className="sm:col-span-2 md:col-span-1">
+            <div className="flex items-center gap-3 md:gap-4 mb-8 md:mb-12">
+              <FlaskConical className="text-rose-600 w-10 h-10 md:w-12 md:h-12" />
+              <h2 className="font-heading font-black text-xl md:text-2xl tracking-tighter">PAWAR<span className="text-rose-600">LAB</span></h2>
             </div>
-            <p className="text-slate-500 text-sm leading-relaxed font-medium mb-10">
-              Defining the future of diagnostics through precision molecular analysis and exceptional patient care since 1998.
+            <p className="text-slate-500 text-sm leading-relaxed font-medium mb-8 md:mb-12 max-w-xs">
+              Defining precision diagnostics through advanced molecular analysis and integrated patient care since 1998.
             </p>
             <div className="flex gap-4">
               {[Instagram, Facebook].map((Icon, i) => (
-                <a key={i} href="#" className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-rose-600 transition-all group">
-                  <Icon className="w-5 h-5 text-slate-400 group-hover:text-white" />
+                <a key={i} href="#" className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-rose-600 transition-all group shadow-sm">
+                  <Icon className="w-5 h-5 md:w-6 md:h-6 text-slate-400 group-hover:text-white" />
                 </a>
               ))}
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-10 md:col-span-2">
+          <div className="grid grid-cols-2 gap-8 md:gap-10 sm:col-span-2 md:col-span-2">
             <div>
-              <h4 className="font-black text-[10px] text-slate-500 uppercase tracking-[0.3em] mb-10">Directory</h4>
-              <ul className="space-y-4 text-sm font-bold text-slate-400">
-                {['Hematology', 'Biochemistry', 'Clinical Trials', 'Hormonal Assay'].map(t => (
-                  <li key={t}><a href="#" className="hover:text-rose-500 transition-colors">{t}</a></li>
+              <h4 className="font-black text-[9px] md:text-[10px] text-slate-500 uppercase tracking-[0.4em] mb-8 md:mb-12">Diagnostic Hub</h4>
+              <ul className="space-y-4 md:space-y-5 text-sm font-bold text-slate-400">
+                {['Hematology', 'Biochemistry', 'Microbiology', 'Hormone Assay'].map(t => (
+                  <li key={t}><a href="#" className="hover:text-rose-500 transition-colors tracking-wide">{t}</a></li>
                 ))}
               </ul>
             </div>
             <div>
-              <h4 className="font-black text-[10px] text-slate-500 uppercase tracking-[0.3em] mb-10">Access</h4>
-              <ul className="space-y-4 text-sm font-bold text-slate-400">
-                <li><button onClick={() => setView('login')} className="hover:text-rose-500 transition-colors">Staff Portal</button></li>
+              <h4 className="font-black text-[9px] md:text-[10px] text-slate-500 uppercase tracking-[0.4em] mb-8 md:mb-12">Access Node</h4>
+              <ul className="space-y-4 md:space-y-5 text-sm font-bold text-slate-400">
+                <li><button onClick={() => setView('login')} className="hover:text-rose-500 transition-colors">Administrator OS</button></li>
                 <li><a href="#" className="hover:text-rose-500 transition-colors">Partner Dashboard</a></li>
-                <li><a href="#" className="hover:text-rose-500 transition-colors">MD Consultation</a></li>
+                <li><a href="#" className="hover:text-rose-500 transition-colors">Terms of Service</a></li>
               </ul>
             </div>
           </div>
 
-          <div>
-             <div className="glass-dark p-8 rounded-[2.5rem] border border-white/5">
-                <h4 className="font-heading font-bold text-xl mb-6">Operating Status</h4>
-                <div className="space-y-5">
-                   <div className="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-widest">
+          <div className="sm:col-span-2 md:col-span-1">
+             <div className="glass-dark p-8 md:p-10 rounded-[2rem] md:rounded-[2.5rem] border border-white/5 shadow-2xl">
+                <h4 className="font-heading font-bold text-lg md:text-xl mb-6 md:mb-8 tracking-tight">Facility Status</h4>
+                <div className="space-y-4 md:space-y-6">
+                   <div className="flex justify-between text-[10px] md:text-[11px] font-black text-slate-500 uppercase tracking-widest">
                       <span>Mon - Sat</span>
                       <span className="text-white">08:00 - 20:00</span>
                    </div>
-                   <div className="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-widest">
+                   <div className="flex justify-between text-[10px] md:text-[11px] font-black text-slate-500 uppercase tracking-widest">
                       <span>Sunday</span>
                       <span className="text-white">08:00 - 14:00</span>
                    </div>
-                   <div className="pt-4 flex items-center gap-3 text-emerald-400 font-black uppercase text-[10px] tracking-widest">
-                      <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_15px_rgba(52,211,153,0.5)]" />
+                   <div className="pt-4 md:pt-6 flex items-center gap-3 md:gap-4 text-emerald-400 font-black uppercase text-[9px] md:text-[10px] tracking-[0.2em] md:tracking-[0.3em]">
+                      <div className="w-2 h-2 md:w-2.5 md:h-2.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_15px_rgba(52,211,153,0.5)]" />
                       Facility Active
                    </div>
                 </div>
@@ -246,9 +240,9 @@ const App: React.FC = () => {
           </div>
         </div>
         
-        <div className="max-w-7xl mx-auto border-t border-white/5 mt-32 pt-12 flex flex-col md:flex-row justify-between items-center text-[10px] font-black text-slate-600 uppercase tracking-[0.5em]">
-          <span>&copy; {new Date().getFullYear()} Pawar Lab • Integrated Solutions</span>
-          <span className="flex items-center gap-2">Built for Excellence <Award className="w-3 h-3" /></span>
+        <div className="max-w-[1440px] mx-auto border-t border-white/5 mt-16 md:mt-32 pt-10 md:pt-16 flex flex-col md:flex-row justify-between items-center text-[9px] md:text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] md:tracking-[0.5em] gap-4">
+          <span>&copy; {new Date().getFullYear()} Pawar Pathology Lab • Integrated Clinical Systems</span>
+          <span className="flex items-center gap-2 md:gap-3">NABL Accredited Excellence <Award className="w-3.5 h-3.5 md:w-4 md:h-4" /></span>
         </div>
       </footer>
 
@@ -256,7 +250,17 @@ const App: React.FC = () => {
         <BookingWizard 
           selectedTests={selectedTests} 
           onCancel={() => setIsWizardOpen(false)}
-          onComplete={handleBookingComplete}
+          onComplete={(formData) => {
+            mockApi.saveBooking({
+              patientName: formData.name,
+              tests: selectedTests,
+              totalAmount: selectedTests.reduce((acc, t) => acc + t.price, 0),
+              collectionType: formData.collectionType,
+              scheduledDate: formData.date
+            });
+            setSelectedTests([]);
+            setIsWizardOpen(false);
+          }}
         />
       )}
     </div>

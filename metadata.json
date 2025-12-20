@@ -1,8 +1,5 @@
 {
-  "name": "Pawar Pathology Lab - High-Performance Diagnostic Platform",
-  "description": "A high-end medical diagnostic web application featuring 3D DNA visualization, smart booking wizard, and dedicated admin/worker dashboards for Pawar Pathology Lab, Betul.",
-  "requestFramePermissions": [
-    "camera",
-    "microphone"
-  ]
+  "name": "Pawar Pathology Lab",
+  "description": "Enterprise-grade clinical diagnostic platform for Betul's leading pathology laboratory.",
+  "requestFramePermissions": []
 }
