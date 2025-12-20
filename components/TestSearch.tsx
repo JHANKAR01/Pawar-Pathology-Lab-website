@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, Info, FlaskConical, MapPin } from 'lucide-react';
+import { Search, Info, FlaskConical, MapPin, Sparkles, ChevronRight, Clock, Home, Zap, ShieldCheck } from 'lucide-react';
 import { Test } from '../types';
 import { CATEGORIES } from '../constants';
 
@@ -21,33 +21,42 @@ const TestSearch: React.FC<TestSearchProps> = ({ tests, onSelect }) => {
   });
 
   return (
-    <div className="w-full max-w-6xl mx-auto py-12 px-4" id="tests">
-      <div className="text-center mb-10">
-        <h2 className="text-3xl font-bold text-gray-900">Find Your Diagnostic Test</h2>
-        <p className="text-gray-500 mt-2">Browse through 500+ clinical and specialized tests</p>
+    <div className="w-full max-w-7xl mx-auto px-6" id="directory">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-12 mb-20">
+        <div className="max-w-2xl">
+          <span className="text-rose-600 text-[10px] font-black uppercase tracking-[0.5em] mb-6 block">Investigation Matrix</span>
+          <h2 className="font-heading text-6xl font-black text-slate-900 tracking-tighter leading-none mb-6">Directory of <br /> <span className="text-rose-600">Specialized Tests</span></h2>
+          <p className="text-slate-500 text-lg font-medium leading-relaxed">Search through our exhaustive list of clinical investigations managed by MD Dr. Rahul Karode.</p>
+        </div>
+        <div className="hidden lg:flex flex-col items-end">
+          <div className="flex -space-x-3 mb-4">
+            {[1,2,3,4].map(i => <div key={i} className="w-12 h-12 rounded-full border-4 border-white bg-slate-200" />)}
+          </div>
+          <p className="text-xs font-black text-slate-400 uppercase tracking-widest">12k+ Samples Processed Monthly</p>
+        </div>
       </div>
 
-      <div className="sticky top-20 z-30 bg-white/80 backdrop-blur-md p-4 rounded-2xl shadow-sm border border-gray-100 mb-8">
-        <div className="flex flex-col md:flex-row gap-4 items-center">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+      <div className="sticky top-28 z-40 mb-20">
+        <div className="glass-pro p-3 rounded-[3rem] shadow-2xl shadow-slate-200/50 flex flex-col xl:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-300 w-6 h-6" />
             <input 
               type="text" 
-              placeholder="Search CBC, Diabetes, Thyroid..." 
-              className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all"
+              placeholder="Search by test name or category..." 
+              className="w-full pl-18 pr-8 py-6 bg-slate-50 border-0 rounded-[2.5rem] focus:ring-2 focus:ring-rose-500 outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-          <div className="flex gap-2 overflow-x-auto w-full md:w-auto no-scrollbar">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar p-1 xl:max-w-2xl">
             {CATEGORIES.map(cat => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                className={`px-8 py-4 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${
                   activeCategory === cat 
-                    ? 'bg-red-600 text-white shadow-md' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-slate-900 text-white shadow-xl scale-105' 
+                    : 'text-slate-400 hover:bg-slate-50'
                 }`}
               >
                 {cat}
@@ -57,36 +66,42 @@ const TestSearch: React.FC<TestSearchProps> = ({ tests, onSelect }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
         {filteredTests.map(test => (
-          <div key={test.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all group">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-3 rounded-lg bg-red-50 text-red-600">
-                <FlaskConical className="w-6 h-6" />
-              </div>
-              <span className="text-2xl font-bold text-red-600">₹{test.price}</span>
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 group-hover:text-red-600 transition-colors">{test.title}</h3>
-            <p className="text-gray-500 text-sm mt-2 line-clamp-2">{test.description}</p>
+          <div key={test.id} className="group bg-white p-10 rounded-[3.5rem] shadow-sm hover:shadow-2xl hover:-translate-y-3 transition-all duration-500 border border-slate-50 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-rose-50 rounded-full -mr-20 -mt-20 group-hover:scale-125 transition-transform duration-700" />
             
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="flex justify-between items-start mb-12 relative z-10">
+              <div className="w-16 h-16 bg-slate-50 text-slate-900 rounded-2xl flex items-center justify-center group-hover:bg-rose-600 group-hover:text-white transition-all duration-500">
+                <Zap className="w-7 h-7" />
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest block mb-2">Standard Fee</span>
+                <span className="text-4xl font-black text-slate-900 tracking-tighter group-hover:text-rose-600 transition-colors">₹{test.price}</span>
+              </div>
+            </div>
+
+            <h3 className="font-heading text-2xl font-black text-slate-900 mb-4 tracking-tight leading-tight relative z-10">{test.title}</h3>
+            <p className="text-slate-400 text-sm font-medium leading-relaxed mb-10 h-16 overflow-hidden relative z-10">{test.description}</p>
+            
+            <div className="flex flex-wrap gap-3 mb-12 relative z-10">
               {test.fastingRequired && (
-                <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold bg-amber-50 text-amber-600 px-2 py-1 rounded">
-                  <Info className="w-3 h-3" /> Fasting Required
-                </span>
+                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 px-4 py-2 rounded-xl border border-amber-100">
+                  <Clock className="w-3.5 h-3.5" /> Fasting Required
+                </div>
               )}
               {test.isHomeCollectionAvailable && (
-                <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded">
-                  <MapPin className="w-3 h-3" /> Home Collection
-                </span>
+                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 px-4 py-2 rounded-xl border border-blue-100">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Home Collection
+                </div>
               )}
             </div>
 
             <button 
               onClick={() => onSelect(test)}
-              className="mt-6 w-full py-3 rounded-xl bg-gray-900 text-white font-semibold hover:bg-red-600 transition-colors"
+              className="w-full py-5 rounded-[2rem] bg-slate-900 text-white font-black uppercase text-[10px] tracking-[0.4em] flex items-center justify-center gap-4 hover:bg-rose-600 transition-all active:scale-95 shadow-xl shadow-slate-100 hover:shadow-rose-200"
             >
-              Add to Booking
+              Add To Request <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         ))}
