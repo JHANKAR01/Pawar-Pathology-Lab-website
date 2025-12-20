@@ -3,15 +3,11 @@ import { Canvas, useFrame, ThreeElements } from '@react-three/fiber';
 import { Float, Environment, Stars, ContactShadows, PresentationControls } from '@react-three/drei';
 import * as THREE from 'three';
 
-// Enhanced type definitions for Three.js intrinsic elements to the global JSX namespace
-// This fixes errors where Three.js elements like 'mesh', 'group', 'torusGeometry', etc. are not recognized in JSX
+// Global JSX augmentation to prevent Three.js intrinsic element errors
 declare global {
   namespace JSX {
-    interface IntrinsicElements extends ThreeElements {}
-  }
-  namespace React {
-    namespace JSX {
-      interface IntrinsicElements extends ThreeElements {}
+    interface IntrinsicElements extends ThreeElements {
+      [key: string]: any;
     }
   }
 }
@@ -52,26 +48,20 @@ const DNAHelix = () => {
   
   const helixData = useMemo(() => {
     const points = [];
-    const rungs = [];
     const count = 45;
     for (let i = 0; i < count; i++) {
       const angle = (i / 5) * Math.PI;
       const y = (i - count/2) * 0.4;
-      
       const p1 = { x: Math.sin(angle) * 2, z: Math.cos(angle) * 2, y };
-      // Fix: Removed the problematic line with 'Math.opacity' typo and used p2Calc for the second strand.
-      const p2Calc = { x: -Math.sin(angle) * 2, z: -Math.cos(angle) * 2, y };
-      
-      points.push({ p1, p2: p2Calc });
-      if (i % 2 === 0) rungs.push({ p1, p2: p2Calc });
+      const p2 = { x: -Math.sin(angle) * 2, z: -Math.cos(angle) * 2, y };
+      points.push({ p1, p2 });
     }
-    return { points, rungs };
+    return { points };
   }, []);
 
   useFrame((state) => {
     if (helixRef.current) {
       helixRef.current.rotation.y += 0.005;
-      helixRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.4) * 0.2;
     }
   });
 
@@ -89,12 +79,6 @@ const DNAHelix = () => {
           </mesh>
         </group>
       ))}
-      {helixData.rungs.map((r, i) => (
-        <mesh key={`rung-${i}`} position={[(r.p1.x + r.p2.x)/2, r.p1.y, (r.p1.z + r.p2.z)/2]} rotation={[0, 0, Math.atan2(r.p2.x - r.p1.x, r.p2.z - r.p1.z)]}>
-          <boxGeometry args={[4, 0.02, 0.02]} />
-          <meshStandardMaterial color="#ffffff" transparent opacity={0.15} />
-        </mesh>
-      ))}
     </group>
   );
 };
@@ -108,11 +92,6 @@ const Hero3D = () => {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
-  const scrollToTests = () => {
-    const element = document.getElementById('directory');
-    if (element) element.scrollIntoView({ behavior: 'smooth' });
-  };
 
   const cells = useMemo(() => {
     const data = [];
@@ -137,85 +116,55 @@ const Hero3D = () => {
     <div className="relative h-[90vh] md:h-screen w-full overflow-hidden bg-[#050505]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(225,29,72,0.18),transparent_80%)] pointer-events-none" />
 
-      {/* 
-          LAYOUT FIX:
-          - Changed justify-center to justify-start to prevent content from expanding upwards into navbar.
-          - Increased md:pt-44 to ensure the NABL badge is safely below the fixed header.
-      */}
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-start text-center px-6 pointer-events-none pt-28 md:pt-44">
-        <span className="mb-4 md:mb-6 px-4 md:px-6 py-2 rounded-full border border-rose-900/40 bg-rose-950/20 text-rose-50 text-[10px] md:text-xs font-black uppercase tracking-[0.4em] animate-pulse">
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-start text-center px-6 pointer-events-none pt-28 md:pt-48">
+        <span className="mb-6 px-6 py-2 rounded-full border border-rose-900/40 bg-rose-950/20 text-rose-50 text-[10px] md:text-xs font-black uppercase tracking-[0.4em] animate-pulse">
           NABL Accredited Excellence • Betul
         </span>
-        <h1 className="font-heading text-4xl sm:text-7xl md:text-8xl font-black text-white mb-6 tracking-tighter leading-[0.85] md:leading-[0.85]">
+        <h1 className="font-heading text-4xl sm:text-7xl md:text-8xl font-black text-white mb-6 tracking-tighter leading-[0.85]">
           PRECISION <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-600 via-rose-300 to-white text-glow">
             DIAGNOSTICS
           </span>
         </h1>
-        <p className="text-gray-400 max-w-lg md:max-w-xl text-xs md:text-lg font-medium leading-relaxed opacity-90 mb-8 md:mb-12">
+        <p className="text-gray-400 max-w-lg md:max-w-xl text-xs md:text-lg font-medium leading-relaxed opacity-90 mb-12">
           Pioneering molecular intelligence and high-throughput pathology for advanced clinical insight across Madhya Pradesh.
         </p>
         
-        <div className="flex flex-col sm:flex-row gap-5 pointer-events-auto w-full sm:w-auto px-6 sm:px-0">
+        <div className="flex flex-col sm:flex-row gap-5 pointer-events-auto">
           <button 
-            onClick={scrollToTests}
-            className="group relative bg-rose-600 text-white px-10 md:px-14 py-4 md:py-5 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-rose-900/40"
+            onClick={() => document.getElementById('directory')?.scrollIntoView({ behavior: 'smooth' })}
+            className="group relative bg-rose-600 text-white px-14 py-5 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-rose-900/40"
           >
-            <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-            <span className="relative">Book Appointment</span>
+            Schedule Analysis
           </button>
           <button 
-            onClick={scrollToTests}
-            className="group px-10 md:px-14 py-4 md:py-5 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest text-white border border-white/20 bg-white/5 backdrop-blur-2xl hover:bg-white/15 transition-all"
+            onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}
+            className="group px-14 py-5 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest text-white border border-white/20 bg-white/5 backdrop-blur-2xl hover:bg-white/15 transition-all"
           >
-            Investigation Menu
+            Our Services
           </button>
         </div>
       </div>
 
-      <div className="absolute inset-0 z-10 opacity-70 md:opacity-100">
+      <div className="absolute inset-0 z-10">
         <Canvas 
-          camera={{ position: [0, 0, 12], fov: isMobile ? 55 : 40 }}
-          gl={{ antialias: true, alpha: true }}
+          camera={{ position: [0, 0, 12], fov: isMobile ? 55 : 40 }} 
+          gl={{ alpha: true, antialias: true }}
           dpr={[1, 2]}
         >
-          <color attach="background" args={['#050505']} />
-          <fog attach="fog" args={['#050505', 10, 25]} />
-          
-          <PresentationControls 
-            global 
-            rotation={[0, 0, 0]} 
-            polar={[-0.1, 0.1]} 
-            azimuth={[-0.1, 0.1]}
-            config={{ mass: 2, tension: 500 }}
-          >
-            <group scale={1}>
+          <PresentationControls global rotation={[0, 0, 0]} polar={[-0.1, 0.1]} azimuth={[-0.1, 0.1]}>
+            <group>
               <DNAHelix />
               {cells.map(cell => (
-                <Cell 
-                  key={cell.id} 
-                  position={cell.position} 
-                  speed={cell.speed} 
-                  type={cell.type} 
-                  scale={cell.scale} 
-                />
+                <Cell key={cell.id} position={cell.position} speed={cell.speed} type={cell.type} scale={cell.scale} />
               ))}
             </group>
           </PresentationControls>
-
-          <Stars radius={70} depth={50} count={4000} factor={5} saturation={0} fade speed={2} />
+          <Stars radius={70} count={4000} factor={5} fade speed={2} />
           <ambientLight intensity={0.6} />
-          <spotLight position={[10, 20, 10]} angle={0.25} penumbra={1} intensity={5} color="#E11D48" />
-          <pointLight position={[-20, -10, -10]} intensity={3} color="#ffffff" />
-          <ContactShadows opacity={0.5} scale={25} blur={2.5} far={15} />
+          <spotLight position={[10, 20, 10]} intensity={5} color="#E11D48" />
           <Environment preset="night" />
         </Canvas>
-      </div>
-
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-30 animate-bounce opacity-40">
-        <div className="w-6 h-10 rounded-full border border-white/30 flex justify-center p-2">
-          <div className="w-1 h-2 bg-rose-600 rounded-full" />
-        </div>
       </div>
     </div>
   );

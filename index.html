@@ -17,6 +17,7 @@
       color: #0F172A;
       overflow-x: hidden;
       scroll-behavior: smooth;
+      margin: 0;
     }
     .font-heading {
       font-family: 'Space Grotesk', sans-serif;
@@ -51,23 +52,30 @@
     .text-glow {
       text-shadow: 0 0 20px rgba(225, 29, 72, 0.3);
     }
+    #root {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
   </style>
 <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "three": "https://esm.sh/three@0.152.2",
+    "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.13.0?external=three",
+    "@react-three/drei": "https://esm.sh/@react-three/drei@9.68.2?external=three",
+    "lucide-react": "https://esm.sh/lucide-react@0.344.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
-    "@react-three/fiber": "https://esm.sh/@react-three/fiber@^9.4.2",
-    "@react-three/drei": "https://esm.sh/@react-three/drei@^10.7.7",
-    "three": "https://esm.sh/three@^0.182.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
     "mongoose": "https://esm.sh/mongoose@^9.0.2",
-    "next/": "https://esm.sh/next@^16.1.0/",
     "next": "https://esm.sh/next@^16.1.0",
-    "buffer": "https://esm.sh/buffer@^6.0.3",
+    "next/": "https://esm.sh/next@^16.1.0/",
+    "googleapis": "https://esm.sh/googleapis@^169.0.0",
     "stream": "https://esm.sh/stream@^0.0.3",
-    "googleapis": "https://esm.sh/googleapis@^169.0.0"
+    "buffer": "https://esm.sh/buffer@^6.0.3"
   }
 }
 </script>

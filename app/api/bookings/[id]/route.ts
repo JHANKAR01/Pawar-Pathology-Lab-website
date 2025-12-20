@@ -21,8 +21,9 @@ export async function PATCH(
     const contentType = request.headers.get('content-type') || '';
 
     if (contentType.includes('multipart/form-data')) {
-      const formData = await request.formData();
-      const file = formData.get('file') as File;
+      // Fix: Cast formData to any to resolve property 'get' does not exist error on standard Web FormData in some environments
+      const formData: any = await request.formData();
+      const file = formData.get('file') as any;
       const status = formData.get('status') as string;
 
       if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 });
