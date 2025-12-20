@@ -3,15 +3,6 @@ import { Canvas, useFrame, ThreeElements } from '@react-three/fiber';
 import { Environment, Stars, PresentationControls } from '@react-three/drei';
 import * as THREE from 'three';
 
-// Global JSX augmentation
-declare global {
-  namespace JSX {
-    interface IntrinsicElements extends ThreeElements {
-      [key: string]: any;
-    }
-  }
-}
-
 const InstancedCells = ({ isMobile }: { isMobile: boolean }) => {
   const rbcMesh = useRef<THREE.InstancedMesh>(null);
   const wbcMesh = useRef<THREE.InstancedMesh>(null);
