@@ -1,72 +1,80 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  LayoutDashboard, Users, FileText, HeartHandshake, Settings as SettingsIcon, 
-  Bell, ArrowUpRight, Search, ShieldCheck, LogOut 
+  LayoutDashboard, FileText, HeartHandshake, Settings as SettingsIcon, 
+  Bell, Search, ShieldCheck, LogOut, CheckCircle, Loader2, RefreshCw, Filter, 
+  UserPlus, MapPin, ClipboardCheck, UserCheck, UserPlus2
 } from 'lucide-react';
-import { BookingStatus, IBooking } from '@/models/Booking'; // Import types directly if available or redefine
 
-// Types suitable for frontend
 interface BookingType {
   _id: string;
   patientName: string;
   totalAmount: number;
   status: string;
-  tests: { category: string }[];
+  tests: { title: string; category: string }[];
+  address?: string;
+  assignedPartnerName?: string;
+  reportFileUrl?: string;
 }
+
+const MOCK_PARTNERS = [
+  { id: 'p1', name: 'Ritesh Sharma' },
+  { id: 'p2', name: 'Amit Verma' },
+  { id: 'p3', name: 'Sunil Patil' }
+];
 
 export default function AdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('Intelligence');
   const [bookings, setBookings] = useState<BookingType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Initial Data Fetch
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch('/api/bookings');
-        if (res.ok) {
-          const data = await res.json();
-          setBookings(data);
-        }
-      } catch (error) {
-        console.error('Failed to load admin data', error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
 
-  const handleLogout = () => {
-    // In a real app, clear cookies/tokens
-    router.push('/');
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/bookings');
+      if (res.ok) setBookings(await res.json());
+    } catch (error) {
+      console.error('Failed to load admin data', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const awaitingVerification = bookings.filter(b => b.status === 'report_uploaded');
+  const handleUpdateStatus = async (id: string, newStatus: string, extraData: object = {}) => {
+    setActionLoading(id);
+    try {
+      const res = await fetch(`/api/bookings/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, ...extraData })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setBookings(prev => prev.map(b => b._id === id ? updated : b));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
-  const stats = [
-    { label: "Revenue Matrix", value: `₹${bookings.reduce((a, b) => a + (b.totalAmount || 0), 0)}`, trend: "+12.5%", color: "rose" },
-    { label: "Specimens Active", value: bookings.filter(b => b.status === 'pending').length.toString(), trend: "-2", color: "blue" },
-    { label: "Reports Pending", value: awaitingVerification.length.toString(), trend: "Critical", color: "amber" },
-    { label: "Total Registrations", value: bookings.length.toString(), trend: "Total", color: "emerald" },
-  ];
+  const handleLogout = () => router.push('/');
 
-  if (loading) {
-      return (
-          <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-              <div className="w-8 h-8 border-2 border-rose-600 rounded-full animate-spin border-t-transparent"></div>
-          </div>
-      );
-  }
+  const pendingCount = bookings.filter(b => b.status === 'pending').length;
+  const acceptedCount = bookings.filter(b => b.status === 'accepted').length;
+  const verificationCount = bookings.filter(b => b.status === 'report_uploaded').length;
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col lg:flex-row font-sans p-4 lg:p-8 gap-8">
-      {/* OS Sidebar */}
+    <div className="min-h-screen bg-[#050505] flex flex-col lg:flex-row font-sans p-4 lg:p-8 gap-8">
       <aside className="w-full lg:w-80 glass-dark rounded-[3.5rem] p-8 flex flex-col relative z-20">
         <div className="flex items-center gap-4 mb-16 border-b border-white/5 pb-10">
           <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-rose-900/50">
@@ -74,99 +82,156 @@ export default function AdminPage() {
           </div>
           <div>
             <h2 className="text-xl font-black text-white tracking-tighter">ADMIN<span className="text-rose-600">OS</span></h2>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">V3.0 Connected</p>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">V3.5 Diagnostic Workflow</p>
           </div>
         </div>
         
         <nav className="flex-1 space-y-3">
-          {['Intelligence', 'Specimens', 'Partners', 'Config'].map(tab => (
+          {[
+            { id: 'Intelligence', icon: LayoutDashboard },
+            { id: 'Specimens', icon: FileText, badge: pendingCount + verificationCount },
+            { id: 'Partners', icon: HeartHandshake },
+            { id: 'Config', icon: SettingsIcon }
+          ].map(tab => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
               className={`w-full flex items-center justify-between px-6 py-4 rounded-[2rem] text-sm font-bold transition-all ${
-                activeTab === tab 
-                  ? 'bg-white text-slate-900 shadow-2xl shadow-white/5' 
+                activeTab === tab.id 
+                  ? 'bg-white text-slate-900 shadow-2xl shadow-white/5 scale-105' 
                   : 'text-slate-500 hover:text-white hover:bg-white/5'
               }`}
             >
               <span className="flex items-center gap-3">
-                {tab === 'Intelligence' && <LayoutDashboard className="w-5 h-5" />}
-                {tab === 'Specimens' && <FileText className="w-5 h-5" />}
-                {tab === 'Partners' && <HeartHandshake className="w-5 h-5" />}
-                {tab === 'Config' && <SettingsIcon className="w-5 h-5" />}
-                {tab}
+                <tab.icon className="w-5 h-5" />
+                {tab.id}
               </span>
-              {tab === 'Specimens' && awaitingVerification.length > 0 && (
-                <span className="bg-rose-600 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center">{awaitingVerification.length}</span>
-              )}
+              {tab.badge ? (
+                <span className="bg-rose-600 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center animate-pulse">{tab.badge}</span>
+              ) : null}
             </button>
           ))}
         </nav>
-
-        <div className="pt-10 border-t border-white/5">
-          <button onClick={handleLogout} className="w-full flex items-center gap-3 text-slate-500 hover:text-rose-500 font-bold px-6 py-4 rounded-[2rem] transition-all">
-            <LogOut className="w-5 h-5" /> Terminate Session
-          </button>
-        </div>
+        <button onClick={handleLogout} className="mt-10 flex items-center gap-3 text-slate-500 hover:text-rose-500 font-bold px-6 py-4 rounded-[2rem]">
+          <LogOut className="w-5 h-5" /> Terminate Session
+        </button>
       </aside>
 
-      {/* Main Workspace */}
       <main className="flex-1 space-y-8 overflow-y-auto">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div className="view-transition">
-            <span className="text-[10px] font-black text-rose-500 uppercase tracking-[0.5em] mb-3 block">Real-time Clinical Monitor</span>
+        <header className="flex justify-between items-center">
+          <div>
+            <span className="text-[10px] font-black text-rose-500 uppercase tracking-[0.5em] mb-3 block">Real-time Lab Monitor</span>
             <h1 className="text-5xl font-black text-white tracking-tighter">{activeTab} Workstation</h1>
           </div>
-          <div className="flex gap-4">
-             <div className="relative group">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-                <input placeholder="Search global logs..." className="bg-white/5 border border-white/10 rounded-[2rem] pl-16 pr-8 py-5 text-white text-xs font-bold outline-none focus:ring-2 focus:ring-rose-600 transition-all w-64" />
-             </div>
-             <button className="w-16 h-16 glass-dark rounded-full flex items-center justify-center relative hover:bg-white/10 transition-all">
-                <Bell className="text-white w-6 h-6" />
-                <span className="absolute top-4 right-4 w-3 h-3 bg-rose-600 rounded-full border-2 border-slate-950" />
-             </button>
-          </div>
+          <button onClick={fetchData} className="w-16 h-16 glass-dark rounded-full flex items-center justify-center hover:bg-white/10 transition-all">
+            <RefreshCw className={`text-white w-6 h-6 ${loading ? 'animate-spin' : ''}`} />
+          </button>
         </header>
 
-        {activeTab === 'Intelligence' && (
-          <div className="space-y-10 view-transition">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {stats.map(s => (
-                <div key={s.label} className="glass-dark p-10 rounded-[3rem] group hover:bg-white/5 transition-all">
-                  <div className="flex justify-between items-start mb-10">
-                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em]">{s.label}</p>
-                    <span className={`text-[9px] font-black px-3 py-1 rounded-lg ${s.color === 'rose' ? 'bg-rose-600/20 text-rose-500' : 'bg-white/10 text-slate-300'}`}>
-                      {s.trend}
-                    </span>
-                  </div>
-                  <p className="text-5xl font-black text-white tracking-tighter">{s.value}</p>
-                </div>
-              ))}
+        {activeTab === 'Specimens' && (
+          <div className="space-y-8">
+            {/* Step 1: Acceptance */}
+            <div className="glass-dark p-12 rounded-[4rem]">
+              <h3 className="text-2xl font-black text-white mb-8 flex items-center gap-4">
+                <UserCheck className="text-rose-600" /> Pending Lab Acceptance
+              </h3>
+              <div className="space-y-4">
+                {bookings.filter(b => b.status === 'pending').length === 0 ? (
+                  <p className="text-slate-500 text-sm italic">No new patient requests.</p>
+                ) : (
+                  bookings.filter(b => b.status === 'pending').map(b => (
+                    <div key={b._id} className="bg-white/5 p-8 rounded-[2.5rem] flex items-center justify-between border border-white/5">
+                      <div>
+                        <p className="text-white font-black text-lg">{b.patientName}</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{b.tests[0].title} • {b._id.slice(-6)}</p>
+                      </div>
+                      <button 
+                        onClick={() => handleUpdateStatus(b._id, 'accepted')}
+                        disabled={actionLoading === b._id}
+                        className="px-8 py-3 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-700 transition-all shadow-xl shadow-rose-900/20"
+                      >
+                        {actionLoading === b._id ? <Loader2 className="animate-spin w-4 h-4" /> : 'Accept Request'}
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
 
+            {/* Step 2: Assignment */}
             <div className="glass-dark p-12 rounded-[4rem]">
-                <h3 className="text-2xl font-black text-white tracking-tight mb-8">Recent Specimens</h3>
-                <div className="space-y-4">
-                {bookings.slice(0, 5).map(b => (
-                    <div key={b._id} className="group flex items-center justify-between p-8 rounded-[2.5rem] bg-white/5 border border-white/5 hover:border-rose-600/30 transition-all">
-                    <div className="flex items-center gap-6">
-                        <div className="w-14 h-14 bg-rose-600 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-2xl">
-                        {b.patientName?.[0] || 'U'}
-                        </div>
-                        <div>
-                        <p className="font-black text-white text-lg tracking-tight">{b.patientName}</p>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{b.tests?.[0]?.category || 'General'} • {b._id.slice(-6)}</p>
-                        </div>
+              <h3 className="text-2xl font-black text-white mb-8 flex items-center gap-4">
+                <UserPlus2 className="text-blue-500" /> Dispatch & Assignment
+              </h3>
+              <div className="space-y-4">
+                {bookings.filter(b => b.status === 'accepted').length === 0 ? (
+                  <p className="text-slate-500 text-sm italic">No specimens awaiting assignment.</p>
+                ) : (
+                  bookings.filter(b => b.status === 'accepted').map(b => (
+                    <div key={b._id} className="bg-white/5 p-8 rounded-[2.5rem] flex items-center justify-between border border-white/5">
+                      <div>
+                        <p className="text-white font-black text-lg">{b.patientName}</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Confirmed • Awaiting Dispatcher</p>
+                      </div>
+                      <div className="flex gap-4">
+                        <select 
+                          className="bg-slate-900 text-white border border-white/10 rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-rose-600"
+                          onChange={(e) => {
+                            const partner = MOCK_PARTNERS.find(p => p.id === e.target.value);
+                            if (partner) handleUpdateStatus(b._id, 'assigned', { assignedPartnerId: partner.id, assignedPartnerName: partner.name });
+                          }}
+                          disabled={actionLoading === b._id}
+                        >
+                          <option value="">Select Partner</option>
+                          {MOCK_PARTNERS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                      </div>
                     </div>
-                    <span className={`px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                        b.status === 'completed' ? 'bg-emerald-600/20 text-emerald-400' : 'bg-rose-600/20 text-rose-400'
-                    }`}>{b.status.replace('_', ' ')}</span>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Verification */}
+            <div className="glass-dark p-12 rounded-[4rem]">
+              <h3 className="text-2xl font-black text-white mb-8">Clinical Verification Queue</h3>
+              <div className="space-y-4">
+                {bookings.filter(b => b.status === 'report_uploaded').map(b => (
+                  <div key={b._id} className="bg-white/5 p-8 rounded-[2.5rem] flex items-center justify-between border border-white/5">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-rose-600 rounded-xl flex items-center justify-center"><ClipboardCheck className="text-white w-6 h-6"/></div>
+                      <div>
+                        <p className="text-white font-black text-lg">{b.patientName}</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Report Uploaded by {b.assignedPartnerName}</p>
+                      </div>
                     </div>
+                    <div className="flex gap-4">
+                      <a href={b.reportFileUrl} target="_blank" className="px-6 py-3 border border-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all">Review</a>
+                      <button 
+                        onClick={() => handleUpdateStatus(b._id, 'completed')}
+                        className="px-8 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-900/20"
+                      >
+                        Verify & Release
+                      </button>
+                    </div>
+                  </div>
                 ))}
-                </div>
+              </div>
             </div>
           </div>
+        )}
+
+        {activeTab === 'Intelligence' && (
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="glass-dark p-10 rounded-[3rem]">
+                <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em] mb-6">Workflow Intelligence</p>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center"><span className="text-white text-sm">Active Field Agents</span> <span className="text-rose-500 font-bold">3</span></div>
+                  <div className="flex justify-between items-center"><span className="text-white text-sm">Processing Specimens</span> <span className="text-amber-500 font-bold">{bookings.filter(b => ['assigned', 'reached', 'sample_collected'].includes(b.status)).length}</span></div>
+                  <div className="flex justify-between items-center"><span className="text-white text-sm">Total Throughput</span> <span className="text-emerald-500 font-bold">{bookings.length}</span></div>
+                </div>
+              </div>
+           </div>
         )}
       </main>
     </div>

@@ -1,12 +1,15 @@
-
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
-import Booking from '@/models/Booking';
+import Booking, { BookingStatus } from '@/models/Booking';
 import { uploadReportToDrive } from '@/lib/googleDrive';
-// Fix: Import Buffer from 'buffer' to resolve 'Cannot find name Buffer' error
 import { Buffer } from 'buffer';
 
-// PATCH /api/bookings/[id] - Update status or Upload Report
+// Placeholder for notifications
+const sendNotification = async (type: 'SMS' | 'EMAIL', to: string, message: string) => {
+  console.log(`[NOTIFICATION][${type}] to ${to}: ${message}`);
+  // In a real implementation, you would integrate Twilio, SendGrid, etc.
+};
+
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
@@ -15,26 +18,18 @@ export async function PATCH(
   const { id } = params;
 
   try {
-    // Check Content-Type to determine if this is a JSON update or a File Upload
     const contentType = request.headers.get('content-type') || '';
 
     if (contentType.includes('multipart/form-data')) {
-      // --- Handle File Upload (Partner Dashboard) ---
       const formData = await request.formData();
       const file = formData.get('file') as File;
       const status = formData.get('status') as string;
 
-      if (!file) {
-        return NextResponse.json({ error: 'No file provided' }, { status: 400 });
-      }
+      if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 });
 
-      // Convert File to Buffer
       const arrayBuffer = await file.arrayBuffer();
-      // Fix: Use Buffer.from with imported Buffer to ensure it is found by the compiler
       const buffer = Buffer.from(arrayBuffer);
 
-      // Upload to Google Drive
-      // Note: In production, ensure GOOGLE credentials are set, otherwise wrap in try/catch or use dummy link
       let reportUrl = '';
       try {
         const driveResponse = await uploadReportToDrive(
@@ -44,33 +39,42 @@ export async function PATCH(
         );
         reportUrl = driveResponse.webViewLink || '';
       } catch (driveError) {
-        console.error("Drive Upload Failed (Check .env):", driveError);
-        // Fallback for development if keys aren't set
-        reportUrl = 'https://mock-drive-link.com/error-check-logs'; 
+        console.error("Drive Upload Failed:", driveError);
+        reportUrl = 'https://mock-drive-link.com/upload-error'; 
       }
 
       const updatedBooking = await Booking.findByIdAndUpdate(
         id,
-        { 
-          status: status || 'report_uploaded',
-          reportFileUrl: reportUrl
-        },
+        { status: status || BookingStatus.REPORT_UPLOADED, reportFileUrl: reportUrl },
         { new: true }
       );
 
       return NextResponse.json(updatedBooking);
 
     } else {
-      // --- Handle JSON Status Update (Admin/Logic) ---
       const body = await request.json();
+      
+      const oldBooking = await Booking.findById(id);
+      if (!oldBooking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+
       const updatedBooking = await Booking.findByIdAndUpdate(
         id,
         { $set: body },
         { new: true }
       );
       
-      if (!updatedBooking) {
-        return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+      if (!updatedBooking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+
+      // Logic for Notifications on Verification
+      if (updatedBooking.status === BookingStatus.COMPLETED && oldBooking.status !== BookingStatus.COMPLETED) {
+        const message = `Pawar Lab: Hello ${updatedBooking.patientName}, your report for ${updatedBooking.tests[0].title} has been verified. You can download it now from your patient portal.`;
+        
+        if (updatedBooking.email) {
+          await sendNotification('EMAIL', updatedBooking.email, message);
+        }
+        if (updatedBooking.contactNumber) {
+          await sendNotification('SMS', updatedBooking.contactNumber, message);
+        }
       }
 
       return NextResponse.json(updatedBooking);

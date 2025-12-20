@@ -1,5 +1,7 @@
 {
   "name": "Pawar Pathology Lab",
   "description": "Enterprise-grade clinical diagnostic platform for Betul's leading pathology laboratory.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "geolocation"
+  ]
 }

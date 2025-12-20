@@ -1,133 +1,150 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ClipboardList, CheckCircle, Upload, MapPin, Package, LogOut, Search, Plus, X, FlaskConical, Loader2 } from 'lucide-react';
+import { 
+  CheckCircle, Upload, MapPin, Package, LogOut, Search, 
+  FlaskConical, Loader2, Navigation, AlertTriangle, ClipboardList,
+  Check, Phone, Info
+} from 'lucide-react';
 
 export default function PartnerPage() {
   const router = useRouter();
   const [allBookings, setAllBookings] = useState<any[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [newPatient, setNewPatient] = useState({ name: '', phone: '', testTitle: 'General Profile' });
   const [uploadingId, setUploadingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
+  useEffect(() => { fetchBookings(); }, []);
 
   const fetchBookings = async () => {
     const res = await fetch('/api/bookings');
     if (res.ok) setAllBookings(await res.json());
   };
 
-  const handleUpdateStatus = async (id: string, currentStatus: string) => {
-    // If pending -> Mark collected
-    if (currentStatus === 'pending') {
-      await fetch(`/api/bookings/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'sample_collected' })
-      });
-      fetchBookings();
-    }
-    // If sample_collected -> Trigger file upload input
-    else if (currentStatus === 'sample_collected') {
-      document.getElementById(`file-upload-${id}`)?.click();
+  const handleUpdateStatus = async (id: string, newStatus: string) => {
+    const res = await fetch(`/api/bookings/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    });
+    if (res.ok) fetchBookings();
+  };
+
+  const handleCollectSample = (id: string) => {
+    if (window.confirm('PROTOCOL CONFIRMATION: Are you sure you have collected the specimen? This will immediately notify the central lab for processing.')) {
+      handleUpdateStatus(id, 'sample_collected');
     }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, id: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setUploadingId(id);
     const formData = new FormData();
     formData.append('file', file);
     formData.append('status', 'report_uploaded');
-
     try {
-      const res = await fetch(`/api/bookings/${id}`, {
-        method: 'PATCH',
-        body: formData, // No Content-Type header needed, browser sets boundary
-      });
+      const res = await fetch(`/api/bookings/${id}`, { method: 'PATCH', body: formData });
       if (res.ok) fetchBookings();
     } catch (err) {
-      alert('Upload failed');
+      alert('Clinical record upload failed.');
     } finally {
       setUploadingId(null);
     }
   };
 
-  const filtered = allBookings.filter(b => 
-    b.patientName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    b._id.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Only show tasks assigned to me that aren't completed
+  const myTasks = allBookings.filter(b => !['completed', 'pending', 'accepted'].includes(b.status));
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <nav className="bg-white border-b px-8 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center shadow-lg shadow-red-200">
             <Package className="text-white w-6 h-6" />
           </div>
           <div>
-            <h1 className="font-black text-lg leading-tight">PARTNER HUB</h1>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Global Management Panel</p>
+            <h1 className="font-black text-lg">PARTNER WORKSPACE</h1>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Field Operations Node</p>
           </div>
         </div>
-        <button onClick={() => router.push('/')} className="text-gray-400 hover:text-red-600 flex items-center gap-2 font-bold text-sm transition-colors">
+        <button onClick={() => router.push('/')} className="text-gray-400 hover:text-red-600 font-bold text-sm flex items-center gap-2">
           <LogOut className="w-4 h-4" /> Logout
         </button>
       </nav>
 
-      <main className="p-8 max-w-6xl mx-auto w-full">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+      <main className="p-8 max-w-5xl mx-auto w-full">
+        <div className="mb-12 flex justify-between items-end">
           <div>
-            <h2 className="text-3xl font-black text-gray-900">System Overview</h2>
-            <p className="text-gray-500 font-medium">Manage patients and reports</p>
+            <h2 className="text-3xl font-black text-gray-900">Current Assignments</h2>
+            <p className="text-gray-500 font-medium">Follow clinical protocol sequence for specimen acquisition</p>
           </div>
-          <div className="flex gap-4 w-full md:w-auto">
-             <div className="relative flex-1 md:w-64">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 w-5 h-5" />
-              <input 
-                type="text" 
-                placeholder="Search patient..."
-                className="w-full pl-12 pr-4 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-red-500 outline-none transition-all"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-              />
-            </div>
-            {/* Disabled Register for now as it needs POST implementation matching schema */}
-          </div>
+          <button onClick={fetchBookings} className="p-3 bg-white border border-gray-100 rounded-full hover:bg-gray-50 transition-all shadow-sm">
+            <RefreshCw className="w-5 h-5 text-gray-400" />
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
-          {filtered.map(task => (
-            <div key={task._id} className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 hover:border-red-100 transition-all group">
-              <div className="flex flex-col md:flex-row justify-between gap-8">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                      task.status === 'completed' ? 'bg-green-100 text-green-600' :
-                      task.status === 'report_uploaded' ? 'bg-amber-100 text-amber-600' :
+        <div className="space-y-6">
+          {myTasks.length === 0 ? (
+            <div className="text-center py-24 bg-white rounded-[3rem] border-2 border-dashed border-gray-100 flex flex-col items-center">
+              <ClipboardList className="w-16 h-16 text-gray-100 mb-4" />
+              <p className="text-gray-400 font-bold">No active specimen requests at this time.</p>
+            </div>
+          ) : (
+            myTasks.map(task => (
+              <div key={task._id} className="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between gap-8 items-center group hover:border-red-500/20 transition-all">
+                <div className="flex-1 w-full">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                      task.status === 'sample_collected' ? 'bg-amber-100 text-amber-600' : 
+                      task.status === 'reached' ? 'bg-emerald-100 text-emerald-600' :
                       'bg-blue-100 text-blue-600'
                     }`}>
                       {task.status.replace('_', ' ')}
                     </span>
-                    <span className="text-[10px] text-gray-300 font-bold">#{task._id.slice(-6)}</span>
+                    <span className="text-[10px] text-gray-300 font-bold tracking-widest">ID: #{task._id.slice(-6).toUpperCase()}</span>
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{task.patientName}</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">{task.patientName}</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
+                      <MapPin className="w-4 h-4 text-red-500" />
+                      {task.address || "Main Center Collection"}
+                    </div>
+                    {task.contactNumber && (
+                      <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
+                        <Phone className="w-4 h-4 text-emerald-500" />
+                        +91 {task.contactNumber}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                
-                <div className="flex flex-col justify-center min-w-[220px] gap-3">
-                  {task.status === 'pending' && (
+
+                <div className="flex flex-wrap gap-4 w-full md:w-auto">
+                  {task.status === 'assigned' && (
+                    <>
+                      {task.coordinates && (
+                        <a 
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${task.coordinates.lat},${task.coordinates.lng}`}
+                          target="_blank"
+                          className="flex items-center gap-3 px-6 py-4 bg-white border border-gray-100 text-gray-900 rounded-2xl font-bold text-sm shadow-sm hover:bg-gray-50 transition-all"
+                        >
+                          <Navigation className="w-5 h-5 text-blue-500" /> Directions
+                        </a>
+                      )}
+                      <button 
+                        onClick={() => handleUpdateStatus(task._id, 'reached')}
+                        className="flex items-center gap-3 px-8 py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm shadow-xl hover:bg-red-600 transition-all"
+                      >
+                         I have Reached Location
+                      </button>
+                    </>
+                  )}
+
+                  {task.status === 'reached' && (
                     <button 
-                      onClick={() => handleUpdateStatus(task._id, task.status)}
-                      className="w-full py-4 bg-gray-900 text-white rounded-[1.5rem] font-bold flex items-center justify-center gap-2 hover:bg-red-600 shadow-lg"
+                      onClick={() => handleCollectSample(task._id)}
+                      className="flex items-center gap-3 px-10 py-4 bg-emerald-600 text-white rounded-2xl font-bold text-sm shadow-xl hover:bg-emerald-700 transition-all"
                     >
-                      <CheckCircle className="w-5 h-5" /> Collect Sample
+                      <CheckCircle className="w-5 h-5" /> Collect Specimen
                     </button>
                   )}
 
@@ -135,33 +152,37 @@ export default function PartnerPage() {
                     <>
                       <input 
                         type="file" 
-                        id={`file-upload-${task._id}`} 
+                        id={`file-${task._id}`} 
                         className="hidden" 
-                        accept="application/pdf"
+                        accept=".pdf"
                         onChange={(e) => handleFileUpload(e, task._id)}
                       />
                       <button 
-                        onClick={() => handleUpdateStatus(task._id, task.status)}
+                        onClick={() => document.getElementById(`file-${task._id}`)?.click()}
                         disabled={uploadingId === task._id}
-                        className="w-full py-4 bg-red-600 text-white rounded-[1.5rem] font-bold flex items-center justify-center gap-2 hover:bg-red-700 shadow-lg disabled:opacity-70"
+                        className="flex items-center gap-3 px-8 py-4 bg-rose-600 text-white rounded-2xl font-bold text-sm shadow-xl hover:bg-rose-700 transition-all disabled:opacity-50"
                       >
-                        {uploadingId === task._id ? <Loader2 className="animate-spin" /> : <Upload className="w-5 h-5" />} 
-                        {uploadingId === task._id ? 'Uploading...' : 'Upload PDF'}
+                        {uploadingId === task._id ? <Loader2 className="animate-spin w-5 h-5" /> : <Upload className="w-5 h-5" />} 
+                        Dispatch Report PDF
                       </button>
                     </>
                   )}
 
-                  {(task.status === 'report_uploaded' || task.status === 'completed') && (
-                     <div className="bg-green-50 text-green-600 p-4 rounded-2xl text-center font-bold text-sm border border-green-100 flex items-center justify-center gap-2">
-                        <CheckCircle className="w-5 h-5" /> Processing Complete
+                  {task.status === 'report_uploaded' && (
+                     <div className="flex items-center gap-3 px-8 py-4 bg-emerald-50 text-emerald-600 rounded-2xl font-bold text-sm border border-emerald-100">
+                        <Info className="w-5 h-5" /> Pending Lab Verification
                      </div>
                   )}
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </main>
     </div>
   );
 }
+
+const RefreshCw = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+);
