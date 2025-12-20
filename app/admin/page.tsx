@@ -1,11 +1,12 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, FileText, HeartHandshake, Settings as SettingsIcon, 
-  Bell, Search, ShieldCheck, LogOut, CheckCircle, Loader2, RefreshCw, Filter, 
-  UserPlus, MapPin, ClipboardCheck, UserCheck, UserPlus2
+  Search, ShieldCheck, LogOut, CheckCircle, Loader2, RefreshCw, Filter, 
+  UserCheck, UserPlus2, FlaskConical, MapPin, ClipboardCheck, Settings2, Trash2
 } from 'lucide-react';
 
 interface BookingType {
@@ -19,21 +20,28 @@ interface BookingType {
   reportFileUrl?: string;
 }
 
-const MOCK_PARTNERS = [
-  { id: 'p1', name: 'Ritesh Sharma' },
-  { id: 'p2', name: 'Amit Verma' },
-  { id: 'p3', name: 'Sunil Patil' }
-];
+interface Partner {
+  id: string;
+  name: string;
+  role: string;
+}
 
 export default function AdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('Intelligence');
   const [bookings, setBookings] = useState<BookingType[]>([]);
+  const [partners, setPartners] = useState<Partner[]>([
+    { id: 'p1', name: 'Ritesh Sharma', role: 'Field Phlebotomist' },
+    { id: 'p2', name: 'Amit Verma', role: 'Lab Technician' }
+  ]);
+  const [newPartner, setNewPartner] = useState({ name: '', role: 'Field Phlebotomist' });
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [config, setConfig] = useState({ requireVerification: true });
 
   useEffect(() => {
     fetchData();
+    fetchConfig();
   }, []);
 
   const fetchData = async () => {
@@ -48,6 +56,13 @@ export default function AdminPage() {
     }
   };
 
+  const fetchConfig = async () => {
+    try {
+      const res = await fetch('/api/settings');
+      if (res.ok) setConfig(await res.json());
+    } catch (err) { console.error(err); }
+  };
+
   const handleUpdateStatus = async (id: string, newStatus: string, extraData: object = {}) => {
     setActionLoading(id);
     try {
@@ -58,6 +73,7 @@ export default function AdminPage() {
       });
       if (res.ok) {
         const updated = await res.json();
+        // Immediate UI refresh for verified results
         setBookings(prev => prev.map(b => b._id === id ? updated : b));
       }
     } catch (err) {
@@ -67,11 +83,23 @@ export default function AdminPage() {
     }
   };
 
-  const handleLogout = () => router.push('/');
+  const handleToggleConfig = async () => {
+    const newConfig = { ...config, requireVerification: !config.requireVerification };
+    setConfig(newConfig);
+    await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newConfig)
+    });
+  };
 
-  const pendingCount = bookings.filter(b => b.status === 'pending').length;
-  const acceptedCount = bookings.filter(b => b.status === 'accepted').length;
-  const verificationCount = bookings.filter(b => b.status === 'report_uploaded').length;
+  const handleAddPartner = (e: React.FormEvent) => {
+    e.preventDefault();
+    const p = { id: 'p' + (partners.length + 1), ...newPartner };
+    setPartners([...partners, p]);
+    setNewPartner({ name: '', role: 'Field Phlebotomist' });
+    alert('Clinical partner registered in ecosystem.');
+  };
 
   return (
     <div className="min-h-screen bg-[#050505] flex flex-col lg:flex-row font-sans p-4 lg:p-8 gap-8">
@@ -80,16 +108,16 @@ export default function AdminPage() {
           <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-rose-900/50">
             <ShieldCheck className="text-white w-6 h-6" />
           </div>
-          <div>
-            <h2 className="text-xl font-black text-white tracking-tighter">ADMIN<span className="text-rose-600">OS</span></h2>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">V3.5 Diagnostic Workflow</p>
+          <div className="block">
+            <h2 className="text-xl font-black text-white tracking-tighter uppercase">ADMIN<span className="text-rose-600">OS</span></h2>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">Lifecycle v3.5</p>
           </div>
         </div>
         
         <nav className="flex-1 space-y-3">
           {[
             { id: 'Intelligence', icon: LayoutDashboard },
-            { id: 'Specimens', icon: FileText, badge: pendingCount + verificationCount },
+            { id: 'Specimens', icon: FlaskConical },
             { id: 'Partners', icon: HeartHandshake },
             { id: 'Config', icon: SettingsIcon }
           ].map(tab => (
@@ -106,132 +134,150 @@ export default function AdminPage() {
                 <tab.icon className="w-5 h-5" />
                 {tab.id}
               </span>
-              {tab.badge ? (
-                <span className="bg-rose-600 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center animate-pulse">{tab.badge}</span>
-              ) : null}
             </button>
           ))}
         </nav>
-        <button onClick={handleLogout} className="mt-10 flex items-center gap-3 text-slate-500 hover:text-rose-500 font-bold px-6 py-4 rounded-[2rem]">
-          <LogOut className="w-5 h-5" /> Terminate Session
+        <button onClick={() => router.push('/')} className="mt-10 flex items-center gap-3 text-slate-500 hover:text-rose-500 font-bold px-6 py-4 rounded-[2rem]">
+          <LogOut className="w-5 h-5" /> Logout
         </button>
       </aside>
 
       <main className="flex-1 space-y-8 overflow-y-auto">
         <header className="flex justify-between items-center">
           <div>
-            <span className="text-[10px] font-black text-rose-500 uppercase tracking-[0.5em] mb-3 block">Real-time Lab Monitor</span>
-            <h1 className="text-5xl font-black text-white tracking-tighter">{activeTab} Workstation</h1>
+            <span className="text-[10px] font-black text-rose-500 uppercase tracking-[0.5em] mb-3 block">Diagnostic Node Status</span>
+            <h1 className="text-5xl font-black text-white tracking-tighter uppercase">{activeTab}</h1>
           </div>
           <button onClick={fetchData} className="w-16 h-16 glass-dark rounded-full flex items-center justify-center hover:bg-white/10 transition-all">
             <RefreshCw className={`text-white w-6 h-6 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </header>
 
+        {activeTab === 'Intelligence' && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4">
+             <div className="glass-dark p-10 rounded-[3rem]">
+                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-4">Total Specimens</p>
+                <p className="text-5xl font-black text-white">{bookings.length}</p>
+             </div>
+             <div className="glass-dark p-10 rounded-[3rem]">
+                <p className="text-amber-500 text-[10px] font-black uppercase tracking-widest mb-4">Pending Lab Analysis</p>
+                <p className="text-5xl font-black text-white">{bookings.filter(b => b.status === 'sample_collected').length}</p>
+             </div>
+             <div className="glass-dark p-10 rounded-[3rem]">
+                <p className="text-emerald-500 text-[10px] font-black uppercase tracking-widest mb-4">Verified Reports Today</p>
+                <p className="text-5xl font-black text-white">{bookings.filter(b => b.status === 'completed').length}</p>
+             </div>
+          </div>
+        )}
+
         {activeTab === 'Specimens' && (
-          <div className="space-y-8">
-            {/* Step 1: Acceptance */}
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
             <div className="glass-dark p-12 rounded-[4rem]">
-              <h3 className="text-2xl font-black text-white mb-8 flex items-center gap-4">
-                <UserCheck className="text-rose-600" /> Pending Lab Acceptance
+              <h3 className="text-2xl font-black text-white mb-10 flex items-center gap-4">
+                 <FlaskConical className="text-rose-600" /> Active Diagnostic Flow
               </h3>
               <div className="space-y-4">
-                {bookings.filter(b => b.status === 'pending').length === 0 ? (
-                  <p className="text-slate-500 text-sm italic">No new patient requests.</p>
-                ) : (
-                  bookings.filter(b => b.status === 'pending').map(b => (
-                    <div key={b._id} className="bg-white/5 p-8 rounded-[2.5rem] flex items-center justify-between border border-white/5">
-                      <div>
-                        <p className="text-white font-black text-lg">{b.patientName}</p>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{b.tests[0].title} • {b._id.slice(-6)}</p>
-                      </div>
-                      <button 
-                        onClick={() => handleUpdateStatus(b._id, 'accepted')}
-                        disabled={actionLoading === b._id}
-                        className="px-8 py-3 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-700 transition-all shadow-xl shadow-rose-900/20"
-                      >
-                        {actionLoading === b._id ? <Loader2 className="animate-spin w-4 h-4" /> : 'Accept Request'}
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Step 2: Assignment */}
-            <div className="glass-dark p-12 rounded-[4rem]">
-              <h3 className="text-2xl font-black text-white mb-8 flex items-center gap-4">
-                <UserPlus2 className="text-blue-500" /> Dispatch & Assignment
-              </h3>
-              <div className="space-y-4">
-                {bookings.filter(b => b.status === 'accepted').length === 0 ? (
-                  <p className="text-slate-500 text-sm italic">No specimens awaiting assignment.</p>
-                ) : (
-                  bookings.filter(b => b.status === 'accepted').map(b => (
-                    <div key={b._id} className="bg-white/5 p-8 rounded-[2.5rem] flex items-center justify-between border border-white/5">
-                      <div>
-                        <p className="text-white font-black text-lg">{b.patientName}</p>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Confirmed • Awaiting Dispatcher</p>
-                      </div>
-                      <div className="flex gap-4">
-                        <select 
-                          className="bg-slate-900 text-white border border-white/10 rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-rose-600"
-                          onChange={(e) => {
-                            const partner = MOCK_PARTNERS.find(p => p.id === e.target.value);
-                            if (partner) handleUpdateStatus(b._id, 'assigned', { assignedPartnerId: partner.id, assignedPartnerName: partner.name });
-                          }}
-                          disabled={actionLoading === b._id}
-                        >
-                          <option value="">Select Partner</option>
-                          {MOCK_PARTNERS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Verification */}
-            <div className="glass-dark p-12 rounded-[4rem]">
-              <h3 className="text-2xl font-black text-white mb-8">Clinical Verification Queue</h3>
-              <div className="space-y-4">
-                {bookings.filter(b => b.status === 'report_uploaded').map(b => (
-                  <div key={b._id} className="bg-white/5 p-8 rounded-[2.5rem] flex items-center justify-between border border-white/5">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-rose-600 rounded-xl flex items-center justify-center"><ClipboardCheck className="text-white w-6 h-6"/></div>
-                      <div>
-                        <p className="text-white font-black text-lg">{b.patientName}</p>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Report Uploaded by {b.assignedPartnerName}</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-4">
-                      <a href={b.reportFileUrl} target="_blank" className="px-6 py-3 border border-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all">Review</a>
-                      <button 
-                        onClick={() => handleUpdateStatus(b._id, 'completed')}
-                        className="px-8 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-900/20"
-                      >
-                        Verify & Release
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                 {['pending', 'accepted', 'assigned', 'reached', 'sample_collected', 'report_uploaded'].map(status => {
+                   const stageBookings = bookings.filter(b => b.status === status);
+                   if (stageBookings.length === 0) return null;
+                   return (
+                     <div key={status} className="mb-10">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-6 border-l-2 border-rose-600 pl-4">{status.replace('_', ' ')} Stage</p>
+                        <div className="space-y-4">
+                           {stageBookings.map(b => (
+                             <div key={b._id} className="bg-white/5 p-8 rounded-[2.5rem] flex items-center justify-between border border-white/5 group hover:border-rose-600/30 transition-all">
+                                <div>
+                                   <p className="text-white font-black text-lg">{b.patientName}</p>
+                                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{b.tests[0].title} • {b._id.slice(-6)}</p>
+                                </div>
+                                <div className="flex gap-4">
+                                   {status === 'pending' && (
+                                     <button onClick={() => handleUpdateStatus(b._id, 'accepted')} className="px-8 py-3 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-700">Accept Request</button>
+                                   )}
+                                   {status === 'accepted' && (
+                                     <select 
+                                       onChange={(e) => {
+                                         const p = partners.find(part => part.id === e.target.value);
+                                         if(p) handleUpdateStatus(b._id, 'assigned', { assignedPartnerId: p.id, assignedPartnerName: p.name });
+                                       }}
+                                       className="bg-slate-900 text-white text-[10px] font-black uppercase px-6 py-3 rounded-xl border border-white/10"
+                                     >
+                                        <option>Dispatch Partner</option>
+                                        {partners.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                     </select>
+                                   )}
+                                   {status === 'report_uploaded' && (
+                                     <button onClick={() => handleUpdateStatus(b._id, 'completed')} className="px-8 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700">Verify & Release</button>
+                                   )}
+                                   <button className="p-3 bg-white/5 text-slate-500 rounded-xl hover:text-rose-500"><Settings2 className="w-5 h-5" /></button>
+                                </div>
+                             </div>
+                           ))}
+                        </div>
+                     </div>
+                   );
+                 })}
               </div>
             </div>
           </div>
         )}
 
-        {activeTab === 'Intelligence' && (
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="glass-dark p-10 rounded-[3rem]">
-                <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em] mb-6">Workflow Intelligence</p>
+        {activeTab === 'Partners' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4">
+             <div className="glass-dark p-12 rounded-[4rem]">
+                <h3 className="text-2xl font-black text-white mb-8">Register Partner</h3>
+                <form onSubmit={handleAddPartner} className="space-y-6">
+                   <div>
+                      <label className="text-[10px] font-black uppercase text-slate-500 mb-2 block">Partner Name</label>
+                      <input 
+                        className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white font-bold focus:border-rose-600 outline-none"
+                        value={newPartner.name}
+                        onChange={e => setNewPartner({...newPartner, name: e.target.value})}
+                      />
+                   </div>
+                   <button className="w-full bg-rose-600 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl">Establish Partnership</button>
+                </form>
+             </div>
+             <div className="glass-dark p-12 rounded-[4rem]">
+                <h3 className="text-2xl font-black text-white mb-8">Active Directory</h3>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center"><span className="text-white text-sm">Active Field Agents</span> <span className="text-rose-500 font-bold">3</span></div>
-                  <div className="flex justify-between items-center"><span className="text-white text-sm">Processing Specimens</span> <span className="text-amber-500 font-bold">{bookings.filter(b => ['assigned', 'reached', 'sample_collected'].includes(b.status)).length}</span></div>
-                  <div className="flex justify-between items-center"><span className="text-white text-sm">Total Throughput</span> <span className="text-emerald-500 font-bold">{bookings.length}</span></div>
+                   {partners.map(p => (
+                     <div key={p.id} className="flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/5">
+                        <div className="flex items-center gap-4">
+                           <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-rose-600"><UserCheck /></div>
+                           <div>
+                              <p className="text-white font-black">{p.name}</p>
+                              <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest">{p.role}</p>
+                           </div>
+                        </div>
+                        <button className="text-slate-600 hover:text-rose-600"><Trash2 className="w-5 h-5" /></button>
+                     </div>
+                   ))}
                 </div>
-              </div>
-           </div>
+             </div>
+          </div>
+        )}
+
+        {activeTab === 'Config' && (
+          <div className="animate-in fade-in slide-in-from-bottom-4">
+             <div className="glass-dark p-12 rounded-[4rem] max-w-2xl">
+                <h3 className="text-2xl font-black text-white mb-10">Clinical Guardrails</h3>
+                <div className="space-y-8">
+                   <div className="flex items-center justify-between p-8 bg-white/5 rounded-[2.5rem] border border-white/10">
+                      <div>
+                         <p className="text-white font-black text-lg">Pathologist Verification</p>
+                         <p className="text-xs text-slate-500 font-medium">Require manual verification of uploaded PDFs before patient visibility.</p>
+                      </div>
+                      <button 
+                        onClick={handleToggleConfig}
+                        className={`w-16 h-8 rounded-full transition-all relative ${config.requireVerification ? 'bg-rose-600' : 'bg-slate-700'}`}
+                      >
+                         <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${config.requireVerification ? 'left-9' : 'left-1'}`} />
+                      </button>
+                   </div>
+                </div>
+             </div>
+          </div>
         )}
       </main>
     </div>

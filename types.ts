@@ -1,4 +1,5 @@
 
+
 export enum UserRole {
   ADMIN = 'admin',
   PARTNER = 'partner',
@@ -6,11 +7,13 @@ export enum UserRole {
 }
 
 export enum BookingStatus {
-  PENDING = 'pending',
-  CONFIRMED = 'confirmed',
-  SAMPLE_COLLECTED = 'sample_collected',
-  REPORT_UPLOADED = 'report_uploaded',
-  COMPLETED = 'completed'
+  PENDING = 'pending',                // Booking created by patient
+  ACCEPTED = 'accepted',              // Admin accepted the booking
+  ASSIGNED = 'assigned',              // Admin assigned a partner
+  REACHED = 'reached',                // Partner reached patient location
+  SAMPLE_COLLECTED = 'sample_collected', // Partner collected sample
+  REPORT_UPLOADED = 'report_uploaded',   // Partner uploaded report
+  COMPLETED = 'completed'             // Admin verified and released
 }
 
 export enum CollectionType {
@@ -22,14 +25,9 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   role: UserRole;
   token?: string;
-}
-
-export interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
 }
 
 export interface Test {
@@ -43,18 +41,25 @@ export interface Test {
 }
 
 export interface Booking {
-  id: string;
-  patientId?: string;
+  _id: string;
+  id: string; // Added id property to unify mock and database representations
   patientName: string;
+  contactNumber?: string;
+  email?: string;
   tests: Test[];
   totalAmount: number;
-  discountApplied: number;
   collectionType: CollectionType;
   scheduledDate: string;
   status: BookingStatus;
   paymentStatus: 'paid' | 'unpaid';
-  paymentMode?: 'online' | 'cash';
+  paymentMode: 'online' | 'cash';
+  address?: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+  assignedPartnerId?: string;
+  assignedPartnerName?: string;
   reportFileUrl?: string;
-  assignedWorkerId?: string;
   createdAt: string;
 }

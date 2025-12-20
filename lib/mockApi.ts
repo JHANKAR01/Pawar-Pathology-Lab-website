@@ -1,4 +1,5 @@
 
+
 import { Booking, BookingStatus, User, UserRole } from '../types';
 
 const DB_KEYS = {
@@ -60,9 +61,13 @@ export const mockApi = {
 
   saveBooking: (booking: Partial<Booking>) => {
     const bookings = mockApi.getBookings();
+    const generatedId = 'PL-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+    
+    // Fix: Unify id and _id for mock and database compatibility
     const newBooking = {
       ...booking,
-      id: 'PL-' + Math.random().toString(36).substr(2, 6).toUpperCase(),
+      id: generatedId,
+      _id: generatedId,
       status: booking.status || BookingStatus.PENDING,
       paymentStatus: 'unpaid',
       createdAt: new Date().toISOString()
@@ -82,7 +87,8 @@ export const mockApi = {
 
     const bookings = mockApi.getBookings();
     const updated = bookings.map(b => {
-      if (b.id === id) {
+      // Fix: Check both id and _id for status updates
+      if (b.id === id || b._id === id) {
         // Verification Logic
         if (status === BookingStatus.REPORT_UPLOADED && !settings.requireVerification) {
           return { ...b, status: BookingStatus.COMPLETED };
@@ -92,6 +98,6 @@ export const mockApi = {
       return b;
     });
     localStorage.setItem(DB_KEYS.BOOKINGS, JSON.stringify(updated));
-    return updated.find(b => b.id === id);
+    return updated.find(b => b.id === id || b._id === id);
   }
 };

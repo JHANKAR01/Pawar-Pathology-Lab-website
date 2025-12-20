@@ -1,4 +1,5 @@
 
+
 import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { Canvas, useFrame, ThreeElements } from '@react-three/fiber';
 import { Float, Environment, Stars, ContactShadows, PresentationControls } from '@react-three/drei';
@@ -6,15 +7,9 @@ import * as THREE from 'three';
 
 // Enhanced type definitions for Three.js intrinsic elements to the global JSX namespace
 // This fixes errors like "Property 'mesh' does not exist on type 'JSX.IntrinsicElements'"
-// by augmenting both global and React-specific JSX namespaces.
 declare global {
   namespace JSX {
     interface IntrinsicElements extends ThreeElements {}
-  }
-  namespace React {
-    namespace JSX {
-      interface IntrinsicElements extends ThreeElements {}
-    }
   }
 }
 
