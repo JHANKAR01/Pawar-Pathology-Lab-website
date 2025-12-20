@@ -1,24 +1,15 @@
 
 import React, { useRef, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, ThreeElements } from '@react-three/fiber';
 import { Float, Environment, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 
-// Fix: Augment the global JSX namespace with an index signature. 
-// This prevents the manual Three.js element definitions from shadowing the standard HTML element types (div, h1, etc.) 
-// provided by React, resolving property existence errors across the entire application.
+// Fix: Augment the global JSX namespace with Three.js elements. 
+// Using ThreeElements from @react-three/fiber provides comprehensive typing for all Three.js elements
+// and resolves "Property does not exist on type 'JSX.IntrinsicElements'" errors.
 declare global {
   namespace JSX {
-    interface IntrinsicElements {
-      mesh: any;
-      group: any;
-      sphereGeometry: any;
-      meshStandardMaterial: any;
-      ambientLight: any;
-      spotLight: any;
-      pointLight: any;
-      [elemName: string]: any;
-    }
+    interface IntrinsicElements extends ThreeElements {}
   }
 }
 
