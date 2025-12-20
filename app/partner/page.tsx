@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { 
   CheckCircle, Upload, MapPin, Package, LogOut, Loader2, Navigation, ClipboardList, RefreshCw, Plus, X, Phone, DollarSign
 } from 'lucide-react';
-import { BookingStatus, CollectionType } from '@/types';
+import { BookingStatus } from '@/types';
 
 export default function PartnerPage() {
   const router = useRouter();
@@ -20,21 +20,25 @@ export default function PartnerPage() {
     email: '',
     testTitle: 'CBC - Hematology Profile',
     totalAmount: 350,
-    amountTaken: 0,
-    coupon: ''
+    amountTaken: 0
   });
 
   useEffect(() => { fetchBookings(); }, []);
 
   const fetchBookings = async () => {
     setLoading(true);
-    const res = await fetch('/api/bookings');
-    if (res.ok) {
-      const data = await res.json();
-      // Partners only see ASSIGNED records onwards
-      setTasks(data.filter((b: any) => 
-        ['assigned', 'reached', 'sample_collected', 'report_uploaded'].includes(b.status)
-      ));
+    try {
+      const res = await fetch('/api/bookings');
+      if (res.ok) {
+        const data = await res.json();
+        // Mock filter: In production, this would filter by the logged-in partner's ID
+        // For now, we show all assigned/active tasks suitable for field ops
+        setTasks(data.filter((b: any) => 
+          ['assigned', 'reached', 'sample_collected', 'report_uploaded'].includes(b.status)
+        ));
+      }
+    } catch (e) {
+      console.error(e);
     }
     setLoading(false);
   };
@@ -74,7 +78,8 @@ export default function PartnerPage() {
           scheduledDate: new Date().toISOString(),
           status: 'sample_collected', // Walk-ins usually have sample taken immediately
           paymentMode: 'cash',
-          paymentStatus: balance === 0 ? 'paid' : 'unpaid'
+          paymentStatus: balance === 0 ? 'paid' : 'unpaid',
+          bookedByEmail: 'partner-direct'
         })
       });
 

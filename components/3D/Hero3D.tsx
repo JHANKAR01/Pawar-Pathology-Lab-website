@@ -1,9 +1,9 @@
 import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { Canvas, useFrame, ThreeElements } from '@react-three/fiber';
-import { Float, Environment, Stars, ContactShadows, PresentationControls } from '@react-three/drei';
+import { Environment, Stars, PresentationControls } from '@react-three/drei';
 import * as THREE from 'three';
 
-// Global JSX augmentation to prevent Three.js intrinsic element errors
+// Global JSX augmentation
 declare global {
   namespace JSX {
     interface IntrinsicElements extends ThreeElements {
@@ -12,34 +12,76 @@ declare global {
   }
 }
 
-const Cell: React.FC<{ position: [number, number, number], speed?: number, type?: 'rbc' | 'wbc', scale?: number }> = ({ position, speed = 1, type = 'rbc', scale = 1 }) => {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const randomRotationAxis = useMemo(() => new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize(), []);
+const InstancedCells = ({ isMobile }: { isMobile: boolean }) => {
+  const rbcMesh = useRef<THREE.InstancedMesh>(null);
+  const wbcMesh = useRef<THREE.InstancedMesh>(null);
   
+  const count = isMobile ? 40 : 100;
+  
+  const data = useMemo(() => {
+    return Array.from({ length: count }, () => ({
+      position: new THREE.Vector3(
+        (Math.random() - 0.5) * 30,
+        (Math.random() - 0.5) * 20,
+        (Math.random() - 0.5) * 15 - 5
+      ),
+      rotation: new THREE.Euler(Math.random() * Math.PI, Math.random() * Math.PI, 0),
+      scale: 0.5 + Math.random() * 0.8,
+      speed: 0.2 + Math.random() * 0.5,
+      type: Math.random() > 0.85 ? 'wbc' : 'rbc'
+    }));
+  }, [count]);
+
   useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.rotateOnAxis(randomRotationAxis, 0.01 * speed);
-      meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 0.3 * speed + position[0]) * 0.4;
-    }
+    const time = state.clock.getElapsedTime();
+    let rbcIdx = 0;
+    let wbcIdx = 0;
+
+    const tempObj = new THREE.Object3D();
+
+    data.forEach((d) => {
+      tempObj.position.copy(d.position);
+      tempObj.position.y += Math.sin(time * d.speed + d.position.x) * 0.1;
+      tempObj.rotation.copy(d.rotation);
+      tempObj.rotation.x += time * 0.1 * d.speed;
+      tempObj.rotation.y += time * 0.1 * d.speed;
+      tempObj.scale.setScalar(d.scale);
+      tempObj.updateMatrix();
+
+      if (d.type === 'rbc' && rbcMesh.current) {
+        rbcMesh.current.setMatrixAt(rbcIdx++, tempObj.matrix);
+      } else if (d.type === 'wbc' && wbcMesh.current) {
+        wbcMesh.current.setMatrixAt(wbcIdx++, tempObj.matrix);
+      }
+    });
+
+    if (rbcMesh.current) rbcMesh.current.instanceMatrix.needsUpdate = true;
+    if (wbcMesh.current) wbcMesh.current.instanceMatrix.needsUpdate = true;
   });
 
   return (
-    <Float speed={2 * speed} rotationIntensity={1.5} floatIntensity={1.5}>
-      <mesh ref={meshRef} position={position} scale={scale}>
-        {type === 'rbc' ? (
-          <torusGeometry args={[0.3, 0.15, 12, 24]} />
-        ) : (
-          <sphereGeometry args={[0.25, 32, 32]} />
-        )}
+    <>
+      <instancedMesh ref={rbcMesh} args={[undefined, undefined, count]}>
+        <torusGeometry args={[0.3, 0.15, 12, 24]} />
         <meshStandardMaterial 
-          color={type === 'rbc' ? "#E11D48" : "#F8FAFC"} 
-          roughness={type === 'rbc' ? 0.2 : 0.4} 
-          metalness={type === 'rbc' ? 0.6 : 0.1} 
-          emissive={type === 'rbc' ? "#300000" : "#ffffff"} 
-          emissiveIntensity={type === 'rbc' ? 0.4 : 0.1}
+          color="#E11D48" 
+          roughness={0.2} 
+          metalness={0.6} 
+          emissive="#300000" 
+          emissiveIntensity={0.4}
         />
-      </mesh>
-    </Float>
+      </instancedMesh>
+      <instancedMesh ref={wbcMesh} args={[undefined, undefined, count]}>
+        <sphereGeometry args={[0.25, 16, 16]} />
+        <meshStandardMaterial 
+          color="#F8FAFC" 
+          roughness={0.4} 
+          metalness={0.1} 
+          emissive="#ffffff" 
+          emissiveIntensity={0.1}
+        />
+      </instancedMesh>
+    </>
   );
 };
 
@@ -59,9 +101,9 @@ const DNAHelix = () => {
     return { points };
   }, []);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (helixRef.current) {
-      helixRef.current.rotation.y += 0.005;
+      helixRef.current.rotation.y += 0.002;
     }
   });
 
@@ -70,12 +112,12 @@ const DNAHelix = () => {
       {helixData.points.map((d, i) => (
         <group key={`dna-group-${i}`}>
           <mesh position={[d.p1.x, d.p1.y, d.p1.z]}>
-            <sphereGeometry args={[0.1, 16, 16]} />
-            <meshStandardMaterial color="#E11D48" emissive="#E11D48" emissiveIntensity={1.2} />
+            <sphereGeometry args={[0.1, 8, 8]} />
+            <meshStandardMaterial color="#E11D48" emissive="#E11D48" emissiveIntensity={1} />
           </mesh>
           <mesh position={[d.p2.x, d.p2.y, d.p2.z]}>
-            <sphereGeometry args={[0.1, 16, 16]} />
-            <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.5} />
+            <sphereGeometry args={[0.1, 8, 8]} />
+            <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.4} />
           </mesh>
         </group>
       ))}
@@ -92,25 +134,6 @@ const Hero3D = () => {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
-  const cells = useMemo(() => {
-    const data = [];
-    const count = isMobile ? 35 : 70;
-    for (let i = 0; i < count; i++) {
-      data.push({
-        id: i,
-        position: [
-          (Math.random() - 0.5) * 24,
-          (Math.random() - 0.5) * 15,
-          (Math.random() - 0.5) * 12 - 5
-        ] as [number, number, number],
-        speed: 0.3 + Math.random() * 0.7,
-        type: (Math.random() > 0.85 ? 'wbc' : 'rbc') as 'rbc' | 'wbc',
-        scale: 0.5 + Math.random() * 0.9
-      });
-    }
-    return data;
-  }, [isMobile]);
 
   return (
     <div className="relative h-[90vh] md:h-screen w-full overflow-hidden bg-[#050505]">
@@ -149,18 +172,16 @@ const Hero3D = () => {
       <div className="absolute inset-0 z-10">
         <Canvas 
           camera={{ position: [0, 0, 12], fov: isMobile ? 55 : 40 }} 
-          gl={{ alpha: true, antialias: true }}
-          dpr={[1, 2]}
+          gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
+          dpr={[1, 1.5]} // Capped DPR for performance
         >
           <PresentationControls global rotation={[0, 0, 0]} polar={[-0.1, 0.1]} azimuth={[-0.1, 0.1]}>
             <group>
               <DNAHelix />
-              {cells.map(cell => (
-                <Cell key={cell.id} position={cell.position} speed={cell.speed} type={cell.type} scale={cell.scale} />
-              ))}
+              <InstancedCells isMobile={isMobile} />
             </group>
           </PresentationControls>
-          <Stars radius={70} count={4000} factor={5} fade speed={2} />
+          <Stars radius={70} count={isMobile ? 1000 : 3000} factor={5} fade speed={2} />
           <ambientLight intensity={0.6} />
           <spotLight position={[10, 20, 10]} intensity={5} color="#E11D48" />
           <Environment preset="night" />

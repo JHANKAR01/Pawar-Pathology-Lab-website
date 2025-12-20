@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Check, Calendar, CreditCard, User, CheckCircle, MapPin, Loader2, Navigation, Ticket, UserPlus, X, AlertTriangle } from 'lucide-react';
+import { Check, Calendar, CreditCard, User, CheckCircle, MapPin, Loader2, Navigation, Ticket, UserPlus, X, AlertTriangle, DollarSign } from 'lucide-react';
 import { Test, CollectionType } from '../types';
 import { mockApi } from '../lib/mockApi';
 
@@ -12,10 +12,11 @@ interface BookingWizardProps {
 const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete, onCancel }) => {
   const [step, setStep] = useState(1);
   const [isBookingForSelf, setIsBookingForSelf] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState<'online' | 'cash'>('online');
+  const [paymentMethod, setPaymentMethod] = useState<'online' | 'cash'>('cash');
   const [isCapturingLocation, setIsCapturingLocation] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const [discount, setDiscount] = useState(0);
+  const [amountTaken, setAmountTaken] = useState(0); // For partial payments
   const [error, setError] = useState('');
 
   const [formData, setFormData] = useState({
@@ -29,11 +30,11 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     coordinates: null as { lat: number; lng: number } | null
   });
 
-  // Fix: Memoize currentUser so the object reference doesn't change on every render
   const currentUser = useMemo(() => mockApi.getCurrentUser(), []);
 
+  // Fix: Only run pre-fill logic on initial mount or when specifically toggling self-booking ON.
+  // This prevents overwriting user input while they type if 'isBookingForSelf' is false.
   useEffect(() => {
-    // Only pre-fill if switching TO self-booking
     if (isBookingForSelf && currentUser) {
       setFormData(prev => ({
         ...prev,
@@ -43,13 +44,13 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
       }));
     } else if (!isBookingForSelf) {
       // Clear data only when explicitly switching to "someone else"
-      // This prevents the "typing wipe" because isBookingForSelf is static during typing
       setFormData(prev => ({ ...prev, name: '', email: '', phone: '' }));
     }
-  }, [isBookingForSelf, currentUser]);
+  }, [isBookingForSelf]);
 
   const baseTotal = selectedTests.reduce((acc, t) => acc + t.price, 0);
   const finalTotal = Math.max(0, baseTotal - discount);
+  const balanceAmount = Math.max(0, finalTotal - amountTaken);
 
   const applyPromo = () => {
     if (promoCode.toUpperCase() === 'SAVE10') {
@@ -112,8 +113,9 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
       ...formData, 
       paymentMethod, 
       totalAmount: finalTotal,
-      amountTaken: paymentMethod === 'online' ? finalTotal : 0,
-      balanceAmount: paymentMethod === 'online' ? 0 : finalTotal
+      amountTaken: amountTaken,
+      balanceAmount: balanceAmount,
+      paymentStatus: balanceAmount === 0 ? 'paid' : 'partial'
     });
   };
 
@@ -174,7 +176,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                     value={formData.name} 
                     onChange={e => setFormData({...formData, name: e.target.value})} 
                     placeholder="Full name" 
-                    disabled={isBookingForSelf}
+                    readOnly={isBookingForSelf} // Read-only if self, ensuring typing bug doesn't occur
                   />
                 </div>
                 <div>
@@ -187,7 +189,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                       maxLength={10} 
                       onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} 
                       placeholder="10 digits" 
-                      disabled={isBookingForSelf}
+                      readOnly={isBookingForSelf}
                     />
                   </div>
                 </div>
@@ -250,7 +252,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                  {discount > 0 && <p className="text-xs font-bold text-emerald-400 mt-2 uppercase">Promo Applied (-₹{discount})</p>}
               </div>
 
-              <div className="flex gap-4 p-4 bg-slate-50 rounded-2xl">
+              <div className="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                 <Ticket className="text-rose-600" />
                 <input 
                   placeholder="Coupon Code" 
@@ -261,14 +263,34 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                 <button onClick={applyPromo} className="text-rose-600 font-black text-xs uppercase hover:text-rose-800">Apply</button>
               </div>
 
+              <div className="p-6 bg-slate-50 rounded-2xl text-left space-y-4">
+                 <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Amount Paid Now (Cash/Partial)</label>
+                    <div className="relative">
+                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                        <input 
+                            type="number" 
+                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 font-bold"
+                            value={amountTaken}
+                            onChange={(e) => setAmountTaken(Number(e.target.value))}
+                            max={finalTotal}
+                        />
+                    </div>
+                 </div>
+                 <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                    <span className="font-bold text-sm text-slate-500">Balance Due:</span>
+                    <span className="font-black text-rose-600 text-lg">₹{balanceAmount}</span>
+                 </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-6">
-                 <button onClick={() => setPaymentMethod('online')} className={`p-8 rounded-[2.5rem] border-2 transition-all ${paymentMethod === 'online' ? 'border-rose-600 bg-rose-50 shadow-xl' : 'border-slate-50'}`}>
-                    <p className="font-black text-slate-900 uppercase text-xs">Secure Online</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">UPI / Cards</p>
+                 <button onClick={() => setPaymentMethod('online')} className={`p-6 rounded-[2rem] border-2 transition-all ${paymentMethod === 'online' ? 'border-rose-600 bg-rose-50 shadow-xl' : 'border-slate-50'}`}>
+                    <p className="font-black text-slate-900 uppercase text-xs">Online</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">UPI / Card</p>
                  </button>
-                 <button onClick={() => setPaymentMethod('cash')} className={`p-8 rounded-[2.5rem] border-2 transition-all ${paymentMethod === 'cash' ? 'border-rose-600 bg-rose-50 shadow-xl' : 'border-slate-50'}`}>
-                    <p className="font-black text-slate-900 uppercase text-xs">Pay Later</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Cash at Site</p>
+                 <button onClick={() => setPaymentMethod('cash')} className={`p-6 rounded-[2rem] border-2 transition-all ${paymentMethod === 'cash' ? 'border-rose-600 bg-rose-50 shadow-xl' : 'border-slate-50'}`}>
+                    <p className="font-black text-slate-900 uppercase text-xs">Cash</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Pay at Lab</p>
                  </button>
               </div>
             </div>
@@ -280,7 +302,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
           {step < 4 ? (
             <button onClick={nextStep} className="bg-slate-900 text-white px-12 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-rose-600 transition-all">Continue</button>
           ) : (
-            <button onClick={handleSubmit} className="bg-rose-600 text-white px-16 py-6 rounded-2xl font-black text-[11px] uppercase tracking-[0.4em] shadow-xl hover:bg-rose-700 transition-all">Finalize Booking</button>
+            <button onClick={handleSubmit} className="bg-rose-600 text-white px-16 py-6 rounded-2xl font-black text-[11px] uppercase tracking-[0.4em] shadow-xl hover:bg-rose-700 transition-all">Confirm Booking</button>
           )}
         </div>
       </div>

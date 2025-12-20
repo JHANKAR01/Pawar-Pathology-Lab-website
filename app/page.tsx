@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -46,7 +45,8 @@ export default function Home() {
         body: JSON.stringify({
           ...formData,
           tests: selectedTests,
-          status: 'pending'
+          status: 'pending',
+          bookedByEmail: currentUser?.email || 'guest'
         }),
       });
 
@@ -68,6 +68,7 @@ export default function Home() {
       return;
     }
     if (selectedTests.find(t => t.id === test.id)) {
+      // Logic for deselecting if needed, but UI now disables button
       setSelectedTests(prev => prev.filter(t => t.id !== test.id));
     } else {
       setSelectedTests(prev => [...prev, test]);
@@ -92,17 +93,13 @@ export default function Home() {
 
           <div className="hidden lg:flex gap-14">
             {['Directory', 'Services', 'Network', 'Support'].map(item => (
-              <button 
+              <a 
                 key={item} 
-                onClick={() => {
-                   const id = item.toLowerCase();
-                   const el = document.getElementById(id);
-                   el?.scrollIntoView({ behavior: 'smooth' });
-                }}
+                href={`#${item.toLowerCase()}`}
                 className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-400 hover:text-rose-600 transition-all"
               >
                 {item}
-              </button>
+              </a>
             ))}
           </div>
 

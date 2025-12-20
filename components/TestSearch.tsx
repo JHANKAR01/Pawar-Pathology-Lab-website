@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { Search, Zap, ChevronRight, Clock, ShieldCheck, FlaskConical } from 'lucide-react';
+import { Search, Zap, ChevronRight, Clock, ShieldCheck, FlaskConical, CheckCircle } from 'lucide-react';
 import { Test } from '../types';
 import { CATEGORIES } from '../constants';
 
 interface TestSearchProps {
   tests: Test[];
   onSelect: (test: Test) => void;
-  // Fix: Added selectedIds to the props interface to resolve type mismatch in app/page.tsx
   selectedIds?: string[];
 }
 
-const TestSearch: React.FC<TestSearchProps> = ({ tests, onSelect, selectedIds }) => {
+const TestSearch: React.FC<TestSearchProps> = ({ tests, onSelect, selectedIds = [] }) => {
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
 
@@ -75,9 +74,9 @@ const TestSearch: React.FC<TestSearchProps> = ({ tests, onSelect, selectedIds })
           </div>
         ) : (
           filteredTests.map(test => {
-            const isSelected = selectedIds?.includes(test.id);
+            const isSelected = selectedIds.includes(test.id);
             return (
-              <div key={test.id} className={`group bg-white p-8 md:p-12 rounded-[2.5rem] md:rounded-[4rem] shadow-sm hover:shadow-2xl hover:-translate-y-2 md:hover:-translate-y-3 transition-all duration-500 border border-slate-50 relative overflow-hidden ${isSelected ? 'ring-2 ring-rose-500' : ''}`}>
+              <div key={test.id} className={`group bg-white p-8 md:p-12 rounded-[2.5rem] md:rounded-[4rem] shadow-sm hover:shadow-2xl hover:-translate-y-2 md:hover:-translate-y-3 transition-all duration-500 border border-slate-50 relative overflow-hidden ${isSelected ? 'ring-2 ring-emerald-500' : ''}`}>
                 <div className="absolute top-0 right-0 w-40 h-40 md:w-48 md:h-48 bg-rose-50 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-1000 opacity-40 pointer-events-none" />
                 
                 <div className="flex justify-between items-start mb-10 md:mb-14 relative z-10">
@@ -108,9 +107,14 @@ const TestSearch: React.FC<TestSearchProps> = ({ tests, onSelect, selectedIds })
 
                 <button 
                   onClick={() => onSelect(test)}
-                  className={`w-full py-4 md:py-6 rounded-[1.5rem] md:rounded-[2.2rem] font-black uppercase text-[9px] md:text-[10px] tracking-[0.3em] md:tracking-[0.4em] flex items-center justify-center gap-3 md:gap-4 transition-all active:scale-95 shadow-lg md:shadow-xl ${isSelected ? 'bg-rose-600 text-white' : 'bg-slate-900 text-white hover:bg-rose-600 shadow-slate-100 hover:shadow-rose-200'}`}
+                  disabled={isSelected}
+                  className={`w-full py-4 md:py-6 rounded-[1.5rem] md:rounded-[2.2rem] font-black uppercase text-[9px] md:text-[10px] tracking-[0.3em] md:tracking-[0.4em] flex items-center justify-center gap-3 md:gap-4 transition-all active:scale-95 shadow-lg md:shadow-xl ${isSelected ? 'bg-emerald-50 text-emerald-600 cursor-default shadow-none' : 'bg-slate-900 text-white hover:bg-rose-600 shadow-slate-100 hover:shadow-rose-200'}`}
                 >
-                  {isSelected ? 'Remove from Schedule' : 'Schedule Analysis'} <ChevronRight className="w-4 h-4" />
+                  {isSelected ? (
+                    <><CheckCircle className="w-4 h-4" /> Added to Cart</>
+                  ) : (
+                    <>Schedule Analysis <ChevronRight className="w-4 h-4" /></>
+                  )}
                 </button>
               </div>
             );

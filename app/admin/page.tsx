@@ -1,11 +1,10 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  LayoutDashboard, FileText, HeartHandshake, Settings as SettingsIcon, 
-  Search, ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Check, FlaskConical, AlertCircle, Settings2
+  LayoutDashboard, HeartHandshake, Settings as SettingsIcon, 
+  ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, FlaskConical, Settings2
 } from 'lucide-react';
 
 interface BookingType {
@@ -76,15 +75,18 @@ export default function AdminPage() {
   const handleToggleConfig = async () => {
     const newConfig = { ...config, requireVerification: !config.requireVerification };
     setConfig(newConfig);
-    await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newConfig)
-    });
+    try {
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newConfig)
+      });
+    } catch (e) { console.error("Config save failed", e); }
   };
 
   const handleAddPartner = (e: React.FormEvent) => {
     e.preventDefault();
+    // In production, post to /api/partners
     const p = { id: 'p' + (partners.length + 1), ...newPartner, activeTasks: 0 };
     setPartners([...partners, p]);
     setNewPartner({ name: '', role: 'Field Phlebotomist' });
@@ -164,13 +166,13 @@ export default function AdminPage() {
                 <div key={b._id} className="glass-dark p-8 rounded-[2.5rem] border border-white/5 flex flex-col md:flex-row justify-between gap-8 items-center">
                    <div>
                       <h3 className="text-xl font-black text-white">{b.patientName}</h3>
-                      <p className="text-slate-500 text-xs font-bold uppercase mt-1">{b.tests[0].title} • {b.status.replace('_', ' ')}</p>
+                      <p className="text-slate-500 text-xs font-bold uppercase mt-1">{b.tests?.[0]?.title || "Unknown Test"} • {b.status.replace('_', ' ')}</p>
                    </div>
                    <div className="flex gap-4">
                       {b.status === 'pending' && (
                         <button 
                           onClick={() => handleUpdateStatus(b._id, 'accepted')}
-                          className="px-8 py-3 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest"
+                          className="px-8 py-3 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-700"
                         >
                           Approve
                         </button>
@@ -227,7 +229,7 @@ export default function AdminPage() {
                          <option>Pathologist</option>
                       </select>
                    </div>
-                   <button className="w-full bg-rose-600 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest">Onboard Partner</button>
+                   <button className="w-full bg-rose-600 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-rose-700">Onboard Partner</button>
                 </form>
              </div>
              <div className="glass-dark p-12 rounded-[4rem]">

@@ -1,4 +1,3 @@
-
 import mongoose, { Schema, Document, models, model } from 'mongoose';
 
 export enum BookingStatus {
@@ -18,7 +17,8 @@ export enum CollectionType {
 
 export enum PaymentStatus {
   PAID = 'paid',
-  UNPAID = 'unpaid'
+  UNPAID = 'unpaid',
+  PARTIAL = 'partial'
 }
 
 interface IBookingTest {
@@ -32,6 +32,7 @@ export interface IBooking extends Document {
   patientName: string;
   contactNumber?: string;
   email?: string;
+  bookedByEmail?: string; // Track who created the booking
   tests: IBookingTest[];
   totalAmount: number;
   amountTaken: number;
@@ -58,6 +59,7 @@ const BookingSchema = new Schema<IBooking>(
     patientName: { type: String, required: true, trim: true, index: true },
     contactNumber: { type: String, trim: true },
     email: { type: String, trim: true, lowercase: true },
+    bookedByEmail: { type: String, trim: true, lowercase: true, index: true }, 
     tests: [{
       _id: false,
       id: String,
