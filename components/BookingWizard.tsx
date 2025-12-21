@@ -197,7 +197,6 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                     value={formData.name} 
                     onChange={e => setFormData({...formData, name: e.target.value})} 
                     placeholder="Full name" 
-                    readOnly={isBookingForSelf}
                   />
                 </div>
                 <div>
@@ -210,7 +209,6 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                       maxLength={10} 
                       onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} 
                       placeholder="10 digits" 
-                      readOnly={isBookingForSelf}
                     />
                   </div>
                 </div>

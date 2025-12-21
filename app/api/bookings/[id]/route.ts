@@ -52,7 +52,7 @@ export async function PATCH(
 
       const updatedBooking = await Booking.findByIdAndUpdate(
         id,
-        { status: status || BookingStatus.REPORT_UPLOADED, reportFileUrl: reportUrl },
+        { status: status || 'report_uploaded', reportFileUrl: reportUrl },
         { new: true }
       );
 
@@ -73,7 +73,7 @@ export async function PATCH(
       if (!updatedBooking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
       // Logic for Notifications on Verification
-      if (updatedBooking.status === BookingStatus.COMPLETED && oldBooking.status !== BookingStatus.COMPLETED) {
+      if (updatedBooking.status === 'completed' && oldBooking.status !== 'completed') {
         const message = `Pawar Lab: Hello ${updatedBooking.patientName}, your report for ${updatedBooking.tests[0].title} has been verified. You can download it now from your patient portal.`;
         
         if (updatedBooking.email) {
