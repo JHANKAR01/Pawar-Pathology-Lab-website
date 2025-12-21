@@ -1,6 +1,8 @@
 // This file is intended for server-side use with Node.js. 
 // It has been disabled for the frontend bundle to prevent "mongoose not found" crashes in the browser.
-export const User = {};
-export const Test = {};
-export const Booking = {};
-export const Settings = {};
+import User from './User';
+import Test from './Test';
+import Booking from './Booking';
+import Settings from './Settings';
+
+export { User, Test, Booking, Settings };

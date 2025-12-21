@@ -23,6 +23,7 @@ export enum CollectionType {
 export interface User {
   id: string;
   name: string;
+  username: string;
   email: string;
   phone?: string;
   role: UserRole;
@@ -46,6 +47,7 @@ export interface IBooking {
   contactNumber?: string;
   email?: string;
   bookedByEmail?: string;
+  userId: string; // Should be a string representation of ObjectId
   tests: Test[];
   totalAmount: number;
   amountTaken: number;
@@ -60,6 +62,7 @@ export interface IBooking {
     lat: number;
     lng: number;
   };
+  referredBy?: string;
   assignedPartnerId?: string;
   assignedPartnerName?: string;
   reportFileUrl?: string;

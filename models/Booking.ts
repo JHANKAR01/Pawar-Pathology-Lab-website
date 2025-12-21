@@ -33,6 +33,7 @@ export interface IBooking extends Document {
   contactNumber?: string;
   email?: string;
   bookedByEmail?: string; // Track who created the booking
+  userId: mongoose.Schema.Types.ObjectId; // Foreign Key to User
   tests: IBookingTest[];
   totalAmount: number;
   amountTaken: number;
@@ -48,6 +49,7 @@ export interface IBooking extends Document {
   paymentMode: 'online' | 'cash';
   paymentStatus: PaymentStatus;
   reportFileUrl?: string; 
+  referredBy?: string; // New field for referral source
   assignedPartnerId?: string;
   assignedPartnerName?: string;
   createdAt: Date;
@@ -59,7 +61,8 @@ const BookingSchema = new Schema<IBooking>(
     patientName: { type: String, required: true, trim: true, index: true },
     contactNumber: { type: String, trim: true },
     email: { type: String, trim: true, lowercase: true },
-    bookedByEmail: { type: String, trim: true, lowercase: true, index: true }, 
+    bookedByEmail: { type: String, trim: true, lowercase: true, index: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     tests: [{
       _id: false,
       id: String,
@@ -91,6 +94,7 @@ const BookingSchema = new Schema<IBooking>(
     paymentMode: { type: String, enum: ['online', 'cash'], default: 'cash' },
     paymentStatus: { type: String, enum: Object.values(PaymentStatus), default: PaymentStatus.UNPAID },
     reportFileUrl: { type: String },
+    referredBy: { type: String, default: 'Self' },
     assignedPartnerId: { type: String },
     assignedPartnerName: { type: String }
   },

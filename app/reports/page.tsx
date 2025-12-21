@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { mockApi } from '@/lib/mockApi';
-import { BookingStatus, IBooking } from '@/models/Booking';
+import { BookingStatus, IBooking } from '@/types';
 import { 
   FlaskConical, LogOut, CheckCircle, Loader2, 
   FileText, CalendarDays, ShieldX, ChevronDown
