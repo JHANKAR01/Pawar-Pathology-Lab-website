@@ -11,7 +11,8 @@ export enum BookingStatus {
   REACHED = 'reached',
   SAMPLE_COLLECTED = 'sample_collected',
   REPORT_UPLOADED = 'report_uploaded',
-  COMPLETED = 'completed'
+  COMPLETED = 'completed',
+  DECLINED = 'declined'
 }
 
 export enum CollectionType {

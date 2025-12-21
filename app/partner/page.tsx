@@ -39,7 +39,7 @@ export default function PartnerPage() {
         const data = await res.json();
         // For the demo, we show tasks assigned or in progress
         setTasks(data.filter((b: any) => 
-          ['assigned', 'reached', 'sample_collected', 'report_uploaded'].includes(b.status)
+          ['assigned', 'reached', 'sample_collected', 'report_uploaded', 'completed'].includes(b.status)
         ));
       }
     } catch (e) {

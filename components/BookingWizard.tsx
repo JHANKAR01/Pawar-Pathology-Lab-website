@@ -119,14 +119,19 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
 
   const handleSubmit = () => {
     let finalPaymentStatus;
-    let finalBalanceAmount;
+    const finalBalanceAmount = finalTotal - amountTaken;
 
-    if (paymentMethod === 'cash') {
-      finalBalanceAmount = finalTotal - amountTaken;
-      finalPaymentStatus = finalBalanceAmount > 0 ? 'partial' : 'unpaid'; // Mark as unpaid if no amount taken
-    } else {
+    if (paymentMethod === 'online') {
       finalPaymentStatus = 'paid';
-      finalBalanceAmount = 0;
+    } else {
+      // Corrected Cash Logic
+      if (amountTaken === 0) {
+        finalPaymentStatus = 'unpaid';
+      } else if (finalBalanceAmount > 0) {
+        finalPaymentStatus = 'partial';
+      } else {
+        finalPaymentStatus = 'paid';
+      }
     }
 
     onComplete({ 

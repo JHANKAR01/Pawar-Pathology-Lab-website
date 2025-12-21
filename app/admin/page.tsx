@@ -222,14 +222,22 @@ export default function AdminPage() {
                        <span key={t.id} className="px-3 py-1 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white">{t.title}</span>
                      ))}
                    </div>
-                   <div className="flex gap-4 items-center">
+                   <div className="flex gap-4 items-center mt-4">
                       {b.status === 'pending' && (
-                        <button 
-                          onClick={() => handleUpdateStatus(b._id, 'accepted')}
-                          className="px-8 py-3 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-700"
-                        >
-                          Approve
-                        </button>
+                        <>
+                          <button 
+                            onClick={() => handleUpdateStatus(b._id, 'accepted')}
+                            className="px-8 py-3 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-700"
+                          >
+                            Approve
+                          </button>
+                          <button 
+                            onClick={() => handleUpdateStatus(b._id, 'declined')}
+                            className="px-8 py-3 bg-red-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700"
+                          >
+                            Decline
+                          </button>
+                        </>
                       )}
                       {b.status === 'accepted' && (
                          <div className="flex gap-2">
@@ -252,7 +260,16 @@ export default function AdminPage() {
                           Verify & Release
                         </button>
                       )}
+                      {b.contactNumber && (
+                        <a href={`tel:${b.contactNumber}`} className="px-4 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700">Call</a>
+                      )}
+                      {b.email && (
+                        <a href={`mailto:${b.email}`} className="px-4 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700">Email</a>
+                      )}
                    </div>
+                   {b.assignedPartnerName && (
+                       <p className="text-slate-400 text-xs font-bold uppercase mt-2">Assigned to: {b.assignedPartnerName}</p>
+                   )}
                 </div>
              ))}
           </div>
@@ -269,6 +286,7 @@ export default function AdminPage() {
                   <th className="p-4">Total</th>
                   <th className="p-4">Balance</th>
                   <th className="p-4">Status</th>
+                  <th className="p-4">Assigned To</th>
                 </tr>
               </thead>
               <tbody>
@@ -282,6 +300,7 @@ export default function AdminPage() {
                     <td className="p-4">
                       <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-500">{b.status}</span>
                     </td>
+                    <td className="p-4 text-slate-400">{b.assignedPartnerName || 'N/A'}</td>
                   </tr>
                 ))}
               </tbody>
