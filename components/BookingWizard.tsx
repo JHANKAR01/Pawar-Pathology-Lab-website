@@ -27,7 +27,8 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     collectionType: CollectionType.LAB_VISIT,
     date: '',
     time: '',
-    coordinates: null as { lat: number; lng: number } | null
+    coordinates: null as { lat: number; lng: number } | null,
+    referredBy: 'Self'
   });
 
   const currentUser = useMemo(() => mockApi.getCurrentUser(), []);
@@ -149,7 +150,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
             <div className="space-y-6">
               <h3 className="font-black text-lg mb-6 tracking-tight text-slate-900 uppercase">Review Selected Tests</h3>
               {selectedTests.map(t => (
-                <div key={t.id} className="flex justify-between items-center p-6 bg-slate-50 rounded-[1.5rem] border border-slate-100">
+                <div key={t._id} className="flex justify-between items-center p-6 bg-slate-50 rounded-[1.5rem] border border-slate-100">
                   <span className="font-bold text-slate-700">{t.title}</span>
                   <span className="font-black text-rose-600">₹{t.price}</span>
                 </div>
@@ -213,6 +214,16 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                     readOnly={isBookingForSelf}
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 ml-2">Referred By</label>
+                <input 
+                  className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-rose-600 focus:bg-white rounded-2xl outline-none transition-all font-bold" 
+                  value={formData.referredBy} 
+                  onChange={e => setFormData({...formData, referredBy: e.target.value})} 
+                  placeholder="e.g., Dr. Smith or Self"
+                />
               </div>
             </div>
           )}

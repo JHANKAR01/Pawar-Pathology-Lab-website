@@ -10,21 +10,18 @@ interface LoginPageProps {
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = async (e?: React.FormEvent, customId?: string) => {
+  const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    const loginId = customId || email;
-    const loginPass = customId || password;
-
     try {
-      const user = await mockApi.login(loginId, loginPass);
+      const user = await mockApi.login(username, password);
       onLoginSuccess(user);
     } catch (err: any) {
       setError(err.message);
@@ -32,12 +29,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
       setIsLoading(false);
     }
   };
-
-  const quickLogins = [
-    { id: 'admin', label: 'Admin', icon: ShieldCheck, desc: 'Full Access' },
-    { id: 'partner', label: 'Partner', icon: HeartHandshake, desc: 'Global Mgmt' },
-    { id: 'patient', label: 'User', icon: UserIcon, desc: 'Booking' }, // Changed id from 'user' to 'patient'
-  ];
 
   return (
     <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6 relative overflow-hidden font-sans">
@@ -88,25 +79,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
         <div className="lg:w-1/2 p-12 md:p-16 flex flex-col justify-center">
           <div className="mb-12">
             <h2 className="text-2xl font-black text-white mb-2">Portal Access</h2>
-            <p className="text-gray-500 text-sm font-medium">Select a quick role or enter credentials</p>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 mb-12">
-            {quickLogins.map(role => (
-              <button
-                key={role.id}
-                onClick={() => handleLogin(undefined, role.id)}
-                className="group flex flex-col items-center gap-3 p-5 rounded-3xl bg-white/5 border border-white/5 hover:border-red-500/50 transition-all text-center"
-              >
-                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-red-500 group-hover:bg-red-500/10 transition-all">
-                  <role.icon className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-white font-black text-[10px] uppercase tracking-widest">{role.label}</p>
-                  <p className="text-[9px] text-gray-500 font-bold mt-1 uppercase tracking-tighter">{role.desc}</p>
-                </div>
-              </button>
-            ))}
+            <p className="text-gray-500 text-sm font-medium">Enter your credentials to continue</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
@@ -123,10 +96,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
                 <input 
                   type="text" 
                   required
-                  placeholder="User ID / Identity"
+                  placeholder="Username"
                   className="w-full pl-16 pr-6 py-5 bg-white/5 border border-white/5 rounded-2xl focus:ring-2 focus:ring-red-500 focus:bg-white/10 outline-none transition-all font-bold text-white text-sm"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
                 />
               </div>
 
@@ -135,7 +108,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
                 <input 
                   type="password" 
                   required
-                  placeholder="Security Code"
+                  placeholder="Password"
                   className="w-full pl-16 pr-6 py-5 bg-white/5 border border-white/5 rounded-2xl focus:ring-2 focus:ring-red-500 focus:bg-white/10 outline-none transition-all font-bold text-white text-sm"
                   value={password}
                   onChange={e => setPassword(e.target.value)}

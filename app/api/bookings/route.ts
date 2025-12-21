@@ -9,8 +9,14 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
+    const userId = searchParams.get('userId');
 
-    const filter = email ? { bookedByEmail: email } : {};
+    let filter = {};
+    if (userId) {
+      filter = { userId: userId };
+    } else if (email) {
+      filter = { bookedByEmail: email };
+    }
 
     const bookings = await Booking.find(filter).sort({ createdAt: -1 });
     return NextResponse.json(bookings);
@@ -25,7 +31,11 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    // Basic validation could go here
+    // Calculate balance amount
+    const totalAmount = body.totalAmount || 0;
+    const amountTaken = body.amountTaken || 0;
+    body.balanceAmount = totalAmount - amountTaken;
+
     const booking = await Booking.create(body);
     
     return NextResponse.json(booking, { status: 201 });

@@ -1,68 +1,13 @@
 import mongoose, { Schema, Document, models, model } from 'mongoose';
+import { BookingStatus, CollectionType, PaymentStatus, IBooking, IBookingTest } from '@/types';
 
-export enum BookingStatus {
-  PENDING = 'pending',
-  ACCEPTED = 'accepted',
-  ASSIGNED = 'assigned',
-  REACHED = 'reached',
-  SAMPLE_COLLECTED = 'sample_collected',
-  REPORT_UPLOADED = 'report_uploaded',
-  COMPLETED = 'completed'
-}
-
-export enum CollectionType {
-  HOME = 'home',
-  LAB_VISIT = 'lab_visit'
-}
-
-export enum PaymentStatus {
-  PAID = 'paid',
-  UNPAID = 'unpaid',
-  PARTIAL = 'partial'
-}
-
-interface IBookingTest {
-  id: string;
-  title: string;
-  price: number;
-  category: string;
-}
-
-export interface IBooking extends Document {
-  patientName: string;
-  contactNumber?: string;
-  email?: string;
-  bookedByEmail?: string; // Track who created the booking
-  userId: mongoose.Schema.Types.ObjectId; // Foreign Key to User
-  tests: IBookingTest[];
-  totalAmount: number;
-  amountTaken: number;
-  balanceAmount: number;
-  collectionType: CollectionType;
-  address?: string; 
-  coordinates?: {
-    lat: number;
-    lng: number;
-  };
-  scheduledDate: Date;
-  status: BookingStatus;
-  paymentMode: 'online' | 'cash';
-  paymentStatus: PaymentStatus;
-  reportFileUrl?: string; 
-  referredBy?: string; // New field for referral source
-  assignedPartnerId?: string;
-  assignedPartnerName?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-const BookingSchema = new Schema<IBooking>(
+const BookingSchema = new Schema<IBooking & Document>(
   {
     patientName: { type: String, required: true, trim: true, index: true },
     contactNumber: { type: String, trim: true },
     email: { type: String, trim: true, lowercase: true },
     bookedByEmail: { type: String, trim: true, lowercase: true, index: true },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     tests: [{
       _id: false,
       id: String,
@@ -101,5 +46,5 @@ const BookingSchema = new Schema<IBooking>(
   { timestamps: true }
 );
 
-const Booking = models.Booking || model<IBooking>('Booking', BookingSchema);
+const Booking = models.Booking || model<IBooking & Document>('Booking', BookingSchema);
 export default Booking;

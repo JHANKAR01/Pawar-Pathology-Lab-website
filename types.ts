@@ -1,4 +1,3 @@
-
 export enum UserRole {
   ADMIN = 'admin',
   PARTNER = 'partner',
@@ -6,13 +5,13 @@ export enum UserRole {
 }
 
 export enum BookingStatus {
-  PENDING = 'pending',                // Booking created by patient
-  ACCEPTED = 'accepted',              // Admin accepted the booking
-  ASSIGNED = 'assigned',              // Admin assigned a partner
-  REACHED = 'reached',                // Partner reached patient location
-  SAMPLE_COLLECTED = 'sample_collected', // Partner collected sample
-  REPORT_UPLOADED = 'report_uploaded',   // Partner uploaded report
-  COMPLETED = 'completed'             // Admin verified and released
+  PENDING = 'pending',
+  ACCEPTED = 'accepted',
+  ASSIGNED = 'assigned',
+  REACHED = 'reached',
+  SAMPLE_COLLECTED = 'sample_collected',
+  REPORT_UPLOADED = 'report_uploaded',
+  COMPLETED = 'completed'
 }
 
 export enum CollectionType {
@@ -20,7 +19,14 @@ export enum CollectionType {
   LAB_VISIT = 'lab_visit'
 }
 
+export enum PaymentStatus {
+  PAID = 'paid',
+  UNPAID = 'unpaid',
+  PARTIAL = 'partial'
+}
+
 export interface User {
+  _id: string;
   id: string;
   name: string;
   username: string;
@@ -31,13 +37,20 @@ export interface User {
 }
 
 export interface Test {
+  _id: string;
   id: string;
   title: string;
-  category: string;
   price: number;
+  category: string;
+  testCode: string;
   description: string;
-  isHomeCollectionAvailable: boolean;
-  fastingRequired: boolean;
+}
+
+export interface IBookingTest {
+  id: string;
+  title: string;
+  price: number;
+  category: string;
 }
 
 export interface IBooking {
@@ -47,15 +60,15 @@ export interface IBooking {
   contactNumber?: string;
   email?: string;
   bookedByEmail?: string;
-  userId: string; // Should be a string representation of ObjectId
-  tests: Test[];
+  userId: string; 
+  tests: IBookingTest[];
   totalAmount: number;
   amountTaken: number;
   balanceAmount: number;
   collectionType: CollectionType;
   scheduledDate: string;
   status: BookingStatus;
-  paymentStatus: 'paid' | 'unpaid' | 'partial';
+  paymentStatus: PaymentStatus;
   paymentMode: 'online' | 'cash';
   address?: string;
   coordinates?: {
@@ -68,4 +81,10 @@ export interface IBooking {
   reportFileUrl?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ISettings {
+  requireVerification: boolean;
+  maintenanceMode: boolean;
+  announcement?: string;
 }

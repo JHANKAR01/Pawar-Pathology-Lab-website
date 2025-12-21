@@ -21,16 +21,9 @@ const Hero3DContainer = dynamic(() => import('@/components/3D/Hero3DContainer'),
   loading: () => <div className="relative h-[90vh] md:h-screen w-full overflow-hidden bg-[#050505]" />
 });
 
-const MOCK_TESTS: Test[] = [
-  { id: '1', title: 'CBC - Hematology Profile', category: 'Hematology', price: 350, description: 'High-precision automated cellular analysis of 24 vital blood parameters.', isHomeCollectionAvailable: true, fastingRequired: false },
-  { id: '2', title: 'Lipid Management Panel', category: 'Biochemistry', price: 750, description: 'Evaluation of total cholesterol, HDL, LDL, and VLDL using enzymatic methods.', isHomeCollectionAvailable: true, fastingRequired: true },
-  { id: '3', title: 'HbA1c - Glycemic Control', category: 'Biochemistry', price: 550, description: '3-month glycemic control monitoring using HPLC technology.', isHomeCollectionAvailable: true, fastingRequired: false },
-  { id: '4', title: 'Thyroid Ultra-Sensitive Profile', category: 'Hormones', price: 600, description: 'Third-generation CLIA assay for T3, T4, and ultra-sensitive TSH.', isHomeCollectionAvailable: true, fastingRequired: false },
-  { id: '5', title: 'Vitamin B12 Assay', category: 'Special Tests', price: 1200, description: 'Direct measurement of active cobalamin for neuro-metabolic health.', isHomeCollectionAvailable: true, fastingRequired: true },
-];
-
 export default function Home() {
   const router = useRouter();
+  const [tests, setTests] = useState<Test[]>([]);
   const [selectedTests, setSelectedTests] = useState<Test[]>([]);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -38,6 +31,21 @@ export default function Home() {
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
   useEffect(() => {
+    const fetchTests = async () => {
+      try {
+        const response = await fetch('/api/tests');
+        if (response.ok) {
+          const data = await response.json();
+          setTests(data);
+        } else {
+          console.error('Failed to fetch tests');
+        }
+      } catch (error) {
+        console.error('An error occurred while fetching tests:', error);
+      }
+    };
+
+    fetchTests();
     const handleScroll = () => setIsScrolled(window.scrollY > 40);
     window.addEventListener('scroll', handleScroll);
     setCurrentUser(mockApi.getCurrentUser());
@@ -53,9 +61,10 @@ export default function Home() {
         contactNumber: phone,
         scheduledDate: date,
         paymentMode: paymentMethod,
-        tests: selectedTests.map(({ id, title, price, category }) => ({ id, title, price, category })),
+        tests: selectedTests.map(({ _id, title, price, category }) => ({ id: _id, title, price, category })),
         status: BookingStatus.PENDING,
         bookedByEmail: currentUser?.email || 'guest',
+        userId: currentUser?._id,
       };
 
       const response = await fetch('/api/bookings', {
@@ -84,8 +93,8 @@ export default function Home() {
       router.push('/login');
       return;
     }
-    if (selectedTests.find(t => t.id === test.id)) {
-      setSelectedTests(prev => prev.filter(t => t.id !== test.id));
+    if (selectedTests.find(t => t._id === test._id)) {
+      setSelectedTests(prev => prev.filter(t => t._id !== test._id));
     } else {
       setSelectedTests(prev => [...prev, test]);
     }
@@ -149,8 +158,8 @@ export default function Home() {
 
         <section id="test-directory" className="py-24 md:py-40 bg-slate-50/50">
           <TestSearch 
-            tests={MOCK_TESTS} 
-            selectedIds={selectedTests.map(t => t.id)}
+            tests={tests} 
+            selectedIds={selectedTests.map(t => t._id)}
             onSelect={handleTestSelect} 
           />
         </section>

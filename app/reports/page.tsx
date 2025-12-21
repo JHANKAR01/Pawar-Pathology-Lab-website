@@ -29,17 +29,14 @@ export default function ReportsPage() {
   }, [router]);
 
   useEffect(() => {
-    if (currentUser?.email) {
+    if (currentUser?._id) {
       const fetchBookings = async () => {
         setIsLoading(true);
         try {
-          // In a real app, the API would fetch only the user's bookings.
-          // Here, we fetch all and filter on the client for the demo.
-          const response = await fetch(`/api/bookings`);
+          const response = await fetch(`/api/bookings?userId=${currentUser._id}`);
           if (response.ok) {
             const data = await response.json();
-            const userBookings = data.filter((b: IBooking) => b.bookedByEmail === currentUser.email);
-            setAllBookings(userBookings);
+            setAllBookings(data);
           }
         } catch (error) {
           console.error("Failed to fetch user's bookings", error);

@@ -1,18 +1,8 @@
 
 import mongoose, { Schema, Document, models, model } from 'mongoose';
+import { ISettings } from '@/types';
 
-/**
- * ISettings Interface
- * Represents global application configuration.
- * Designed as a Singleton (we typically only fetch the first document).
- */
-export interface ISettings extends Document {
-  requireVerification: boolean; // Controls if reports need Admin approval before patient can view
-  maintenanceMode: boolean;     // Emergency kill-switch for the app
-  announcement?: string;        // Global banner message text
-}
-
-const SettingsSchema = new Schema<ISettings>(
+const SettingsSchema = new Schema<ISettings & Document>(
   {
     requireVerification: { 
       type: Boolean, 
@@ -44,6 +34,6 @@ SettingsSchema.statics.getSingleton = async function() {
   return await this.create({ requireVerification: true });
 };
 
-const Settings = models.Settings || model<ISettings>('Settings', SettingsSchema);
+const Settings = models.Settings || model<ISettings & Document>('Settings', SettingsSchema);
 
 export default Settings;

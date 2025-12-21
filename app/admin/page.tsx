@@ -1,16 +1,9 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { 
-  LayoutDashboard, HeartHandshake, Settings as SettingsIcon, 
-  ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, FlaskConical, Settings2
-} from 'lucide-react';
-
 interface BookingType {
   _id: string;
   patientName: string;
   totalAmount: number;
+  balanceAmount: number;
+  referredBy: string;
   status: string;
   tests: { title: string; category: string }[];
   assignedPartnerName?: string;
@@ -109,6 +102,7 @@ export default function AdminPage() {
         <nav className="flex-1 space-y-3">
           {[
             { id: 'Intelligence', icon: LayoutDashboard },
+            { id: 'Bookings', icon: FlaskConical },
             { id: 'Specimens', icon: FlaskConical },
             { id: 'Partners', icon: HeartHandshake },
             { id: 'Config', icon: SettingsIcon }
@@ -160,7 +154,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {activeTab === 'Specimens' && (
+        {activeTab === 'Bookings' && (
           <div className="space-y-6 animate-in fade-in">
              {bookings.filter(b => b.status !== 'completed').map(b => (
                 <div key={b._id} className="glass-dark p-8 rounded-[2.5rem] border border-white/5 flex flex-col md:flex-row justify-between gap-8 items-center">
@@ -201,6 +195,37 @@ export default function AdminPage() {
                    </div>
                 </div>
              ))}
+          </div>
+        )}
+
+        {activeTab === 'Specimens' && (
+          <div className="glass-dark p-8 rounded-[3rem]">
+            <table className="w-full text-white">
+              <thead>
+                <tr className="text-left text-[10px] uppercase tracking-widest text-slate-500">
+                  <th className="p-4">Patient</th>
+                  <th className="p-4">Tests</th>
+                  <th className="p-4">Referred By</th>
+                  <th className="p-4">Total</th>
+                  <th className="p-4">Balance</th>
+                  <th className="p-4">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bookings.map(b => (
+                  <tr key={b._id} className="border-b border-white/5">
+                    <td className="p-4 font-bold">{b.patientName}</td>
+                    <td className="p-4 text-slate-400">{b.tests.map(t => t.title).join(', ')}</td>
+                    <td className="p-4 text-slate-400">{b.referredBy}</td>
+                    <td className="p-4 font-bold">₹{b.totalAmount}</td>
+                    <td className="p-4 font-bold text-rose-500">₹{b.balanceAmount}</td>
+                    <td className="p-4">
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-500">{b.status}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
