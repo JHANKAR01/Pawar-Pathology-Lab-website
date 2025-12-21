@@ -34,13 +34,13 @@ export default function LoginPage() {
       localStorage.setItem('pawar_lab_auth_token', JSON.stringify(user));
       
       switch (user.role) {
-        case UserRole.ADMIN:
+        case 'admin':
           router.push('/admin');
           break;
-        case UserRole.PARTNER:
+        case 'partner':
           router.push('/partner');
           break;
-        case UserRole.PATIENT:
+        case 'patient':
           router.push('/reports');
           break;
         default:

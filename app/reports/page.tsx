@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { mockApi } from '@/lib/mockApi';
 import { BookingStatus, IBooking } from '@/types';
 import { 
   FlaskConical, LogOut, CheckCircle, Loader2, 
@@ -22,7 +21,7 @@ export default function ReportsPage() {
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('pawar_lab_auth_token') || '{}');
     if (user?.role !== 'patient') {
-      router.push('/login');
+      router.push(user?.role === 'admin' ? '/admin' : '/login');
     } else {
       setCurrentUser(user);
     }
@@ -68,7 +67,7 @@ export default function ReportsPage() {
 
   const handleLogout = () => {
     localStorage.removeItem('pawar_lab_auth_token');
-    window.location.href = '/';
+    router.push('/login');
   };
 
   if (!currentUser) {

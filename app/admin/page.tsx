@@ -19,30 +19,27 @@ interface BookingType {
 }
 
 interface Partner {
-  id: string;
+  _id: string;
   name: string;
-  role: string;
-  activeTasks: number;
+  operationalRole: string;
 }
 
 export default function AdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('Intelligence');
   const [bookings, setBookings] = useState<BookingType[]>([]);
-  const [partners, setPartners] = useState<Partner[]>([
-    { id: 'p1', name: 'Ritesh Sharma', role: 'Field Phlebotomist', activeTasks: 0 },
-    { id: 'p2', name: 'Amit Verma', role: 'Lab Technician', activeTasks: 0 }
-  ]);
-  const [newPartner, setNewPartner] = useState({ name: '', role: 'Field Phlebotomist' });
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [newPartner, setNewPartner] = useState({ name: '', email: '', username: '', password: '' });
   const [loading, setLoading] = useState(true);
   const [config, setConfig] = useState({ requireVerification: true });
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('pawar_lab_auth_token') || '{}');
     if (user?.role !== 'admin') {
-      router.push('/login');
+      router.push(user?.role === 'patient' ? '/reports' : '/login');
     }
     fetchData();
+    fetchPartners();
     fetchConfig();
   }, [router]);
 
@@ -55,6 +52,15 @@ export default function AdminPage() {
       console.error('Failed to load admin data', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPartners = async () => {
+    try {
+      const res = await fetch('/api/users?role=partner');
+      if (res.ok) setPartners(await res.json());
+    } catch (error) {
+      console.error('Failed to load partners', error);
     }
   };
 
@@ -90,13 +96,26 @@ export default function AdminPage() {
     } catch (e) { console.error("Config save failed", e); }
   };
 
-  const handleAddPartner = (e: React.FormEvent) => {
+  const handleAddPartner = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In production, post to /api/partners
-    const p = { id: 'p' + (partners.length + 1), ...newPartner, activeTasks: 0 };
-    setPartners([...partners, p]);
-    setNewPartner({ name: '', role: 'Field Phlebotomist' });
-    alert('Partner Added Successfully');
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...newPartner, role: 'partner', operationalRole: 'helper' })
+      });
+      if (res.ok) {
+        setNewPartner({ name: '', email: '', username: '', password: '' });
+        fetchPartners();
+        alert('Partner Added Successfully');
+      } else {
+        const errorData = await res.json();
+        alert(`Failed to add partner: ${errorData.error}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('An unexpected error occurred.');
+    }
   };
 
   return (
@@ -188,8 +207,8 @@ export default function AdminPage() {
                          <div className="flex gap-2">
                            {partners.map(p => (
                              <button 
-                               key={p.id}
-                               onClick={() => handleUpdateStatus(b._id, 'assigned', { assignedPartnerId: p.id, assignedPartnerName: p.name })}
+                               key={p._id}
+                               onClick={() => handleUpdateStatus(b._id, 'assigned', { assignedPartnerId: p._id, assignedPartnerName: p.name })}
                                className="px-6 py-3 bg-white/5 border border-white/10 text-white rounded-xl text-[9px] font-black uppercase hover:bg-rose-600 transition-all"
                              >
                                Assign {p.name}
@@ -256,16 +275,30 @@ export default function AdminPage() {
                       />
                    </div>
                    <div>
-                      <label className="text-[10px] font-black uppercase text-slate-500 mb-2 block">Operational Role</label>
-                      <select 
-                        className="w-full bg-slate-900 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none"
-                        value={newPartner.role}
-                        onChange={e => setNewPartner({...newPartner, role: e.target.value})}
-                      >
-                         <option>Field Phlebotomist</option>
-                         <option>Lab Technician</option>
-                         <option>Pathologist</option>
-                      </select>
+                      <label className="text-[10px] font-black uppercase text-slate-500 mb-2 block">Email</label>
+                      <input 
+                        type="email"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-rose-600"
+                        value={newPartner.email}
+                        onChange={e => setNewPartner({...newPartner, email: e.target.value})}
+                      />
+                   </div>
+                   <div>
+                      <label className="text-[10px] font-black uppercase text-slate-500 mb-2 block">Username</label>
+                      <input 
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-rose-600"
+                        value={newPartner.username}
+                        onChange={e => setNewPartner({...newPartner, username: e.target.value})}
+                      />
+                   </div>
+                   <div>
+                      <label className="text-[10px] font-black uppercase text-slate-500 mb-2 block">Password</label>
+                      <input 
+                        type="password"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-rose-600"
+                        value={newPartner.password}
+                        onChange={e => setNewPartner({...newPartner, password: e.target.value})}
+                      />
                    </div>
                    <button className="w-full bg-rose-600 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-rose-700">Onboard Partner</button>
                 </form>
@@ -274,12 +307,12 @@ export default function AdminPage() {
                 <h3 className="text-2xl font-black text-white mb-8">Active Directory</h3>
                 <div className="space-y-4">
                    {partners.map(p => (
-                     <div key={p.id} className="flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/5">
+                     <div key={p._id} className="flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/5">
                         <div className="flex items-center gap-4">
                            <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-rose-600"><UserCheck /></div>
                            <div>
                               <p className="text-white font-black">{p.name}</p>
-                              <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest">{p.role}</p>
+                              <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest">{p.operationalRole}</p>
                            </div>
                         </div>
                         <Trash2 className="text-slate-700 cursor-pointer hover:text-rose-600" />

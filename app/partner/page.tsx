@@ -26,7 +26,7 @@ export default function PartnerPage() {
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('pawar_lab_auth_token') || '{}');
     if (user?.role !== 'partner') {
-      router.push('/login');
+      router.push(user?.role === 'admin' ? '/admin' : '/login');
     }
     fetchBookings();
   }, [router]);

@@ -104,7 +104,7 @@ export default function Home() {
 
   const handleLogout = () => {
     localStorage.removeItem('pawar_lab_auth_token');
-    window.location.reload();
+    router.push('/login');
   };
   
   const navItems = ['Test Directory', 'Clinical Services', 'Help & Support'];
