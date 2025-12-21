@@ -1,15 +1,17 @@
+
+// lib/seedDatabase.ts
 import mongoose from 'mongoose';
-import dbConnect from './dbConnect';
-import User from '../models/User';
-import Test from '../models/Test';
-import Booking from '../models/Booking';
-import Settings from '../models/Settings';
-import { UserRole, BookingStatus, CollectionType } from '../types';
+import dbConnect from './dbConnect.js'; // Added .js extension
+import User from '../models/User.js';    // Added .js extension
+import Test from '../models/Test.js';    // Added .js extension
+import Booking from '../models/Booking.js';
+import Settings from '../models/Settings.js';
+import { UserRole, BookingStatus } from '../types.js';
 
 async function seed() {
   await dbConnect();
-
-  console.log('Clearing existing data...');
+  console.log('Clearing existing clinical data...');
+  
   await Promise.all([
     User.deleteMany({}),
     Test.deleteMany({}),
@@ -17,83 +19,52 @@ async function seed() {
     Settings.deleteMany({}),
   ]);
 
-  console.log('Seeding Users...');
+  console.log('Seeding 16 Authorized Users...');
   const users = await User.create([
-    { username: 'jhankar', password: 'jhankar', name: 'Jhankar', role: UserRole.ADMIN },
-    { username: 'keshav', password: 'keshav', name: 'Keshav', role: UserRole.ADMIN },
-    { username: 'vishal', password: 'vishal', name: 'Vishal', role: UserRole.PARTNER },
-    { username: 'manoj', password: 'manoj', name: 'Manoj', role: UserRole.PARTNER },
-    { username: 'shubham', password: 'shubham', name: 'Shubham', role: UserRole.PARTNER },
-    { username: 'shankar', password: 'shankar', name: 'Shankar', role: UserRole.PARTNER },
+    { username: 'jhankar', password: 'jhankar', name: 'Jhankar', role: 'admin' },
+    { username: 'keshav', password: 'keshav', name: 'Keshav', role: 'admin' },
+    { username: 'vishal', password: 'vishal', name: 'Vishal', role: 'partner' },
+    { username: 'manoj', password: 'manoj', name: 'Manoj', role: 'partner' },
+    { username: 'shubham', password: 'shubham', name: 'Shubham', role: 'partner' },
+    { username: 'shankar', password: 'shankar', name: 'Shankar', role: 'partner' },
     ...Array.from({ length: 10 }, (_, i) => ({
       username: `user${i + 1}`,
       password: `user${i + 1}`,
       name: `Patient ${i + 1}`,
-      role: UserRole.PATIENT,
+      role: 'patient',
     })),
   ]);
 
-  console.log('Seeding Tests...');
+  console.log('Seeding Lab Test Directory...');
   const tests = await Test.create([
     { title: 'CBC - Hematology Profile', price: 350, category: 'Hematology' },
     { title: 'Diabetes Screen (HbA1c)', price: 500, category: 'Biochemistry' },
-    { title: 'Lipid Profile', price: 650, category: 'Biochemistry' },
     { title: 'Thyroid Profile (T3, T4, TSH)', price: 450, category: 'Endocrinology' },
     { title: 'Liver Function Test (LFT)', price: 800, category: 'Biochemistry' },
-    { title: 'Kidney Function Test (KFT)', price: 900, category: 'Biochemistry' },
   ]);
 
-  console.log('Seeding Settings...');
+  console.log('Setting Default Referral logic...');
+  await Booking.create({
+    patientName: 'Seed Patient',
+    bookedByEmail: 'user1',
+    userId: users.find(u => u.username === 'user1')?._id,
+    tests: [tests[0]],
+    totalAmount: 350,
+    balanceAmount: 0,
+    amountTaken: 350,
+    status: 'completed',
+    referredBy: 'Self', // Verified default
+    scheduledDate: new Date(),
+  });
+
+  console.log('Seeding Global Settings...');
   await Settings.create({ requireVerification: true, maintenanceMode: false });
-
-  console.log('Seeding Sample Bookings...');
-  const patient1 = users.find(u => u.username === 'user1');
-  const patient2 = users.find(u => u.username === 'user2');
-
-  await Booking.create([
-    {
-      patientName: patient1?.name,
-      bookedByEmail: patient1?.username,
-      userId: patient1?._id, // Foreign Key to Users
-      tests: [tests[0]],      // Reference to CBC Test
-      totalAmount: tests[0].price,
-      balanceAmount: 0,
-      amountTaken: tests[0].price,
-      status: BookingStatus.COMPLETED,
-      referredBy: 'Self',     // Default Referral
-      scheduledDate: new Date(),
-    },
-    {
-      patientName: patient1?.name,
-      bookedByEmail: patient1?.username,
-      userId: patient1?._id,
-      tests: [tests[0]],
-      totalAmount: tests[0].price,
-      balanceAmount: tests[0].price,
-      amountTaken: 0,
-      status: BookingStatus.PENDING,
-      referredBy: 'Dr. Sameer', // Doctor Referral
-      scheduledDate: new Date(),
-    },
-    {
-      patientName: patient2?.name,
-      bookedByEmail: patient2?.username,
-      userId: patient2?._id,
-      tests: [tests[3]],
-      totalAmount: tests[3].price,
-      balanceAmount: 0,
-      amountTaken: tests[3].price,
-      status: BookingStatus.COMPLETED,
-      referredBy: 'Self',
-      scheduledDate: new Date(),
-    }
-  ]);
 
   console.log('Database Seeded Successfully!');
   process.exit(0);
 }
 
 seed().catch(err => {
-  console.error(err);
+  console.error('Seeding Failed:', err);
   process.exit(1);
 });
