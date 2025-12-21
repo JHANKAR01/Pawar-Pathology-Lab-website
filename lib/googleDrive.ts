@@ -1,40 +1,13 @@
 
-// Configuration check for Google Drive environment variables
-console.log('--- Google Drive Configuration Check ---');
-
-const requiredOAuthVars = [
-  'GOOGLE_CLIENT_ID',
-  'GOOGLE_CLIENT_SECRET',
-  'GOOGLE_REFRESH_TOKEN',
-];
-let allOAuthVarsLoaded = true;
-
-requiredOAuthVars.forEach(varName => {
-  if (!process.env[varName]) {
-    console.log(`${varName}: ❌ MISSING`);
-    allOAuthVarsLoaded = false;
-  } else {
-    console.log(`${varName}: ✅ LOADED`);
-  }
-});
-
-if (!process.env.GOOGLE_DRIVE_FOLDER_ID) {
-  console.log(`GOOGLE_DRIVE_FOLDER_ID: ❌ MISSING`);
-} else {
-  console.log(`GOOGLE_DRIVE_FOLDER_ID: ✅ LOADED`);
-}
-
-if (!allOAuthVarsLoaded) {
-  throw new Error('CRITICAL: Google Drive credentials missing in .env');
-}
-
-console.log('--- Configuration Check Complete ---');
-
 import { google } from 'googleapis';
 import { Readable } from 'stream';
 import { Buffer } from 'buffer';
 
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
+
+if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_REFRESH_TOKEN) {
+  throw new Error('CRITICAL: Google Drive credentials missing in .env');
+}
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
@@ -78,9 +51,6 @@ async function getOrCreateFolder(name: string, parentId: string): Promise<string
     }
   } catch (error: any) {
     console.error(`Error in getOrCreateFolder for name "${name}" and parent "${parentId}":`, error);
-    if (error.message && (error.message.includes('invalid_request') || error.message.includes('client ID'))) {
-      console.error('AUTH FAILURE: Check your Client ID and Refresh Token in .env');
-    }
     throw error;
   }
 }
@@ -100,7 +70,7 @@ export async function uploadReportToDrive(
     if (!rootFolderId) {
       throw new Error('GOOGLE_DRIVE_FOLDER_ID is not defined in .env');
     }
-    console.log('Targeting Root Folder ID:', rootFolderId); // Diagnostic log
+
 
     // 1. Create nested folder path: Year > Month > Day > Patient Name
     const now = new Date();
@@ -151,9 +121,6 @@ export async function uploadReportToDrive(
 
   } catch (error: any) {
     console.error('Error uploading to Google Drive:', error);
-    if (error.message && (error.message.includes('invalid_request') || error.message.includes('client ID'))) {
-      console.error('AUTH FAILURE: Check your Client ID and Refresh Token in .env');
-    }
     throw error;
   }
 }
