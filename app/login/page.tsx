@@ -5,29 +5,34 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, Loader2, AlertCircle, FlaskConical, ArrowLeft, ShieldCheck, HeartHandshake, User as UserIcon } from 'lucide-react';
+import { mockApi } from '@/lib/mockApi';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   // Simulating Auth for the UI prototype - in production, use NextAuth
-  const handleLogin = (e?: React.FormEvent, role?: string) => {
+  const handleLogin = async (e?: React.FormEvent, role?: string) => {
     if (e) e.preventDefault();
     setIsLoading(true);
+    setError('');
 
-    setTimeout(() => {
-      // Mock logic for demo
-      const targetRole = role || (email.includes('admin') ? 'admin' : email.includes('partner') ? 'partner' : 'user');
+    try {
+      const targetRole = role || (email.includes('admin') ? 'admin' : email.includes('partner') ? 'partner' : 'patient');
+      await mockApi.login(targetRole, targetRole);
       
       if (targetRole === 'admin') router.push('/admin');
       else if (targetRole === 'partner') router.push('/partner');
       else router.push('/');
-      
+
+    } catch (err) {
+      setError('Login failed. Please try again.');
+      console.error(err);
+    } finally {
       setIsLoading(false);
-    }, 800);
+    }
   };
 
   return (
@@ -67,7 +72,7 @@ export default function LoginPage() {
               <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-red-500"><HeartHandshake /></div>
               <p className="text-white font-black text-[10px] uppercase">Partner</p>
             </button>
-            <button onClick={() => handleLogin(undefined, 'user')} className="group flex flex-col items-center gap-3 p-5 rounded-3xl bg-white/5 border border-white/5 hover:border-red-500/50 transition-all text-center">
+            <button onClick={() => handleLogin(undefined, 'patient')} className="group flex flex-col items-center gap-3 p-5 rounded-3xl bg-white/5 border border-white/5 hover:border-red-500/50 transition-all text-center">
               <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-red-500"><UserIcon /></div>
               <p className="text-white font-black text-[10px] uppercase">Patient</p>
             </button>
