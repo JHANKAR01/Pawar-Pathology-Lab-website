@@ -1,4 +1,22 @@
 
+// Configuration check for Google Drive environment variables
+console.log('--- Google Drive Configuration Check ---');
+
+const checkEnvVar = (varName: string) => {
+  if (!process.env[varName]) {
+    console.log(`${varName}: MISSING`);
+    throw new Error(`Google Drive: Missing environment variable: ${varName}`);
+  }
+  console.log(`${varName}: LOADED`);
+};
+
+checkEnvVar('GOOGLE_CLIENT_ID');
+checkEnvVar('GOOGLE_CLIENT_SECRET');
+checkEnvVar('GOOGLE_REFRESH_TOKEN');
+checkEnvVar('GOOGLE_DRIVE_FOLDER_ID');
+
+console.log('--- Configuration Check Complete ---');
+
 import { google } from 'googleapis';
 import { Readable } from 'stream';
 import { Buffer } from 'buffer';
