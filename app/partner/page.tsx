@@ -12,6 +12,7 @@ export default function PartnerPage() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('active'); // 'active' or 'completed'
   
   // Walk-in Form State
   const [newPatient, setNewPatient] = useState({
@@ -195,19 +196,33 @@ export default function PartnerPage() {
             <h2 className="text-3xl font-black text-gray-900 tracking-tight uppercase">Assigned Tasks</h2>
             <p className="text-gray-500 font-medium">Specimens requiring immediate clinical acquisition.</p>
           </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setStatusFilter('active')}
+              className={`px-4 py-2 rounded-xl text-sm font-bold ${statusFilter === 'active' ? 'bg-slate-900 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}
+            >
+              Active
+            </button>
+            <button
+              onClick={() => setStatusFilter('completed')}
+              className={`px-4 py-2 rounded-xl text-sm font-bold ${statusFilter === 'completed' ? 'bg-slate-900 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}
+            >
+              Completed
+            </button>
+          </div>
           <button onClick={fetchBookings} className="p-3 bg-white border border-gray-100 rounded-full hover:bg-gray-50 shadow-sm">
             <RefreshCw className={`w-5 h-5 text-gray-400 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
 
         <div className="space-y-6">
-          {tasks.length === 0 ? (
+          {filteredTasks.length === 0 ? (
             <div className="text-center py-24 bg-white rounded-[3rem] border-2 border-dashed border-gray-100 flex flex-col items-center">
               <ClipboardList className="w-16 h-16 text-gray-100 mb-4" />
               <p className="text-gray-400 font-bold">No active collections assigned.</p>
             </div>
           ) : (
-            tasks.map(task => (
+            filteredTasks.map(task => (
               <div key={task._id} className="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between gap-8 items-center">
                 <div className="flex-1 w-full">
                   <div className="flex items-center gap-2 mb-4">
