@@ -201,12 +201,28 @@ export default function AdminPage() {
         {activeTab === 'Bookings' && (
           <div className="space-y-6 animate-in fade-in">
              {bookings.filter(b => b.status !== 'completed').map(b => (
-                <div key={b._id} className="glass-dark p-8 rounded-[2.5rem] border border-white/5 flex flex-col md:flex-row justify-between gap-8 items-center">
-                   <div>
-                      <h3 className="text-xl font-black text-white">{b.patientName}</h3>
-                      <p className="text-slate-500 text-xs font-bold uppercase mt-1">{b.tests?.[0]?.title || "Unknown Test"} • {b.status.replace('_', ' ')}</p>
+                <div key={b._id} className="glass-dark p-8 rounded-[2.5rem] border border-white/5 flex flex-col gap-4">
+                   <div className="flex justify-between items-start">
+                     <div>
+                        <h3 className="text-xl font-black text-white">{b.patientName}</h3>
+                        <p className="text-slate-500 text-xs font-bold uppercase mt-1">
+                            {b.address ? `Home Visit: ${b.address}` : 'Lab Visit'}
+                        </p>
+                     </div>
+                     <div className="text-right">
+                        <p className="text-white text-lg font-black">₹{b.totalAmount}</p>
+                        <p className="text-slate-500 text-xs uppercase font-bold">
+                            Paid: <span className="text-emerald-500">₹{b.amountTaken}</span> / 
+                            Balance: <span className="text-rose-500">₹{b.balanceAmount}</span>
+                        </p>
+                     </div>
                    </div>
-                   <div className="flex gap-4">
+                   <div className="flex flex-wrap gap-2 mb-4">
+                     {b.tests?.map((t: any) => (
+                       <span key={t.id} className="px-3 py-1 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white">{t.title}</span>
+                     ))}
+                   </div>
+                   <div className="flex gap-4 items-center">
                       {b.status === 'pending' && (
                         <button 
                           onClick={() => handleUpdateStatus(b._id, 'accepted')}

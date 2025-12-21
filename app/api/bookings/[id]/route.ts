@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
-import Booking, { BookingStatus } from '@/models/Booking';
+import Booking from '@/models/Booking';
+import { BookingStatus } from '@/types';
 import { uploadReportToDrive } from '@/lib/googleDrive';
 import { Buffer } from 'buffer';
 

@@ -118,14 +118,25 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
   const prevStep = () => setStep(s => s - 1);
 
   const handleSubmit = () => {
+    let finalPaymentStatus;
+    let finalBalanceAmount;
+
+    if (paymentMethod === 'cash') {
+      finalBalanceAmount = finalTotal - amountTaken;
+      finalPaymentStatus = finalBalanceAmount > 0 ? 'partial' : 'unpaid'; // Mark as unpaid if no amount taken
+    } else {
+      finalPaymentStatus = 'paid';
+      finalBalanceAmount = 0;
+    }
+
     onComplete({ 
       ...formData,
       referredBy: formData.referredBy || 'Self',
       paymentMethod, 
       totalAmount: finalTotal,
       amountTaken: amountTaken,
-      balanceAmount: balanceAmount,
-      paymentStatus: balanceAmount === 0 ? 'paid' : 'partial'
+      balanceAmount: finalBalanceAmount,
+      paymentStatus: finalPaymentStatus
     });
   };
 
