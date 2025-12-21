@@ -87,9 +87,8 @@ export default function AdminPage() {
       if (!res.ok) {
         throw new Error('Failed to update status');
       }
-      // Optionally, if the server returns the updated object, we can use it.
-      // const updatedBooking = await res.json();
-      // setBookings(prev => prev.map(booking => booking._id === id ? updatedBooking : booking));
+      const updatedBooking = await res.json(); // Assuming API returns the updated booking
+      setBookings(prev => prev.map(booking => booking._id === id ? updatedBooking : booking));
     } catch (err) {
       console.error(err);
       alert('Failed to update status. Reverting changes.');
