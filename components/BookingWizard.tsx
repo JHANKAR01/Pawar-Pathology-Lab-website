@@ -117,7 +117,8 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
 
   const handleSubmit = () => {
     onComplete({ 
-      ...formData, 
+      ...formData,
+      referredBy: formData.referredBy || 'Self',
       paymentMethod, 
       totalAmount: finalTotal,
       amountTaken: amountTaken,

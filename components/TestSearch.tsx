@@ -74,9 +74,9 @@ const TestSearch: React.FC<TestSearchProps> = ({ tests, onSelect, selectedIds = 
           </div>
         ) : (
           filteredTests.map(test => {
-            const isSelected = selectedIds.includes(test.id);
+            const isSelected = selectedIds.includes(test._id);
             return (
-              <div key={test.id} className={`group bg-white p-8 md:p-12 rounded-[2.5rem] md:rounded-[4rem] shadow-sm hover:shadow-2xl hover:-translate-y-2 md:hover:-translate-y-3 transition-all duration-500 border border-slate-50 relative overflow-hidden ${isSelected ? 'ring-2 ring-emerald-500' : ''}`}>
+              <div key={test._id} className={`group bg-white p-8 md:p-12 rounded-[2.5rem] md:rounded-[4rem] shadow-sm hover:shadow-2xl hover:-translate-y-2 md:hover:-translate-y-3 transition-all duration-500 border border-slate-50 relative overflow-hidden ${isSelected ? 'ring-2 ring-emerald-500' : ''}`}>
                 <div className="absolute top-0 right-0 w-40 h-40 md:w-48 md:h-48 bg-rose-50 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-1000 opacity-40 pointer-events-none" />
                 
                 <div className="flex justify-between items-start mb-10 md:mb-14 relative z-10">
@@ -92,19 +92,6 @@ const TestSearch: React.FC<TestSearchProps> = ({ tests, onSelect, selectedIds = 
                 <h3 className="font-heading text-2xl md:text-3xl font-black text-slate-900 mb-4 md:mb-6 tracking-tight leading-[1.1] relative z-10">{test.title}</h3>
                 <p className="text-slate-400 text-xs md:text-sm font-medium leading-relaxed mb-8 md:mb-12 h-12 md:h-16 overflow-hidden relative z-10">{test.description}</p>
                 
-                <div className="flex flex-wrap gap-2 md:gap-3 mb-10 md:mb-14 relative z-10">
-                  {test.fastingRequired && (
-                    <div className="flex items-center gap-2 text-[8px] md:text-[9px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 px-3 md:px-5 py-2 md:py-3 rounded-lg md:rounded-xl border border-amber-100/50">
-                      <Clock className="w-3 h-3 md:w-4 md:h-4" /> Fasting
-                    </div>
-                  )}
-                  {test.isHomeCollectionAvailable && (
-                    <div className="flex items-center gap-2 text-[8px] md:text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 px-3 md:px-5 py-2 md:py-3 rounded-lg md:rounded-xl border border-blue-100/50">
-                      <ShieldCheck className="w-3 h-3 md:w-4 md:h-4" /> Home Collection
-                    </div>
-                  )}
-                </div>
-
                 <button 
                   onClick={() => onSelect(test)}
                   disabled={isSelected}
