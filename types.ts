@@ -39,20 +39,21 @@ export interface Test {
   fastingRequired: boolean;
 }
 
-export interface Booking {
+export interface IBooking {
   _id: string;
   id: string;
   patientName: string;
   contactNumber?: string;
   email?: string;
+  bookedByEmail?: string;
   tests: Test[];
   totalAmount: number;
-  amountTaken: number;      // New financial field
-  balanceAmount: number;    // New financial field
+  amountTaken: number;
+  balanceAmount: number;
   collectionType: CollectionType;
   scheduledDate: string;
   status: BookingStatus;
-  paymentStatus: 'paid' | 'unpaid';
+  paymentStatus: 'paid' | 'unpaid' | 'partial';
   paymentMode: 'online' | 'cash';
   address?: string;
   coordinates?: {
@@ -63,4 +64,5 @@ export interface Booking {
   assignedPartnerName?: string;
   reportFileUrl?: string;
   createdAt: string;
+  updatedAt: string;
 }

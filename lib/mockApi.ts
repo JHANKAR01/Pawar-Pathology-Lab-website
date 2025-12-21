@@ -7,20 +7,36 @@ const DB_KEYS = {
 };
 
 const MOCK_USERS: User[] = [
-  { id: 'admin', name: 'Admin Head', email: 'admin', role: UserRole.ADMIN },
-  { id: 'partner', name: 'Lab Partner', email: 'partner', role: UserRole.PARTNER },
-  { id: 'patient', name: 'Regular Patient', email: 'patient', role: UserRole.PATIENT }
+  // Admins
+  { id: 'jhankar', name: 'Jhankar', email: 'jhankar', role: UserRole.ADMIN },
+  { id: 'keshav', name: 'Keshav', email: 'keshav', role: UserRole.ADMIN },
+
+  // Partners
+  { id: 'vishal', name: 'Vishal', email: 'vishal', role: UserRole.PARTNER },
+  { id: 'manoj', name: 'Manoj', email: 'manoj', role: UserRole.PARTNER },
+  { id: 'shubham', name: 'Shubham', email: 'shubham', role: UserRole.PARTNER },
+  { id: 'shankar', name: 'Shankar', email: 'shankar', role: UserRole.PARTNER },
+
+  // Patients
+  ...Array.from({ length: 10 }, (_, i) => ({
+    id: `user${i + 1}`,
+    name: `Patient ${i + 1}`,
+    email: `user${i + 1}`,
+    role: UserRole.PATIENT,
+  })),
 ];
 
 export const mockApi = {
   login: async (email: string, password: string): Promise<User> => {
     const user = MOCK_USERS.find(u => u.email === email);
-    if (user && password === email) {
+    
+    // Password must match username for this demo
+    if (user && password === user.email) {
       const sessionUser = { ...user, token: `mock-jwt-${user.id}-${Date.now()}` };
       localStorage.setItem(DB_KEYS.AUTH_TOKEN, JSON.stringify(sessionUser));
       return sessionUser;
     } else {
-      throw new Error('Invalid credentials. Use admin, partner, or patient as both email and password.');
+      throw new Error('Unauthorized Access');
     }
   },
 
