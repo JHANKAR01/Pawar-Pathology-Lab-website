@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Check, Calendar, CreditCard, User, CheckCircle, MapPin, Loader2, Navigation, Ticket, UserPlus, X, AlertTriangle, DollarSign, Mail } from 'lucide-react';
 import { Test, CollectionType } from '../types';
-import { mockApi } from '../lib/mockApi';
 
 interface BookingWizardProps {
   selectedTests: Test[];
@@ -31,7 +30,10 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     referredBy: 'Self'
   });
 
-  const currentUser = useMemo(() => mockApi.getCurrentUser(), []);
+  const currentUser = useMemo(() => {
+    const user = localStorage.getItem('pawar_lab_auth_token');
+    return user ? JSON.parse(user) : null;
+  }, []);
 
   // Only pre-fill logic on initial mount or when specifically toggling self-booking ON.
   useEffect(() => {

@@ -14,7 +14,6 @@ import {
 import TestSearch from '@/components/TestSearch';
 import BookingWizard from '@/components/BookingWizard';
 import { Test, CollectionType, BookingStatus } from '@/types';
-import { mockApi } from '@/lib/mockApi';
 
 const Hero3DContainer = dynamic(() => import('@/components/3D/Hero3DContainer'), {
   ssr: false,
@@ -48,7 +47,10 @@ export default function Home() {
     fetchTests();
     const handleScroll = () => setIsScrolled(window.scrollY > 40);
     window.addEventListener('scroll', handleScroll);
-    setCurrentUser(mockApi.getCurrentUser());
+    const user = JSON.parse(localStorage.getItem('pawar_lab_auth_token') || '{}');
+    if(user?._id) {
+      setCurrentUser(user);
+    }
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -101,7 +103,7 @@ export default function Home() {
   };
 
   const handleLogout = () => {
-    mockApi.logout();
+    localStorage.removeItem('pawar_lab_auth_token');
     window.location.reload();
   };
   

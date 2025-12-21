@@ -19,7 +19,19 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const user = await mockApi.login(username, password);
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Login failed');
+      }
+
+      const user = await response.json();
+      localStorage.setItem('pawar_lab_auth_token', JSON.stringify(user));
       
       switch (user.role) {
         case UserRole.ADMIN:

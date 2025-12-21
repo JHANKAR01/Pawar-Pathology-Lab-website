@@ -20,8 +20,8 @@ export default function ReportsPage() {
   const [sortOption, setSortOption] = useState<SortOption>('newest');
 
   useEffect(() => {
-    const user = mockApi.getCurrentUser();
-    if (!user) {
+    const user = JSON.parse(localStorage.getItem('pawar_lab_auth_token') || '{}');
+    if (user?.role !== 'patient') {
       router.push('/login');
     } else {
       setCurrentUser(user);
@@ -67,7 +67,7 @@ export default function ReportsPage() {
   }, [allBookings, sortOption]);
 
   const handleLogout = () => {
-    mockApi.logout();
+    localStorage.removeItem('pawar_lab_auth_token');
     window.location.href = '/';
   };
 

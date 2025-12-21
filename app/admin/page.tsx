@@ -1,3 +1,12 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { 
+  LayoutDashboard, HeartHandshake, Settings as SettingsIcon, 
+  ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, FlaskConical, Settings2
+} from 'lucide-react';
+
 interface BookingType {
   _id: string;
   patientName: string;
@@ -29,9 +38,13 @@ export default function AdminPage() {
   const [config, setConfig] = useState({ requireVerification: true });
 
   useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('pawar_lab_auth_token') || '{}');
+    if (user?.role !== 'admin') {
+      router.push('/login');
+    }
     fetchData();
     fetchConfig();
-  }, []);
+  }, [router]);
 
   const fetchData = async () => {
     setLoading(true);

@@ -23,7 +23,13 @@ export default function PartnerPage() {
     amountTaken: 0
   });
 
-  useEffect(() => { fetchBookings(); }, []);
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('pawar_lab_auth_token') || '{}');
+    if (user?.role !== 'partner') {
+      router.push('/login');
+    }
+    fetchBookings();
+  }, [router]);
 
   const fetchBookings = async () => {
     setLoading(true);
