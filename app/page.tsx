@@ -40,7 +40,7 @@ export default function Home() {
 
   const handleBookingComplete = async (bookingData: any) => {
     try {
-      const { name, phone, date, paymentMethod, ...rest } = bookingData;
+      const { name, phone, date, paymentMethod, time, ...rest } = bookingData;
       const payload = {
         ...rest,
         patientName: name,
