@@ -7,7 +7,7 @@ import {
   Phone, MapPin, FlaskConical, LogIn, Activity, 
   Award, Zap, Globe, Instagram, Facebook, Clock, 
   CheckCircle, FileDown, LayoutDashboard, ChevronRight,
-  ClipboardList, Navigation, ShieldCheck, UserCheck, LogOut
+  ClipboardList, Navigation, ShieldCheck, UserCheck, LogOut, X
 } from 'lucide-react';
 import Hero3DContainer from '@/components/3D/Hero3DContainer';
 import TestSearch from '@/components/TestSearch';
@@ -29,6 +29,7 @@ export default function Home() {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 40);
@@ -37,27 +38,37 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleBookingComplete = async (formData: any) => {
+  const handleBookingComplete = async (bookingData: any) => {
     try {
+      const { name, phone, date, paymentMethod, ...rest } = bookingData;
+      const payload = {
+        ...rest,
+        patientName: name,
+        contactNumber: phone,
+        scheduledDate: date,
+        paymentMode: paymentMethod,
+        tests: selectedTests.map(({ id, title, price, category }) => ({ id, title, price, category })),
+        status: BookingStatus.PENDING,
+        bookedByEmail: currentUser?.email || 'guest',
+      };
+
       const response = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          tests: selectedTests,
-          status: 'pending',
-          bookedByEmail: currentUser?.email || 'guest'
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
         setSelectedTests([]);
         setIsWizardOpen(false);
-        alert('Booking request sent for approval.');
-        window.location.reload();
+        setBookingSuccess(true);
+      } else {
+        const errorData = await response.json();
+        alert(`Booking failed: ${errorData.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Booking failed', error);
+      alert('An unexpected error occurred during booking.');
     }
   };
 
@@ -175,6 +186,22 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {bookingSuccess && (
+        <div className="fixed inset-0 z-[101] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="bg-white rounded-[3rem] shadow-2xl p-12 text-center max-w-md animate-in fade-in zoom-in-95">
+                <CheckCircle className="text-emerald-500 w-24 h-24 mx-auto mb-6" />
+                <h2 className="text-3xl font-black text-slate-900 mb-4">Booking Successful!</h2>
+                <p className="text-slate-500 mb-8">Your request has been submitted. Our team will contact you shortly to confirm the details.</p>
+                <button 
+                    onClick={() => setBookingSuccess(false)}
+                    className="bg-slate-900 text-white px-12 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-rose-600 transition-all"
+                >
+                    Done
+                </button>
+            </div>
+        </div>
+      )}
 
       {isWizardOpen && (
         <BookingWizard 

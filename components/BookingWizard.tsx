@@ -49,6 +49,13 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
 
   const baseTotal = selectedTests.reduce((acc, t) => acc + t.price, 0);
   const finalTotal = Math.max(0, baseTotal - discount);
+
+  useEffect(() => {
+    if (currentUser?.role === 'patient') {
+      setAmountTaken(finalTotal);
+    }
+  }, [finalTotal, currentUser]);
+
   const balanceAmount = Math.max(0, finalTotal - amountTaken);
 
   const applyPromo = () => {
@@ -107,8 +114,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
 
   const prevStep = () => setStep(s => s - 1);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     onComplete({ 
       ...formData, 
       paymentMethod, 
@@ -277,25 +283,27 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                 <button onClick={applyPromo} className="text-rose-600 font-black text-xs uppercase hover:text-rose-800">Apply</button>
               </div>
 
-              <div className="p-6 bg-slate-50 rounded-2xl text-left space-y-4">
-                 <div>
-                    <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Amount Paid Now (Cash/Partial)</label>
-                    <div className="relative">
-                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                        <input 
-                            type="number" 
-                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 font-bold"
-                            value={amountTaken}
-                            onChange={(e) => setAmountTaken(Number(e.target.value))}
-                            max={finalTotal}
-                        />
-                    </div>
-                 </div>
-                 <div className="flex justify-between items-center pt-2 border-t border-slate-200">
-                    <span className="font-bold text-sm text-slate-500">Balance Due:</span>
-                    <span className="font-black text-rose-600 text-lg">₹{balanceAmount}</span>
-                 </div>
-              </div>
+              {currentUser?.role !== 'patient' && (
+                <div className="p-6 bg-slate-50 rounded-2xl text-left space-y-4">
+                   <div>
+                      <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Amount Paid Now (Cash/Partial)</label>
+                      <div className="relative">
+                          <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                          <input 
+                              type="number" 
+                              className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 font-bold"
+                              value={amountTaken}
+                              onChange={(e) => setAmountTaken(Number(e.target.value))}
+                              max={finalTotal}
+                          />
+                      </div>
+                   </div>
+                   <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                      <span className="font-bold text-sm text-slate-500">Balance Due:</span>
+                      <span className="font-black text-rose-600 text-lg">₹{balanceAmount}</span>
+                   </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-6">
                  <button onClick={() => setPaymentMethod('online')} className={`p-6 rounded-[2rem] border-2 transition-all ${paymentMethod === 'online' ? 'border-rose-600 bg-rose-50 shadow-xl' : 'border-slate-50'}`}>
