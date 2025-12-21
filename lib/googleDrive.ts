@@ -136,14 +136,13 @@ export async function uploadReportToDrive(
     if (!fileId) throw new Error('Google Drive upload failed: No ID returned');
 
     // 3. Make the file publicly viewable
-    await drive.permissions.create({
-      fileId: fileId,
-      requestBody: {
-        role: 'reader',
-        type: 'anyone',
-      });
-    }
-
+          await drive.permissions.create({
+            fileId: fileId,
+            requestBody: {
+              role: 'reader',
+              type: 'anyone',
+            },
+          });
     return {
       fileId: fileId,
       webViewLink: file.data.webViewLink,
