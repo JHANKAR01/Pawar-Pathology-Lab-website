@@ -28,6 +28,10 @@ export async function PATCH(
 
       if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 });
 
+      // Fetch booking to get patient name for folder structure
+      const booking = await Booking.findById(id);
+      if (!booking) return NextResponse.json({ error: 'Booking not found to associate report with' }, { status: 404 });
+
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
@@ -36,7 +40,8 @@ export async function PATCH(
         const driveResponse = await uploadReportToDrive(
             buffer, 
             `Report_${id}_${Date.now()}.pdf`, 
-            file.type
+            file.type,
+            booking.patientName // Pass patient name for nested folder
         );
         reportUrl = driveResponse.webViewLink || '';
       } catch (driveError) {

@@ -4,10 +4,15 @@ import dbConnect from '@/lib/dbConnect';
 import Booking, { IBooking } from '@/models/Booking';
 
 // GET /api/bookings - Fetch all bookings (Admin/Partner view)
-export async function GET() {
+export async function GET(request: Request) {
   await dbConnect();
   try {
-    const bookings = await Booking.find({}).sort({ createdAt: -1 });
+    const { searchParams } = new URL(request.url);
+    const email = searchParams.get('email');
+
+    const filter = email ? { bookedByEmail: email } : {};
+
+    const bookings = await Booking.find(filter).sort({ createdAt: -1 });
     return NextResponse.json(bookings);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 });

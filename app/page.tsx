@@ -35,6 +35,7 @@ export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [myBookings, setMyBookings] = useState<any[]>([]);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 40);
@@ -42,6 +43,23 @@ export default function Home() {
     setCurrentUser(mockApi.getCurrentUser());
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (currentUser?.email) {
+      const fetchBookings = async () => {
+        try {
+          const response = await fetch(`/api/bookings?email=${currentUser.email}`);
+          if (response.ok) {
+            const data = await response.json();
+            setMyBookings(data);
+          }
+        } catch (error) {
+          console.error("Failed to fetch user's bookings", error);
+        }
+      };
+      fetchBookings();
+    }
+  }, [currentUser, bookingSuccess]);
 
   const handleBookingComplete = async (bookingData: any) => {
     try {
@@ -84,7 +102,6 @@ export default function Home() {
       return;
     }
     if (selectedTests.find(t => t.id === test.id)) {
-      // Logic for deselecting if needed, but UI now disables button
       setSelectedTests(prev => prev.filter(t => t.id !== test.id));
     } else {
       setSelectedTests(prev => [...prev, test]);
@@ -172,6 +189,43 @@ export default function Home() {
               </div>
            </div>
         </section>
+        
+        {currentUser?.role === 'patient' && myBookings.length > 0 && (
+          <section id="my-reports" className="py-24 px-12 bg-slate-50/50">
+            <div className="max-w-[1440px] mx-auto">
+              <h2 className="text-4xl font-black text-slate-900 mb-12 text-center">Your Digital Health Records</h2>
+              <div className="space-y-6">
+                {myBookings.map(booking => (
+                  <div key={booking._id} className="glass-pro p-8 rounded-[2rem] flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                      <h3 className="font-bold text-lg text-slate-800">{booking.tests.map((t: any) => t.title).join(', ')}</h3>
+                      <p className="text-sm text-slate-500">
+                        Booked on: {new Date(booking.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div>
+                      {booking.status === BookingStatus.COMPLETED && booking.reportFileUrl ? (
+                        <a
+                          href={booking.reportFileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-rose-600 text-white px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-rose-200 hover:bg-rose-700 transition-all inline-flex items-center gap-2"
+                        >
+                          <FileDown size={14}/>
+                          Download Report
+                        </a>
+                      ) : (
+                        <span className="bg-amber-100 text-amber-800 px-4 py-2 rounded-full font-bold text-xs uppercase">
+                          {booking.status.replace('_', ' ')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
       </main>
 
       <footer id="support" className="bg-slate-950 text-white py-24 px-12">
@@ -199,7 +253,10 @@ export default function Home() {
                 <h2 className="text-3xl font-black text-slate-900 mb-4">Booking Successful!</h2>
                 <p className="text-slate-500 mb-8">Your request has been submitted. Our team will contact you shortly to confirm the details.</p>
                 <button 
-                    onClick={() => setBookingSuccess(false)}
+                    onClick={() => {
+                      setBookingSuccess(false);
+                      // No full reload, just let the useEffect handle the refresh
+                    }}
                     className="bg-slate-900 text-white px-12 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-rose-600 transition-all"
                 >
                     Done
