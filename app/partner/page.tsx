@@ -13,6 +13,20 @@ export default function PartnerPage() {
   const [loading, setLoading] = useState(true);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('active'); // 'active' or 'completed'
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter tasks based on status and search query
+  const filteredTasks = tasks.filter(task => {
+    const matchesStatus = statusFilter === 'active' 
+      ? !['report_uploaded', 'completed'].includes(task.status) 
+      : ['report_uploaded', 'completed'].includes(task.status);
+    
+    const matchesSearch = task.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          task._id.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return matchesStatus && matchesSearch;
+  });
+  
   
   // Walk-in Form State
   const [newPatient, setNewPatient] = useState({
@@ -197,6 +211,13 @@ export default function PartnerPage() {
             <p className="text-gray-500 font-medium">Specimens requiring immediate clinical acquisition.</p>
           </div>
           <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Search patient or ID..."
+              className="px-4 py-2 rounded-xl text-sm font-bold bg-white text-gray-700 border border-gray-200"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
             <button
               onClick={() => setStatusFilter('active')}
               className={`px-4 py-2 rounded-xl text-sm font-bold ${statusFilter === 'active' ? 'bg-slate-900 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}
