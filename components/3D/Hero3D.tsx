@@ -7,7 +7,8 @@ const InstancedCells = ({ isMobile }: { isMobile: boolean }) => {
   const rbcMesh = useRef<THREE.InstancedMesh>(null);
   const wbcMesh = useRef<THREE.InstancedMesh>(null);
   
-  const count = isMobile ? 40 : 100;
+  // 1. Reduced particle count by 50%
+  const count = isMobile ? 20 : 50;
   
   const data = useMemo(() => {
     return Array.from({ length: count }, () => ({
@@ -18,7 +19,8 @@ const InstancedCells = ({ isMobile }: { isMobile: boolean }) => {
       ),
       rotation: new THREE.Euler(Math.random() * Math.PI, Math.random() * Math.PI, 0),
       scale: 0.5 + Math.random() * 0.8,
-      speed: 0.2 + Math.random() * 0.5,
+      // 3. Increased movement speed
+      speed: 0.5 + Math.random() * 0.8,
       type: Math.random() > 0.85 ? 'wbc' : 'rbc'
     }));
   }, [count]);
@@ -32,10 +34,11 @@ const InstancedCells = ({ isMobile }: { isMobile: boolean }) => {
 
     data.forEach((d) => {
       tempObj.position.copy(d.position);
-      tempObj.position.y += Math.sin(time * d.speed + d.position.x) * 0.1;
+      // Increased vertical movement range and speed
+      tempObj.position.y += Math.sin(time * d.speed + d.position.x) * 0.2;
       tempObj.rotation.copy(d.rotation);
-      tempObj.rotation.x += time * 0.1 * d.speed;
-      tempObj.rotation.y += time * 0.1 * d.speed;
+      tempObj.rotation.x += time * 0.2 * d.speed;
+      tempObj.rotation.y += time * 0.2 * d.speed;
       tempObj.scale.setScalar(d.scale);
       tempObj.updateMatrix();
 
@@ -53,7 +56,8 @@ const InstancedCells = ({ isMobile }: { isMobile: boolean }) => {
   return (
     <>
       <instancedMesh ref={rbcMesh} args={[undefined, undefined, count]}>
-        <torusGeometry args={[0.3, 0.15, 12, 24]} />
+        {/* 2. Simplified RBC geometry */}
+        <torusGeometry args={[0.3, 0.15, 8, 16]} />
         <meshStandardMaterial 
           color="#E11D48" 
           roughness={0.2} 
@@ -63,7 +67,8 @@ const InstancedCells = ({ isMobile }: { isMobile: boolean }) => {
         />
       </instancedMesh>
       <instancedMesh ref={wbcMesh} args={[undefined, undefined, count]}>
-        <sphereGeometry args={[0.25, 16, 16]} />
+        {/* 2. Simplified WBC geometry */}
+        <sphereGeometry args={[0.25, 12, 12]} />
         <meshStandardMaterial 
           color="#F8FAFC" 
           roughness={0.4} 
@@ -103,11 +108,12 @@ const DNAHelix = () => {
       {helixData.points.map((d, i) => (
         <group key={`dna-group-${i}`}>
           <mesh position={[d.p1.x, d.p1.y, d.p1.z]}>
-            <sphereGeometry args={[0.1, 8, 8]} />
+            {/* 2. Simplified DNA geometry */}
+            <sphereGeometry args={[0.1, 6, 6]} />
             <meshStandardMaterial color="#E11D48" emissive="#E11D48" emissiveIntensity={1} />
           </mesh>
           <mesh position={[d.p2.x, d.p2.y, d.p2.z]}>
-            <sphereGeometry args={[0.1, 8, 8]} />
+            <sphereGeometry args={[0.1, 6, 6]} />
             <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.4} />
           </mesh>
         </group>

@@ -3,17 +3,22 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { 
   Phone, MapPin, FlaskConical, LogIn, Activity, 
   Award, Zap, Globe, Instagram, Facebook, Clock, 
   CheckCircle, FileDown, LayoutDashboard, ChevronRight,
   ClipboardList, Navigation, ShieldCheck, UserCheck, LogOut, X
 } from 'lucide-react';
-import Hero3DContainer from '@/components/3D/Hero3DContainer';
 import TestSearch from '@/components/TestSearch';
 import BookingWizard from '@/components/BookingWizard';
 import { Test, CollectionType, BookingStatus } from '@/types';
 import { mockApi } from '@/lib/mockApi';
+
+const Hero3DContainer = dynamic(() => import('@/components/3D/Hero3DContainer'), {
+  ssr: false,
+  loading: () => <div className="relative h-[90vh] md:h-screen w-full overflow-hidden bg-[#050505]" />
+});
 
 const MOCK_TESTS: Test[] = [
   { id: '1', title: 'CBC - Hematology Profile', category: 'Hematology', price: 350, description: 'High-precision automated cellular analysis of 24 vital blood parameters.', isHomeCollectionAvailable: true, fastingRequired: false },

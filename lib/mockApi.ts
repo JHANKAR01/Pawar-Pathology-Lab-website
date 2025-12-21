@@ -14,18 +14,14 @@ const MOCK_USERS: User[] = [
 
 export const mockApi = {
   login: async (email: string, password: string): Promise<User> => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const user = MOCK_USERS.find(u => u.email === email);
-        if (user && password === email) {
-          const sessionUser = { ...user, token: `mock-jwt-${user.id}-${Date.now()}` };
-          localStorage.setItem(DB_KEYS.AUTH_TOKEN, JSON.stringify(sessionUser));
-          resolve(sessionUser);
-        } else {
-          reject(new Error('Invalid credentials. Use admin, partner, or patient as both email and password.'));
-        }
-      }, 500);
-    });
+    const user = MOCK_USERS.find(u => u.email === email);
+    if (user && password === email) {
+      const sessionUser = { ...user, token: `mock-jwt-${user.id}-${Date.now()}` };
+      localStorage.setItem(DB_KEYS.AUTH_TOKEN, JSON.stringify(sessionUser));
+      return sessionUser;
+    } else {
+      throw new Error('Invalid credentials. Use admin, partner, or patient as both email and password.');
+    }
   },
 
   logout: () => {
