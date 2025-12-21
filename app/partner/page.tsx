@@ -48,16 +48,31 @@ export default function PartnerPage() {
     setLoading(false);
   };
 
-  const handleUpdateStatus = async (id: string, newStatus: string) => {
-    const res = await fetch(`/api/bookings/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus })
-    });
-    if (res.ok) fetchBookings();
+  const handleUpdateStatus = async (id: string, newStatus: string, extraData: object = {}) => {
+    const originalTasks = tasks;
+    setTasks(prev => prev.map(task => 
+      task._id === id ? { ...task, status: newStatus, ...extraData } : task
+    ));
+
+    try {
+      const res = await fetch(`/api/bookings/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, ...extraData })
+      });
+      if (!res.ok) {
+        throw new Error('Failed to update status');
+      }
+      const updatedBooking = await res.json();
+      setTasks(prev => prev.map(task => task._id === id ? updatedBooking : task));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update status. Reverting changes.');
+      setTasks(originalTasks); // Rollback
+    }
   };
 
-  const handleCollectSample = (id: string) => {
+  const handleCollectSample = async (id: string) => {
     if (window.confirm('Safety Check: Confirm specimen acquisition for this patient?')) {
       handleUpdateStatus(id, 'sample_collected');
     }
@@ -67,6 +82,26 @@ export default function PartnerPage() {
     e.preventDefault();
     const balance = newPatient.totalAmount - newPatient.amountTaken;
     
+    // Optimistic update - create a temporary ID for the new task
+    const tempId = `temp-${Date.now()}`;
+    const optimisticTask = {
+      _id: tempId,
+      patientName: newPatient.name,
+      contactNumber: newPatient.phone,
+      email: newPatient.email,
+      tests: [{ title: newPatient.testTitle, price: newPatient.totalAmount, category: 'General', id: 'temp-test' }],
+      totalAmount: newPatient.totalAmount,
+      amountTaken: newPatient.amountTaken,
+      balanceAmount: balance,
+      collectionType: 'lab_visit',
+      scheduledDate: new Date().toISOString(),
+      status: 'sample_collected',
+      paymentMode: 'cash',
+      paymentStatus: balance === 0 ? 'paid' : 'unpaid',
+      bookedByEmail: 'partner-direct'
+    };
+    setTasks(prev => [optimisticTask, ...prev]);
+
     try {
       const res = await fetch('/api/bookings', {
         method: 'POST',
@@ -88,26 +123,45 @@ export default function PartnerPage() {
         })
       });
 
-      if (res.ok) {
-        setIsRegisterOpen(false);
-        fetchBookings();
-        alert('Walk-in patient registered and specimen logged.');
+      if (!res.ok) {
+        throw new Error('Failed to register walk-in');
       }
+      const createdBooking = await res.json();
+      setTasks(prev => prev.map(task => task._id === tempId ? createdBooking : task)); // Replace optimistic with real
+      setIsRegisterOpen(false);
+      setNewPatient({ name: '', phone: '', email: '', testTitle: 'CBC - Hematology Profile', totalAmount: 350, amountTaken: 0 });
+      alert('Walk-in patient registered and specimen logged.');
     } catch (err) {
       console.error(err);
+      alert('Failed to register walk-in. Reverting changes.');
+      setTasks(prev => prev.filter(task => task._id !== tempId)); // Rollback optimistic update
     }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, id: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const originalTasks = tasks;
+    setTasks(prev => prev.map(task => 
+      task._id === id ? { ...task, status: 'report_uploaded', reportFileUrl: 'uploading...' } : task // Optimistic update
+    ));
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('status', 'report_uploaded');
     try {
       const res = await fetch(`/api/bookings/${id}`, { method: 'PATCH', body: formData });
-      if (res.ok) fetchBookings();
-    } catch (err) { alert('Upload failed'); }
+      if (!res.ok) {
+        throw new Error('Upload failed');
+      }
+      const updatedBooking = await res.json();
+      setTasks(prev => prev.map(task => task._id === id ? updatedBooking : task));
+    } catch (err) { 
+      console.error(err);
+      alert('Upload failed. Reverting changes.');
+      setTasks(originalTasks); // Rollback
+    }
   };
 
   return (

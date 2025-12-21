@@ -6,7 +6,7 @@ import User from '@/models/User';
 export async function POST(request: Request) {
   await dbConnect();
   try {
-    const { name, username, email, phone } = await request.json();
+    const { name, username, email, phone, role, operationalRole } = await request.json();
     
     const existingUser = await User.findOne({ username });
     if (existingUser) {
@@ -19,7 +19,8 @@ export async function POST(request: Request) {
       email,
       phone,
       password: username, // Password = Username for your setup
-      role: 'patient'
+      role: role || 'patient',
+      operationalRole: operationalRole || 'none',
     });
 
     return NextResponse.json({ message: 'Registration successful' }, { status: 201 });

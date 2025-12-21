@@ -72,15 +72,28 @@ export default function AdminPage() {
   };
 
   const handleUpdateStatus = async (id: string, newStatus: string, extraData: object = {}) => {
+    // Optimistic update
+    const originalBookings = bookings;
+    setBookings(prev => prev.map(booking => 
+      booking._id === id ? { ...booking, status: newStatus, ...extraData } : booking
+    ));
+
     try {
       const res = await fetch(`/api/bookings/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus, ...extraData })
       });
-      if (res.ok) fetchData();
+      if (!res.ok) {
+        throw new Error('Failed to update status');
+      }
+      // Optionally, if the server returns the updated object, we can use it.
+      // const updatedBooking = await res.json();
+      // setBookings(prev => prev.map(booking => booking._id === id ? updatedBooking : booking));
     } catch (err) {
       console.error(err);
+      alert('Failed to update status. Reverting changes.');
+      setBookings(originalBookings); // Rollback
     }
   };
 
