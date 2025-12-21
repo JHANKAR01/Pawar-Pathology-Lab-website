@@ -3,7 +3,7 @@ import { google } from 'googleapis';
 import { Readable } from 'stream';
 import { Buffer } from 'buffer';
 
-const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
+const SCOPES = ['https://www.googleapis.com/auth/drive'];
 
 const auth = new google.auth.GoogleAuth({
   credentials: {
