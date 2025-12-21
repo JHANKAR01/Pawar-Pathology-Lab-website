@@ -139,6 +139,12 @@ export default function Home() {
             {currentUser ? (
                <div className="flex items-center gap-4">
                   <span className="hidden md:block text-xs font-black uppercase text-slate-500">Hi, {currentUser.name}</span>
+                  {currentUser.role === 'admin' && (
+                    <Link href="/admin" className="px-6 py-3 border-2 border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:border-rose-600 hover:text-rose-600 transition-all">Go to Dashboard</Link>
+                  )}
+                  {currentUser.role === 'partner' && (
+                    <Link href="/partner" className="px-6 py-3 border-2 border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:border-rose-600 hover:text-rose-600 transition-all">Go to Dashboard</Link>
+                  )}
                   <button onClick={handleLogout} className="p-3 bg-white/5 border-2 border-slate-100 rounded-2xl text-slate-500 hover:text-rose-600 hover:border-rose-200 transition-all"><LogOut className="w-4 h-4" /></button>
                </div>
             ) : (
@@ -191,15 +197,37 @@ export default function Home() {
       </main>
 
       <footer id="help-support" className="bg-slate-950 text-white py-24 px-12">
-        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
-          <div className="md:col-span-2">
-            <h2 className="text-2xl font-black mb-8 uppercase">PAWAR<span className="text-rose-600">LAB</span></h2>
-            <p className="text-slate-500 max-w-sm">Leading diagnostic intelligence provider in Madhya Pradesh. Precision analysis since 1998.</p>
-          </div>
+        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 text-center md:text-left">
+          {/* Left Column: Brand Identity */}
           <div>
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-8">Contact Node</h4>
+            <div className="flex items-center justify-center md:justify-start gap-4 mb-4">
+              <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center">
+                <FlaskConical className="text-white w-6 h-6" />
+              </div>
+              <h2 className="font-heading font-black text-2xl text-white tracking-tighter uppercase">PAWAR<span className="text-rose-600">LAB</span></h2>
+            </div>
+            <p className="text-slate-500 max-w-sm mx-auto md:mx-0">Leading diagnostic intelligence provider in Madhya Pradesh. Precision analysis since 1998.</p>
+          </div>
+
+          {/* Center Column: Contact Node */}
+          <div className="flex flex-col items-center md:items-start">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-4">Contact Node</h4>
             <p className="text-slate-400 font-bold mb-2">+91 9755553339</p>
             <p className="text-slate-500">support@pawarlab.com</p>
+          </div>
+
+          {/* Right Column: Laboratory Location */}
+          <div className="flex flex-col items-center md:items-start">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-4">Laboratory Location</h4>
+            <a 
+              href="https://www.google.com/maps/search/?api=1&query=Pawar+Pathology+Lab+Betul" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-slate-400 hover:text-rose-600 transition-colors flex items-center gap-2"
+            >
+              <MapPin size={16} />
+              <span>Find us on Google Maps</span>
+            </a>
           </div>
         </div>
       </footer>
