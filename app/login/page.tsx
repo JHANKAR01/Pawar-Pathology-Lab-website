@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, Loader2, AlertCircle, FlaskConical, ShieldCheck, HeartHandshake, User as UserIcon } from 'lucide-react';
+import { Mail, Lock, Loader2, AlertCircle, FlaskConical, ShieldCheck, HeartHandshake, User as UserIcon, ArrowLeft } from 'lucide-react';
 import { mockApi } from '@/lib/mockApi';
 import { UserRole } from '@/types';
 
@@ -63,7 +63,7 @@ export default function LoginPage() {
 
       <div className="w-full max-w-5xl bg-[#111112] rounded-[3.5rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-white/5 overflow-hidden flex flex-col lg:flex-row relative z-10 animate-in fade-in zoom-in duration-500">
         
-        <div className="lg:w-1/2 bg-gradient-to-br from-red-600 to-red-900 p-12 flex flex-col justify-center relative overflow-hidden">
+        <div className="lg:w-1/2 bg-gradient-to-br from-red-600 to-red-900 p-12 flex flex-col justify-center gap-16 relative overflow-hidden">
           <div className="relative z-10 text-center">
             <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mb-8 shadow-2xl mx-auto">
               <FlaskConical className="text-red-600 w-10 h-10" />
@@ -72,6 +72,11 @@ export default function LoginPage() {
               Diagnostic Intelligence Center
             </h1>
             <p className="text-red-100 font-medium">Secure Access Portal</p>
+          </div>
+          <div className="relative z-10">
+            <button onClick={() => router.push('/')} className="w-full flex items-center justify-center gap-3 text-red-100 hover:text-white font-bold px-6 py-4 rounded-[2rem] bg-white/10">
+              <ArrowLeft className="w-5 h-5" /> Go back to Homepage
+            </button>
           </div>
         </div>
 
@@ -113,6 +118,12 @@ export default function LoginPage() {
                {isLoading ? <Loader2 className="animate-spin" /> : "Access System"}
             </button>
           </form>
+          <p className="text-center text-sm text-gray-500 mt-6">
+            Don't have an account?{' '}
+            <a href="/signup" className="font-semibold leading-6 text-red-500 hover:text-red-400">
+              Sign up
+            </a>
+          </p>
         </div>
       </div>
     </div>
