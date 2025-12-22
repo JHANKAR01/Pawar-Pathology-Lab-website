@@ -31,8 +31,9 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
   });
 
   const currentUser = useMemo(() => {
-    const user = localStorage.getItem('pawar_lab_auth_token');
-    return user ? JSON.parse(user) : null;
+    // Assuming currentUser contains { name, email, phone } and is stored in localStorage
+    const userJson = localStorage.getItem('pawar_lab_user'); // Get full user object
+    return userJson ? JSON.parse(userJson) : null;
   }, []);
 
   // Only pre-fill logic on initial mount or when specifically toggling self-booking ON.
@@ -90,6 +91,30 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     );
   };
 
+  const getTodayDate = () => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months start at 0!
+    const dd = String(today.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const isSunday = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.getDay() === 0; // Sunday is 0
+  };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedDate = e.target.value;
+    if (isSunday(selectedDate)) {
+      setError("Sundays are not available for bookings. Please choose another day.");
+      setFormData({...formData, date: ''}); // Clear selected date
+    } else {
+      setError('');
+      setFormData({...formData, date: selectedDate});
+    }
+  };
+
   const validateCurrentStep = () => {
     setError('');
     if (step === 2) {
@@ -99,6 +124,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     }
     if (step === 3) {
       if (!formData.date) return "Please select a preferred date.";
+      if (isSunday(formData.date)) return "Sundays are not available for bookings. Please choose another day."; // Re-check on validation
       if (formData.collectionType === CollectionType.HOME && !formData.coordinates) {
         return "Precision location sync is required for home visits.";
       }
@@ -119,19 +145,17 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
 
   const handleSubmit = () => {
     let finalPaymentStatus;
-    const finalBalanceAmount = finalTotal - amountTaken;
+    let finalAmountTakenForSubmit = amountTaken; // Use the state value
+    let finalCalculatedBalance = finalTotal - finalAmountTakenForSubmit;
 
     if (paymentMethod === 'online') {
       finalPaymentStatus = 'paid';
-    } else {
-      // Corrected Cash Logic
-      if (amountTaken === 0) {
-        finalPaymentStatus = 'unpaid';
-      } else if (finalBalanceAmount > 0) {
-        finalPaymentStatus = 'partial';
-      } else {
-        finalPaymentStatus = 'paid';
-      }
+    } else { // 'cash'
+      // If paymentMethod is 'cash', it means "Pay at Lab"
+      // So, initial amount taken should be 0 and status unpaid, regardless of partial payments made before submission
+      finalPaymentStatus = 'unpaid';
+      finalAmountTakenForSubmit = 0; // Explicitly set to 0 for "Pay at Lab"
+      finalCalculatedBalance = finalTotal; // Balance is full amount
     }
 
     onComplete({ 
@@ -139,8 +163,8 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
       referredBy: formData.referredBy || 'Self',
       paymentMethod, 
       totalAmount: finalTotal,
-      amountTaken: amountTaken,
-      balanceAmount: finalBalanceAmount,
+      amountTaken: finalAmountTakenForSubmit, // Ensure this is 0 if cash payment
+      balanceAmount: finalCalculatedBalance, // Ensure this is total if cash payment
       paymentStatus: finalPaymentStatus
     });
   };
@@ -281,7 +305,12 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                )}
 
                <div className="grid grid-cols-2 gap-6">
-                  <input type="date" className="w-full px-6 py-4 bg-slate-50 border-0 rounded-2xl font-bold" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+                  <input type="date" 
+                         className="w-full px-6 py-4 bg-slate-50 border-0 rounded-2xl font-bold" 
+                         value={formData.date} 
+                         onChange={handleDateChange} // Use new handler
+                         min={getTodayDate()} // Set min date
+                  />
                   <select className="w-full px-6 py-4 bg-slate-50 border-0 rounded-2xl font-bold outline-none" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})}>
                     <option value="">Select Time Slot</option>
                     <option>08:00 AM - 10:00 AM</option>
@@ -323,6 +352,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                               value={amountTaken}
                               onChange={(e) => setAmountTaken(Number(e.target.value))}
                               max={finalTotal}
+                              disabled={paymentMethod === 'cash'} // Disable if cash
                           />
                       </div>
                    </div>
