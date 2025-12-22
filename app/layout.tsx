@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import React from 'react';
+import { ThemeProvider } from '../components/ThemeProvider'; // Import ThemeProvider
 
 const jakarta = Plus_Jakarta_Sans({ 
   subsets: ['latin'],
@@ -26,10 +27,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${jakarta.variable} ${spaceGrotesk.variable}`}>
-      <body className="font-sans bg-slate-50 text-slate-900 selection:bg-rose-100 selection:text-rose-600 overflow-x-hidden">
-        <div className="grain-overlay" />
-        {children}
+    <html lang="en" className={`${jakarta.variable} ${spaceGrotesk.variable} font-sans`}>
+      <body>
+        <ThemeProvider> {/* Wrap children with ThemeProvider */}
+          <div className="grain-overlay" />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

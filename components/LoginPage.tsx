@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Loader2, AlertCircle, ArrowLeft, Eye, EyeOff, ShieldCheck, HeartHandshake, User as UserIcon, Check } from 'lucide-react';
 import { User } from '../types'; // Assuming User type has a token field
+import Link from 'next/link'; // Import Link component
 
 interface LoginPageProps {
   onLoginSuccess: (user: User) => void;
@@ -139,7 +140,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
                 <button 
                   type="button" 
                   onClick={togglePasswordVisibility}
-                  className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-colors"
+                  className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -155,8 +156,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>Establish Session <ArrowLeft className="w-4 h-4 rotate-180" /></>
-              )}
             </button>
+            <p className="text-center text-gray-500 text-xs mt-4">
+              Don't have an account? {' '}
+              <Link href="/signup" className="text-red-500 hover:underline font-bold">
+                Create one
+              </Link>
+            </p>
           </form>
 
           <p className="mt-12 text-center text-[9px] font-black text-gray-600 uppercase tracking-[0.5em]">
