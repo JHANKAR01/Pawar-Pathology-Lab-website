@@ -28,10 +28,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${jakarta.variable} ${spaceGrotesk.variable} font-sans`}>
-      <body className="bg-[#050505] text-white">
+      <body>
         <ThemeProvider> {/* Wrap children with ThemeProvider */}
-          <div className="grain-overlay" />
-          {children}
+          <div className="bg-[#050505] min-h-screen text-white">
+            <div className="grain-overlay" />
+            {children}
+          </div>
         </ThemeProvider>
       </body>
     </html>

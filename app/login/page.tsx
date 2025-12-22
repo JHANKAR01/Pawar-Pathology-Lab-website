@@ -128,7 +128,7 @@ export default function LoginPage() {
                 {isLoading ? <Loader2 className="animate-spin" /> : "Establish Session"}
               </button>
               <button type="button" onClick={() => router.push('/signup')} className="w-full bg-transparent border-2 border-white/20 text-white/70 py-5 rounded-2xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-3 hover:bg-white/10 hover:text-white transition-all">
-                Create New Account
+                Register / Create Account
               </button>
             </div>
           </form>
