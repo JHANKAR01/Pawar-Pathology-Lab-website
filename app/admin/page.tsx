@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, HeartHandshake, Settings as SettingsIcon, 
-  ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2
+  ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home
 } from 'lucide-react';
 import { FlaskConical } from 'lucide-react';
 
@@ -199,9 +199,14 @@ export default function AdminPage() {
             </button>
           ))}
         </nav>
-        <button onClick={() => { localStorage.removeItem('pawar_lab_auth_token'); router.push('/login'); }} className="mt-10 flex items-center gap-3 text-slate-500 hover:text-rose-500 font-bold px-6 py-4 rounded-[2rem]">
-          <LogOut className="w-5 h-5" /> Logout
-        </button>
+        <div className="mt-10 pt-10 border-t border-white/5">
+          <button onClick={() => router.push('/')} className="w-full flex items-center gap-3 px-6 py-4 rounded-[2rem] text-sm font-bold transition-all text-slate-500 hover:text-white hover:bg-white/5">
+            <Home className="w-5 h-5" /> Homepage
+          </button>
+          <button onClick={() => { localStorage.removeItem('pawar_lab_auth_token'); router.push('/login'); }} className="w-full mt-2 flex items-center gap-3 px-6 py-4 rounded-[2rem] text-sm font-bold transition-all text-slate-500 hover:text-rose-500">
+            <LogOut className="w-5 h-5" /> Logout
+          </button>
+        </div>
       </aside>
 
       <main className="flex-1 space-y-8 overflow-y-auto">

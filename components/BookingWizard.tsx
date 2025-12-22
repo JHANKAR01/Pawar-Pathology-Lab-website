@@ -34,7 +34,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
 
   useEffect(() => {
     // On component mount, check for the user in localStorage
-    const userJson = localStorage.getItem('pawar_lab_user');
+    const userJson = localStorage.getItem('pawar_lab_auth_token');
     if (userJson) {
       setCurrentUser(JSON.parse(userJson));
     }
