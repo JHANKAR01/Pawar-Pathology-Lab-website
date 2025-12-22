@@ -28,7 +28,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${jakarta.variable} ${spaceGrotesk.variable} font-sans`}>
-      <body>
+      <body className="bg-[#050505] text-white">
         <ThemeProvider> {/* Wrap children with ThemeProvider */}
           <div className="grain-overlay" />
           {children}

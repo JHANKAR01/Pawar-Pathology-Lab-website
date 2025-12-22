@@ -111,28 +111,27 @@ export default function LoginPage() {
                 <input 
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Password" 
-                  className="w-full pl-16 pr-14 py-5 bg-white/5 border border-white/5 rounded-2xl outline-none text-white font-bold" 
+                  className="w-full pl-16 pr-16 py-5 bg-white/5 border border-white/5 rounded-2xl outline-none text-white font-bold" 
                   value={password} 
                   onChange={e => setPassword(e.target.value)} 
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-600 hover:text-rose-500"
+                  className="absolute right-6 top-1/2 -translate-y-1/2 text-rose-500"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
             </div>
-            <button type="submit" className="w-full bg-red-600 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-red-700 transition-all" disabled={isLoading}>
-               {isLoading ? <Loader2 className="animate-spin" /> : "Access System"}
-            </button>
+            <div className="pt-4 space-y-4">
+              <button type="submit" className="w-full bg-red-600 text-white py-5 rounded-2xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-3 hover:bg-red-700 transition-all" disabled={isLoading}>
+                {isLoading ? <Loader2 className="animate-spin" /> : "Establish Session"}
+              </button>
+              <button type="button" onClick={() => router.push('/signup')} className="w-full bg-transparent border-2 border-white/20 text-white/70 py-5 rounded-2xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-3 hover:bg-white/10 hover:text-white transition-all">
+                Create New Account
+              </button>
+            </div>
           </form>
-          <p className="text-center text-sm text-gray-500 mt-6">
-            Don't have an account?{' '}
-            <a href="/signup" className="font-semibold leading-6 text-red-500 hover:text-red-400">
-              Sign up
-            </a>
-          </p>
         </div>
       </div>
     </div>

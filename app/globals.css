@@ -3,6 +3,13 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html,
+  body {
+    background-color: #050505;
+  }
+}
+
 :root {
   --clinical-rose: #E11D48;
   --slate-950: #0F172A;
