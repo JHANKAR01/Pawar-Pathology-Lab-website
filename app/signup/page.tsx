@@ -108,12 +108,12 @@ export default function SignupPage() {
                   required 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)} 
-                  className="appearance-none block w-full px-3 py-2 border border-white/10 bg-white/5 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm text-white pr-10"
+                  className="appearance-none block w-full px-3 py-2 border border-white/10 bg-white/5 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm text-white pr-14"
                 />
                 <button 
                   type="button" 
                   onClick={togglePasswordVisibility}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-rose-500"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -131,12 +131,12 @@ export default function SignupPage() {
                   required 
                   value={confirmPassword} 
                   onChange={(e) => setConfirmPassword(e.target.value)} 
-                  className="appearance-none block w-full px-3 py-2 border border-white/10 bg-white/5 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm text-white pr-10"
+                  className="appearance-none block w-full px-3 py-2 border border-white/10 bg-white/5 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm text-white pr-14"
                 />
                 <button 
                   type="button" 
                   onClick={toggleConfirmPasswordVisibility}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-rose-500"
                 >
                   {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>

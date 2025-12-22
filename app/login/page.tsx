@@ -2,14 +2,13 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, Loader2, AlertCircle, FlaskConical, ShieldCheck, HeartHandshake, User as UserIcon, ArrowLeft } from 'lucide-react';
-import { mockApi } from '@/lib/mockApi';
-import { UserRole } from '@/types';
+import { Mail, Lock, Loader2, AlertCircle, FlaskConical, ShieldCheck, HeartHandshake, User as UserIcon, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -30,8 +29,11 @@ export default function LoginPage() {
         throw new Error(errorData.error || 'Login failed');
       }
 
-      const user = await response.json();
-      localStorage.setItem('pawar_lab_auth_token', JSON.stringify(user));
+      const { token, user } = await response.json();
+      
+      localStorage.setItem('pawar_lab_auth_token', token);
+      localStorage.setItem('pawar_lab_user_role', user.role);
+      localStorage.setItem('pawar_lab_user', JSON.stringify(user));
       
       switch (user.role) {
         case 'admin':
@@ -107,12 +109,19 @@ export default function LoginPage() {
             <div className="relative">
                 <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-600 w-5 h-5" />
                 <input 
-                  type="password" 
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="Password" 
-                  className="w-full pl-16 pr-6 py-5 bg-white/5 border border-white/5 rounded-2xl outline-none text-white font-bold" 
+                  className="w-full pl-16 pr-14 py-5 bg-white/5 border border-white/5 rounded-2xl outline-none text-white font-bold" 
                   value={password} 
                   onChange={e => setPassword(e.target.value)} 
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-600 hover:text-rose-500"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
             </div>
             <button type="submit" className="w-full bg-red-600 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-red-700 transition-all" disabled={isLoading}>
                {isLoading ? <Loader2 className="animate-spin" /> : "Access System"}
