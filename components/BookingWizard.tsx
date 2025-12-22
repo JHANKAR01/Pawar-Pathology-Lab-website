@@ -30,13 +30,17 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     referredBy: 'Self'
   });
 
-  const currentUser = useMemo(() => {
-    // Assuming currentUser contains { name, email, phone } and is stored in localStorage
-    const userJson = localStorage.getItem('pawar_lab_user'); // Get full user object
-    return userJson ? JSON.parse(userJson) : null;
-  }, []);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
-  // Only pre-fill logic on initial mount or when specifically toggling self-booking ON.
+  useEffect(() => {
+    // On component mount, check for the user in localStorage
+    const userJson = localStorage.getItem('pawar_lab_user');
+    if (userJson) {
+      setCurrentUser(JSON.parse(userJson));
+    }
+  }, []); // Empty dependency array ensures this runs only once on mount
+
+  // This effect now reacts to both currentUser loading and the isBookingForSelf toggle
   useEffect(() => {
     if (isBookingForSelf && currentUser) {
       setFormData(prev => ({
@@ -45,8 +49,8 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
         email: currentUser.email || '',
         phone: currentUser.phone || ''
       }));
-    } else if (!isBookingForSelf) {
-      // Clear data only when explicitly switching to "someone else"
+    } else {
+      // When booking for someone else, or if no user is logged in, clear fields.
       setFormData(prev => ({ ...prev, name: '', email: '', phone: '' }));
     }
   }, [isBookingForSelf, currentUser]);

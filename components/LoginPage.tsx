@@ -134,7 +134,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
                   type={showPassword ? 'text' : 'password'} // Dynamic type
                   required
                   placeholder="Password"
-                  className="w-full pl-16 pr-6 py-5 bg-white/5 border border-white/5 rounded-2xl focus:ring-2 focus:ring-red-500 focus:bg-white/10 outline-none transition-all font-bold text-white text-sm"
+                  className="w-full pl-16 pr-14 py-5 bg-white/5 border border-white/5 rounded-2xl focus:ring-2 focus:ring-red-500 focus:bg-white/10 outline-none transition-all font-bold text-white text-sm"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                 />
@@ -148,22 +148,29 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
               </div>
             </div>
 
-            <button 
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-red-600 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-red-700 shadow-2xl shadow-red-900/30 transition-all active:scale-95 disabled:opacity-70 mt-4"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>Establish Session <ArrowLeft className="w-4 h-4 rotate-180" /></>
-            </button>
-            <p className="text-center text-gray-400 text-sm mt-4">
-              Don't have an account? {' '}
-              <Link href="/signup" className="text-red-500 hover:text-red-400 font-bold underline">
-                Create one
+            {/* Account Actions Section */}
+            <div className="mt-8 space-y-4">
+              <button 
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-red-600 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-red-700 shadow-2xl shadow-red-900/30 transition-all active:scale-95 disabled:opacity-70"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>Sign In <ArrowLeft className="w-4 h-4 rotate-180" /></>
+                )}
+              </button>
+              
+              <Link href="/signup" passHref>
+                <button
+                  type="button"
+                  className="w-full bg-white/10 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-white/20 transition-all active:scale-95"
+                >
+                  Register/Sign Up
+                </button>
               </Link>
-            </p>
+            </div>
           </form>
 
           <p className="mt-12 text-center text-[9px] font-black text-gray-600 uppercase tracking-[0.5em]">
