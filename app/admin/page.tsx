@@ -34,47 +34,15 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [config, setConfig] = useState({ requireVerification: true });
 
-  // Server-side admin guard
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      const token = localStorage.getItem('pawar_lab_auth_token');
-
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-
-      try {
-        const response = await fetch('/api/auth/check-admin', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          // If response is not ok, assume not admin or token is invalid
-          router.push('/login');
-          return;
-        }
-
-        const data = await response.json();
-        console.log('Admin check response:', data); // Debug log for admin status
-        if (!data.isAdmin) {
-          router.push('/login');
-        } else {
-          // If admin, proceed to fetch data
-          fetchData();
-          fetchPartners();
-          fetchConfig();
-        }
-      } catch (error) {
-        console.error('Failed to verify admin status:', error);
-        router.push('/login'); // Redirect on any error during verification
-      }
-    };
-
-    checkAdminStatus();
+    const token = localStorage.getItem('pawar_lab_auth_token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+    fetchData();
+    fetchPartners();
+    fetchConfig();
   }, [router]);
 
   const fetchData = async () => {
