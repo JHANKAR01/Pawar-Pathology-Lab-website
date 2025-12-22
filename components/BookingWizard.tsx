@@ -6,9 +6,10 @@ interface BookingWizardProps {
   selectedTests: Test[];
   onComplete: (details: any) => void;
   onCancel: () => void;
+  onTestRemove: (test: Test) => void;
 }
 
-const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete, onCancel }) => {
+const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete, onCancel, onTestRemove }) => {
   const [step, setStep] = useState(1);
   const [isBookingForSelf, setIsBookingForSelf] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<'online' | 'cash'>('cash');
@@ -54,6 +55,12 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
       setFormData(prev => ({ ...prev, name: '', email: '', phone: '' }));
     }
   }, [isBookingForSelf, currentUser]);
+
+  useEffect(() => {
+    if (selectedTests.length === 0) {
+      onCancel();
+    }
+  }, [selectedTests, onCancel]);
 
   const baseTotal = selectedTests.reduce((acc, t) => acc + t.price, 0);
   const finalTotal = Math.max(0, baseTotal - discount);
@@ -200,8 +207,15 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
               <h3 className="font-black text-lg mb-6 tracking-tight text-slate-900 uppercase">Review Selected Tests</h3>
               {selectedTests.map(t => (
                 <div key={t._id} className="flex justify-between items-center p-6 bg-slate-50 rounded-[1.5rem] border border-slate-100">
-                  <span className="font-bold text-slate-700">{t.title}</span>
-                  <span className="font-black text-rose-600">₹{t.price}</span>
+                  <div>
+                    <span className="font-bold text-slate-700">{t.title}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="font-black text-rose-600">₹{t.price}</span>
+                    <button onClick={() => onTestRemove(t)} className="text-slate-400 hover:text-rose-600 p-2 rounded-full hover:bg-rose-100 transition-all">
+                      <X size={16} />
+                    </button>
+                  </div>
                 </div>
               ))}
               <div className="border-t border-slate-100 pt-8 mt-10 flex justify-between items-center">

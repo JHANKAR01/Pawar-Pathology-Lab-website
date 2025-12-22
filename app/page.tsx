@@ -253,6 +253,7 @@ export default function Home() {
       {isWizardOpen && (
         <BookingWizard 
           selectedTests={selectedTests} 
+          onTestRemove={handleTestSelect}
           onCancel={() => setIsWizardOpen(false)}
           onComplete={handleBookingComplete}
         />
