@@ -47,9 +47,9 @@ export default function Home() {
     fetchTests();
     const handleScroll = () => setIsScrolled(window.scrollY > 40);
     window.addEventListener('scroll', handleScroll);
-    const user = JSON.parse(localStorage.getItem('pawar_lab_auth_token') || '{}');
-    if(user?._id) {
-      setCurrentUser(user);
+    const userJson = localStorage.getItem('pawar_lab_user');
+    if (userJson) {
+      setCurrentUser(JSON.parse(userJson));
     }
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -104,6 +104,9 @@ export default function Home() {
 
   const handleLogout = () => {
     localStorage.removeItem('pawar_lab_auth_token');
+    localStorage.removeItem('pawar_lab_user');
+    localStorage.removeItem('pawar_lab_user_role');
+    setCurrentUser(null);
     router.push('/login');
   };
   

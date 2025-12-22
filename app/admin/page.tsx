@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, HeartHandshake, Settings as SettingsIcon, 
-  ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home
+  ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home, Loader2
 } from 'lucide-react';
 import { FlaskConical } from 'lucide-react';
 
@@ -411,7 +411,7 @@ export default function AdminPage() {
 
               className={`w-full flex items-center gap-3 px-6 py-4 rounded-[2rem] text-sm font-bold transition-all ${
 
-                activeTApi-Pathology-Lab-website/app/admin/page.tsxb === tab.id 
+                activeTab === tab.id 
 
                   ? 'bg-white text-slate-900 shadow-2xl' 
 
