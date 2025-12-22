@@ -40,6 +40,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
       // For now, storing in localStorage. Ideally, use HttpOnly cookies.
       localStorage.setItem('pawar_lab_auth_token', data.token); // Store the token
       localStorage.setItem('pawar_lab_user_role', data.role); // Store user role
+      localStorage.setItem('pawar_lab_user', JSON.stringify(data.user)); // Store full user object
       
       // Pass the user object to onLoginSuccess
       onLoginSuccess(data.user); 
@@ -140,7 +141,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
                 <button 
                   type="button" 
                   onClick={togglePasswordVisibility}
-                  className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                  className="absolute right-6 top-1/2 -translate-y-1/2 text-rose-500 hover:text-white transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -157,9 +158,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
               ) : (
                 <>Establish Session <ArrowLeft className="w-4 h-4 rotate-180" /></>
             </button>
-            <p className="text-center text-gray-500 text-xs mt-4">
+            <p className="text-center text-gray-400 text-sm mt-4">
               Don't have an account? {' '}
-              <Link href="/signup" className="text-red-500 hover:underline font-bold">
+              <Link href="/signup" className="text-red-500 hover:text-red-400 font-bold underline">
                 Create one
               </Link>
             </p>

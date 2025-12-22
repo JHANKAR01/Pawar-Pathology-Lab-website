@@ -150,6 +150,8 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
 
     if (paymentMethod === 'online') {
       finalPaymentStatus = 'paid';
+      finalAmountTakenForSubmit = finalTotal; // Full amount taken for online
+      finalCalculatedBalance = 0; // No balance due for online
     } else { // 'cash'
       // If paymentMethod is 'cash', it means "Pay at Lab"
       // So, initial amount taken should be 0 and status unpaid, regardless of partial payments made before submission

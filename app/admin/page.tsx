@@ -59,6 +59,7 @@ export default function AdminPage() {
         }
 
         const data = await response.json();
+        console.log(data); // Debug log for admin status
         if (!data.isAdmin) {
           router.push('/login');
         } else {
