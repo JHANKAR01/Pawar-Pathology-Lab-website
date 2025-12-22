@@ -1,8 +1,7 @@
 
 import React, { useState } from 'react';
-import { Mail, Lock, Loader2, AlertCircle, FlaskConical, ArrowLeft, ShieldCheck, HeartHandshake, User as UserIcon, Check } from 'lucide-react';
-import { mockApi } from '../lib/mockApi';
-import { User } from '../types';
+import { Mail, Lock, Loader2, AlertCircle, ArrowLeft, Eye, EyeOff, ShieldCheck, HeartHandshake, User as UserIcon, Check } from 'lucide-react';
+import { User } from '../types'; // Assuming User type has a token field
 
 interface LoginPageProps {
   onLoginSuccess: (user: User) => void;
@@ -14,6 +13,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // State for password visibility
 
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -21,13 +21,36 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
     setIsLoading(true);
 
     try {
-      const user = await mockApi.login(username, password);
-      onLoginSuccess(user);
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      // Assuming the API returns user data including a token
+      // For now, storing in localStorage. Ideally, use HttpOnly cookies.
+      localStorage.setItem('pawar_lab_auth_token', data.token); // Store the token
+      localStorage.setItem('pawar_lab_user_role', data.role); // Store user role
+      
+      // Pass the user object to onLoginSuccess
+      onLoginSuccess(data.user); 
     } catch (err: any) {
       setError(err.message);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(prev => !prev);
   };
 
   return (
@@ -52,7 +75,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
               <ArrowLeft className="w-5 h-5" /> Back to Home
             </button>
             <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mb-8 shadow-2xl">
-              <FlaskConical className="text-red-600 w-10 h-10" />
+              <UserIcon className="text-red-600 w-10 h-10" /> {/* Changed from FlaskConical to UserIcon, as FlaskConical was likely a placeholder and UserIcon is more generic for login */}
             </div>
             <h1 className="font-heading text-4xl font-black text-white leading-tight mb-4">
               Diagnostic <br />Intelligence <br />Center
@@ -106,13 +129,20 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
               <div className="relative">
                 <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-600 w-5 h-5" />
                 <input 
-                  type="password" 
+                  type={showPassword ? 'text' : 'password'} // Dynamic type
                   required
                   placeholder="Password"
                   className="w-full pl-16 pr-6 py-5 bg-white/5 border border-white/5 rounded-2xl focus:ring-2 focus:ring-red-500 focus:bg-white/10 outline-none transition-all font-bold text-white text-sm"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                 />
+                <button 
+                  type="button" 
+                  onClick={togglePasswordVisibility}
+                  className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
             </div>
 

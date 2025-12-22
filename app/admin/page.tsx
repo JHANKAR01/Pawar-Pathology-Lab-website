@@ -4,8 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, HeartHandshake, Settings as SettingsIcon, 
-  ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, FlaskConical, Settings2
+  ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2
 } from 'lucide-react';
+import { FlaskConical } from 'lucide-react';
 
 interface BookingType {
   _id: string;
@@ -33,21 +34,59 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [config, setConfig] = useState({ requireVerification: true });
 
+  // Server-side admin guard
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('pawar_lab_auth_token') || '{}');
-    if (user?.role !== 'admin') {
-      router.push(user?.role === 'patient' ? '/reports' : '/login');
-    }
-    fetchData();
-    fetchPartners();
-    fetchConfig();
+    const checkAdminStatus = async () => {
+      const token = localStorage.getItem('pawar_lab_auth_token');
+
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/auth/check-admin', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          // If response is not ok, assume not admin or token is invalid
+          router.push('/login');
+          return;
+        }
+
+        const data = await response.json();
+        if (!data.isAdmin) {
+          router.push('/login');
+        } else {
+          // If admin, proceed to fetch data
+          fetchData();
+          fetchPartners();
+          fetchConfig();
+        }
+      } catch (error) {
+        console.error('Failed to verify admin status:', error);
+        router.push('/login'); // Redirect on any error during verification
+      }
+    };
+
+    checkAdminStatus();
   }, [router]);
 
   const fetchData = async () => {
     setLoading(true);
+    const token = localStorage.getItem('pawar_lab_auth_token'); // Get token for API calls
     try {
-      const res = await fetch('/api/bookings');
+      const res = await fetch('/api/bookings', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (res.ok) setBookings(await res.json());
+      else if (res.status === 401 || res.status === 403) router.push('/login'); // Redirect if unauthorized
     } catch (error) {
       console.error('Failed to load admin data', error);
     } finally {
@@ -56,64 +95,89 @@ export default function AdminPage() {
   };
 
   const fetchPartners = async () => {
+    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
-      const res = await fetch('/api/users?role=partner');
+      const res = await fetch('/api/users?role=partner', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (res.ok) setPartners(await res.json());
+      else if (res.status === 401 || res.status === 403) router.push('/login');
     } catch (error) {
       console.error('Failed to load partners', error);
     }
   };
 
   const fetchConfig = async () => {
+    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
-      const res = await fetch('/api/settings');
+      const res = await fetch('/api/settings', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (res.ok) setConfig(await res.json());
+      else if (res.status === 401 || res.status === 403) router.push('/login');
     } catch (err) { console.error(err); }
   };
 
   const handleUpdateStatus = async (id: string, newStatus: string, extraData: object = {}) => {
-    // Optimistic update
     const originalBookings = bookings;
     setBookings(prev => prev.map(booking => 
       booking._id === id ? { ...booking, status: newStatus, ...extraData } : booking
     ));
 
+    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
       const res = await fetch(`/api/bookings/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ status: newStatus, ...extraData })
       });
       if (!res.ok) {
+        if (res.status === 401 || res.status === 403) router.push('/login');
         throw new Error('Failed to update status');
       }
-      const updatedBooking = await res.json(); // Assuming API returns the updated booking
+      const updatedBooking = await res.json();
       setBookings(prev => prev.map(booking => booking._id === id ? updatedBooking : booking));
     } catch (err) {
       console.error(err);
       alert('Failed to update status. Reverting changes.');
-      setBookings(originalBookings); // Rollback
+      setBookings(originalBookings);
     }
   };
 
   const handleToggleConfig = async () => {
     const newConfig = { ...config, requireVerification: !config.requireVerification };
     setConfig(newConfig);
+    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
-      await fetch('/api/settings', {
+      const res = await fetch('/api/settings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify(newConfig)
       });
+      if (res.status === 401 || res.status === 403) router.push('/login');
     } catch (e) { console.error("Config save failed", e); }
   };
 
   const handleAddPartner = async (e: React.FormEvent) => {
     e.preventDefault();
+    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ ...newPartner, role: 'partner', operationalRole: 'helper' })
       });
       if (res.ok) {
@@ -121,6 +185,7 @@ export default function AdminPage() {
         fetchPartners();
         alert('Partner Added Successfully');
       } else {
+        if (res.status === 401 || res.status === 403) router.push('/login');
         const errorData = await res.json();
         alert(`Failed to add partner: ${errorData.error}`);
       }
@@ -165,7 +230,7 @@ export default function AdminPage() {
             </button>
           ))}
         </nav>
-        <button onClick={() => router.push('/')} className="mt-10 flex items-center gap-3 text-slate-500 hover:text-rose-500 font-bold px-6 py-4 rounded-[2rem]">
+        <button onClick={() => { localStorage.removeItem('pawar_lab_auth_token'); router.push('/login'); }} className="mt-10 flex items-center gap-3 text-slate-500 hover:text-rose-500 font-bold px-6 py-4 rounded-[2rem]">
           <LogOut className="w-5 h-5" /> Logout
         </button>
       </aside>
