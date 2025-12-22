@@ -9,6 +9,12 @@ interface BookingWizardProps {
   onTestRemove: (test: Test) => void;
 }
 
+interface BlackoutDate {
+  reason: string;
+  startDate: string;
+  endDate: string;
+}
+
 const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete, onCancel, onTestRemove }) => {
   const [step, setStep] = useState(1);
   const [isBookingForSelf, setIsBookingForSelf] = useState(true);
@@ -18,6 +24,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
   const [discount, setDiscount] = useState(0);
   const [amountTaken, setAmountTaken] = useState(0); // For partial payments
   const [error, setError] = useState('');
+  const [blackoutDates, setBlackoutDates] = useState<BlackoutDate[]>([]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -39,6 +46,18 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     if (userJson) {
       setCurrentUser(JSON.parse(userJson));
     }
+    const fetchBlackoutDates = async () => {
+      try {
+        const res = await fetch('/api/settings/blackout-dates');
+        if (res.ok) {
+          setBlackoutDates(await res.json());
+        }
+      } catch (error) {
+        console.error("Failed to fetch blackout dates:", error);
+      }
+    };
+
+    fetchBlackoutDates();
   }, []); // Empty dependency array ensures this runs only once on mount
 
   // This effect now reacts to both currentUser loading and the isBookingForSelf toggle
@@ -112,7 +131,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
 
   const isSunday = (dateString: string) => {
     const date = new Date(dateString);
-    return date.getDay() === 0; // Sunday is 0
+    return date.getUTCDay() === 0; // Sunday is 0
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,10 +139,19 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     if (isSunday(selectedDate)) {
       setError("Sundays are not available for bookings. Please choose another day.");
       setFormData({...formData, date: ''}); // Clear selected date
-    } else {
-      setError('');
-      setFormData({...formData, date: selectedDate});
+      return;
     }
+
+    for (const block of blackoutDates) {
+      if (selectedDate >= block.startDate && selectedDate <= block.endDate) {
+        setError(`Lab closed for ${block.reason}. Please select another date.`);
+        setFormData({...formData, date: ''});
+        return;
+      }
+    }
+
+    setError('');
+    setFormData({...formData, date: selectedDate});
   };
 
   const validateCurrentStep = () => {
@@ -136,6 +164,11 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     if (step === 3) {
       if (!formData.date) return "Please select a preferred date.";
       if (isSunday(formData.date)) return "Sundays are not available for bookings. Please choose another day."; // Re-check on validation
+      for (const block of blackoutDates) {
+        if (formData.date >= block.startDate && formData.date <= block.endDate) {
+          return `Lab closed for ${block.reason}. Please select another date.`;
+        }
+      }
       if (formData.collectionType === CollectionType.HOME && !formData.coordinates) {
         return "Precision location sync is required for home visits.";
       }
