@@ -5,7 +5,8 @@
 @layer base {
   html,
   body {
-    background-color: #050505;
+    background-color: #020203 !important;
+    color: #F8FAFC !important;
   }
 }
 
@@ -23,16 +24,15 @@
 }
 
 .glass-pro {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(2, 2, 3, 0.85);
+  backdrop-filter: blur(24px) saturate(200%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .glass-dark {
-  background: rgba(15, 23, 42, 0.9);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(11, 15, 26, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .section-mask {

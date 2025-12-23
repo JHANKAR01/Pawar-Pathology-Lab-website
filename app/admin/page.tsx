@@ -59,7 +59,6 @@ export default function AdminPage() {
         if (!res.ok) throw new Error('Not admin');
 
         const data = await res.json();
-        console.log('Admin Status Response:', data);
         if (data.isAdmin) {
           setIsVerified(true);
           fetchData();
@@ -186,7 +185,8 @@ export default function AdminPage() {
         throw new Error('Failed to update status');
       }
       const updatedBooking = await res.json();
-      setBookings(prev => prev.map(booking => booking._id === id ? updatedBooking : booking));
+      // Refetch all data to ensure consistency
+      fetchData();
     } catch (err) {
       console.error(err);
       alert('Failed to update status. Reverting changes.');
@@ -251,14 +251,14 @@ export default function AdminPage() {
 
   if (!isVerified) {
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-12 h-12 animate-spin text-rose-500" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#050505] flex flex-col lg:flex-row font-sans p-4 lg:p-8 gap-8">
+    <div className="min-h-screen flex flex-col lg:flex-row font-sans p-4 lg:p-8 gap-8">
       <aside className="w-full lg:w-80 glass-dark rounded-[3.5rem] p-8 flex flex-col relative z-20">
         <div className="flex items-center gap-4 mb-16 border-b border-white/5 pb-10">
           <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center">
@@ -283,7 +283,7 @@ export default function AdminPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`w-full flex items-center gap-3 px-6 py-4 rounded-[2rem] text-sm font-bold transition-all ${
                 activeTab === tab.id 
-                  ? 'bg-white text-slate-900 shadow-2xl' 
+                  ? 'bg-rose-600 text-white shadow-2xl' 
                   : 'text-slate-500 hover:text-white hover:bg-white/5'
               }`}
             >
@@ -316,7 +316,7 @@ export default function AdminPage() {
         {activeTab === 'Intelligence' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4">
              <div className="glass-dark p-10 rounded-[3rem]">
-                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-4">Total Revenue</p>
+                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">Total Revenue</p>
                 <p className="text-5xl font-black text-white">₹{bookings.reduce((acc, b) => acc + (b.totalAmount || 0), 0)}</p>
              </div>
              <div className="glass-dark p-10 rounded-[3rem]">

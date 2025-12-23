@@ -17,7 +17,7 @@ import { Test, CollectionType, BookingStatus } from '@/types';
 
 const Hero3DContainer = dynamic(() => import('@/components/3D/Hero3DContainer'), {
   ssr: false,
-  loading: () => <div className="relative h-[90vh] md:h-screen w-full overflow-hidden bg-[#050505]" />
+  loading: () => <div className="relative h-[90vh] md:h-screen w-full overflow-hidden bg-[#020203]" />
 });
 
 export default function Home() {
@@ -113,14 +113,14 @@ export default function Home() {
   const navItems = ['Test Directory', 'Clinical Services', 'Help & Support'];
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#050505]">
+    <div className="flex flex-col min-h-screen">
       <div className={`fixed top-0 left-0 w-full z-50 transition-all duration-700 px-4 md:px-12 ${isScrolled ? 'pt-2 md:pt-4' : 'pt-4 md:pt-8'}`}>
-        <nav className={`max-w-[1440px] mx-auto glass-pro rounded-[1.5rem] md:rounded-[2.5rem] px-4 md:px-8 py-3 flex justify-between items-center shadow-2xl transition-all ${isScrolled ? 'py-3' : 'py-5'}`}>
+        <header className={`max-w-[1440px] mx-auto glass-pro rounded-[1.5rem] md:rounded-[2.5rem] px-4 md:px-8 py-3 flex justify-between items-center shadow-2xl transition-all ${isScrolled ? 'py-3' : 'py-5'}`}>
           <div className="flex items-center gap-4 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center">
               <FlaskConical className="text-white w-6 h-6" />
             </div>
-            <h2 className="font-heading font-black text-2xl text-slate-900 tracking-tighter uppercase">PAWAR<span className="text-rose-600">LAB</span></h2>
+            <h2 className="font-heading font-black text-2xl text-white tracking-tighter uppercase">PAWAR<span className="text-rose-600">LAB</span></h2>
           </div>
 
           <div className="hidden lg:flex items-center gap-10">
@@ -141,33 +141,33 @@ export default function Home() {
           <div className="flex items-center gap-4">
             {currentUser ? (
                <div className="flex items-center gap-4">
-                  <span className="hidden md:block text-xs font-black uppercase text-slate-500">Hi, {currentUser.name}</span>
+                  <span className="hidden md:block text-xs font-black uppercase text-slate-400">Hi, {currentUser.name}</span>
                   {currentUser.role === 'admin' && (
-                    <Link href="/admin" className="px-6 py-3 border-2 border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:border-rose-600 hover:text-rose-600 transition-all">Go to Dashboard</Link>
+                    <Link href="/admin" className="px-6 py-3 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:border-rose-600 hover:text-rose-600 transition-all">Go to Dashboard</Link>
                   )}
                   {currentUser.role === 'partner' && (
-                    <Link href="/partner" className="px-6 py-3 border-2 border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:border-rose-600 hover:text-rose-600 transition-all">Go to Dashboard</Link>
+                    <Link href="/partner" className="px-6 py-3 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:border-rose-600 hover:text-rose-600 transition-all">Go to Dashboard</Link>
                   )}
-                  <button onClick={handleLogout} className="p-3 bg-white/5 border-2 border-slate-100 rounded-2xl text-slate-500 hover:text-rose-600 hover:border-rose-200 transition-all"><LogOut className="w-4 h-4" /></button>
+                  <button onClick={handleLogout} className="p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-rose-600 hover:border-rose-200 transition-all"><LogOut className="w-4 h-4" /></button>
                </div>
             ) : (
-              <Link href="/login" className="px-6 py-3 border-2 border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:border-rose-600 hover:text-rose-600 transition-all">Login</Link>
+              <Link href="/login" className="px-6 py-3 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:border-rose-600 hover:text-rose-600 transition-all">Login</Link>
             )}
             {selectedTests.length > 0 && (
-              <button onClick={() => setIsWizardOpen(true)} className="bg-rose-600 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-rose-200 animate-in fade-in slide-in-from-right">
+              <button onClick={() => setIsWizardOpen(true)} className="bg-rose-600 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-rose-500/20 animate-in fade-in slide-in-from-right">
                 Review Cart ({selectedTests.length})
               </button>
             )}
           </div>
-        </nav>
+        </header>
       </div>
 
       <main className="flex-1">
-        <section className="section-mask">
+        <section className="section-mask relative h-[90vh] md:h-screen w-full overflow-hidden bg-[#020203]">
           <Hero3DContainer />
         </section>
 
-        <section id="test-directory" className="py-24 md:py-40 bg-[#050505]">
+        <section id="test-directory" className="py-24 md:py-40">
           <TestSearch 
             tests={tests} 
             selectedIds={selectedTests.map(t => t._id)}
@@ -175,7 +175,7 @@ export default function Home() {
           />
         </section>
 
-        <section id="clinical-services" className="py-24 px-12 bg-[#050505]">
+        <section id="clinical-services" className="py-24 px-12">
            <div className="max-w-[1440px] mx-auto text-center">
               <h2 className="text-4xl font-black text-white mb-12">Clinical Excellence</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
