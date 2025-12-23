@@ -238,6 +238,17 @@ export default function AdminPage() {
     }
   };
 
+  const getStatusBadge = (status: string) => {
+    const base = 'px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest';
+    switch (status) {
+      case 'pending': return `${base} bg-amber-500/10 text-amber-500`;
+      case 'accepted': return `${base} bg-emerald-500/10 text-emerald-500`;
+      case 'assigned': return `${base} bg-sky-500/10 text-sky-500`;
+      case 'completed': return `${base} bg-slate-500/10 text-slate-500`;
+      default: return `${base} bg-slate-700 text-slate-300`;
+    }
+  };
+
   if (!isVerified) {
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center">
@@ -323,7 +334,26 @@ export default function AdminPage() {
           <div className="space-y-6 animate-in fade-in">
              {bookings.filter(b => b.status !== 'completed').map(b => (
                 <div key={b._id} className="glass-dark p-8 rounded-[2.5rem] border border-white/5 flex flex-col gap-4">
-                   {/* ... Booking details ... */}
+                   <div className="flex justify-between items-center">
+                      <h3 className="text-white font-black text-xl">{b.patientName}</h3>
+                      <span className={getStatusBadge(b.status)}>{b.status}</span>
+                   </div>
+                   <p className="text-slate-400 text-sm font-bold">{b.tests.map(t => t.title).join(' + ')}</p>
+                   <div className="flex gap-8 text-white border-t border-white/10 pt-4 mt-2">
+                        <div>
+                            <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">Total</p>
+                            <p className="font-bold text-lg">₹{b.totalAmount}</p>
+                        </div>
+                        <div>
+                            <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">Balance</p>
+                            <p className="font-bold text-lg text-rose-500">₹{b.balanceAmount}</p>
+                        </div>
+                   </div>
+                   {b.status === 'pending' && (
+                     <button onClick={() => handleUpdateStatus(b._id, 'accepted')} className="mt-4 self-start bg-emerald-500/10 text-emerald-500 px-6 py-3 rounded-xl font-bold text-xs hover:bg-emerald-500/20 transition-all">
+                       Approve Booking
+                     </button>
+                   )}
                 </div>
              ))}
           </div>
@@ -331,13 +361,66 @@ export default function AdminPage() {
 
         {activeTab === 'Specimens' && (
           <div className="glass-dark p-8 rounded-[3rem]">
-            {/* ... Specimens table ... */}
+            <table className="w-full text-left text-white">
+                <thead>
+                    <tr className="border-b border-white/10">
+                        <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-500">Patient</th>
+                        <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-500">Tests</th>
+                        <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-500">Status</th>
+                        <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-500">Assign Partner</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {bookings.filter(b => b.status === 'accepted' || b.status === 'assigned').map(b => (
+                        <tr key={b._id} className="border-b border-white/5">
+                            <td className="p-4 font-bold">{b.patientName}</td>
+                            <td className="p-4 text-slate-400 text-sm">{b.tests.map(t => t.title).join(', ')}</td>
+                            <td className="p-4">
+                                <span className={getStatusBadge(b.status)}>{b.status}</span>
+                                {b.assignedPartnerName && <p className="text-xs text-sky-400 mt-1">{b.assignedPartnerName}</p>}
+                            </td>
+                            <td className="p-4">
+                                <select 
+                                    onChange={(e) => handleUpdateStatus(b._id, 'assigned', { assignedPartnerName: e.target.value })}
+                                    className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white font-bold w-full"
+                                    defaultValue={b.assignedPartnerName || ""}
+                                >
+                                    <option value="" disabled>Select a partner</option>
+                                    {partners.map(p => (
+                                        <option key={p._id} value={p.name}>{p.name}</option>
+                                    ))}
+                                </select>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
           </div>
         )}
 
         {activeTab === 'Partners' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in">
-             {/* ... Partners UI ... */}
+             <div className="glass-dark p-12 rounded-[4rem]">
+                <h3 className="text-2xl font-black text-white mb-8">Register New Partner</h3>
+                <form onSubmit={handleAddPartner} className="space-y-6">
+                    <input className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold" placeholder="Full Name" value={newPartner.name} onChange={e => setNewPartner({...newPartner, name: e.target.value})} />
+                    <input className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold" placeholder="Email" type="email" value={newPartner.email} onChange={e => setNewPartner({...newPartner, email: e.target.value})} />
+                    <input className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold" placeholder="Username" value={newPartner.username} onChange={e => setNewPartner({...newPartner, username: e.target.value})} />
+                    <input className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold" placeholder="Password" type="password" value={newPartner.password} onChange={e => setNewPartner({...newPartner, password: e.target.value})} />
+                    <button type="submit" className="w-full bg-rose-600 text-white py-4 rounded-2xl font-black uppercase text-sm tracking-widest">Register</button>
+                </form>
+             </div>
+             <div className="glass-dark p-12 rounded-[4rem]">
+                 <h3 className="text-2xl font-black text-white mb-8">Active Partners</h3>
+                 <div className="space-y-4">
+                    {partners.map(p => (
+                        <div key={p._id} className="flex items-center justify-between p-6 bg-white/5 rounded-2xl">
+                            <p className="font-bold text-white text-lg">{p.name}</p>
+                            <p className="text-sm text-slate-400 font-bold uppercase">{p.operationalRole}</p>
+                        </div>
+                    ))}
+                 </div>
+             </div>
           </div>
         )}
 

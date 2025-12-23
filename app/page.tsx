@@ -113,7 +113,7 @@ export default function Home() {
   const navItems = ['Test Directory', 'Clinical Services', 'Help & Support'];
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50/50">
+    <div className="flex flex-col min-h-screen bg-[#050505]">
       <div className={`fixed top-0 left-0 w-full z-50 transition-all duration-700 px-4 md:px-12 ${isScrolled ? 'pt-2 md:pt-4' : 'pt-4 md:pt-8'}`}>
         <nav className={`max-w-[1440px] mx-auto glass-pro rounded-[1.5rem] md:rounded-[2.5rem] px-4 md:px-8 py-3 flex justify-between items-center shadow-2xl transition-all ${isScrolled ? 'py-3' : 'py-5'}`}>
           <div className="flex items-center gap-4 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
@@ -167,7 +167,7 @@ export default function Home() {
           <Hero3DContainer />
         </section>
 
-        <section id="test-directory" className="py-24 md:py-40 bg-slate-50/50">
+        <section id="test-directory" className="py-24 md:py-40 bg-[#050505]">
           <TestSearch 
             tests={tests} 
             selectedIds={selectedTests.map(t => t._id)}
@@ -175,24 +175,24 @@ export default function Home() {
           />
         </section>
 
-        <section id="clinical-services" className="py-24 px-12 bg-white">
+        <section id="clinical-services" className="py-24 px-12 bg-[#050505]">
            <div className="max-w-[1440px] mx-auto text-center">
-              <h2 className="text-4xl font-black text-slate-900 mb-12">Clinical Excellence</h2>
+              <h2 className="text-4xl font-black text-white mb-12">Clinical Excellence</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                 <div className="p-12 bg-slate-50/70 rounded-[3rem]">
+                 <div className="glass-dark p-12 rounded-[3rem]">
                     <ShieldCheck className="mx-auto text-rose-600 mb-6" size={48} />
-                    <h3 className="text-xl font-bold mb-4">NABL Accredited</h3>
-                    <p className="text-slate-500">Gold standard pathology reports recognized globally.</p>
+                    <h3 className="text-xl font-bold text-white mb-4">NABL Accredited</h3>
+                    <p className="text-slate-400">Gold standard pathology reports recognized globally.</p>
                  </div>
-                 <div className="p-12 bg-slate-50/70 rounded-[3rem]">
+                 <div className="glass-dark p-12 rounded-[3rem]">
                     <Zap className="mx-auto text-rose-600 mb-6" size={48} />
-                    <h3 className="text-xl font-bold mb-4">Fast Results</h3>
-                    <p className="text-slate-500">Same-day turnaround for most standard clinical panels.</p>
+                    <h3 className="text-xl font-bold text-white mb-4">Fast Results</h3>
+                    <p className="text-slate-400">Same-day turnaround for most standard clinical panels.</p>
                  </div>
-                 <div className="p-12 bg-slate-50/70 rounded-[3rem]">
+                 <div className="glass-dark p-12 rounded-[3rem]">
                     <Clock className="mx-auto text-rose-600 mb-6" size={48} />
-                    <h3 className="text-xl font-bold mb-4">24/7 Support</h3>
-                    <p className="text-slate-500">Clinical experts available for result consultation.</p>
+                    <h3 className="text-xl font-bold text-white mb-4">24/7 Support</h3>
+                    <p className="text-slate-400">Clinical experts available for result consultation.</p>
                  </div>
               </div>
            </div>
