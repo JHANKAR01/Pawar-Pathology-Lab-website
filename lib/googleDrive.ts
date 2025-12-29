@@ -58,19 +58,22 @@ async function getOrCreateFolder(name: string, parentId: string): Promise<string
 /**
  * Uploads a file buffer to a nested Google Drive folder structure.
  * Returns the webViewLink (viewable URL) and fileId.
+ * 
+ * Automated Naming Convention: patient_name + " " + tests + " " + date(mm/dd/yyyy) + " " + bookingId
+ * Deep Nesting: Year > Month > Day > Patient Name
  */
 export async function uploadReportToDrive(
   fileBuffer: Buffer, 
-  fileName: string, 
   mimeType: string,
-  patientName: string // Added for nested folder path
+  patientName: string,
+  testTitles: string[],
+  bookingId: string
 ) {
   try {
     const rootFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
     if (!rootFolderId) {
       throw new Error('GOOGLE_DRIVE_FOLDER_ID is not defined in .env');
     }
-
 
     // 1. Create nested folder path: Year > Month > Day > Patient Name
     const now = new Date();
@@ -81,13 +84,19 @@ export async function uploadReportToDrive(
     const yearFolderId = await getOrCreateFolder(year, rootFolderId);
     const monthFolderId = await getOrCreateFolder(month, yearFolderId);
     const dayFolderId = await getOrCreateFolder(day, monthFolderId);
+    
     // Sanitize patient name to be a valid folder name
     const sanitizedPatientName = patientName.replace(/[^a-zA-Z0-9 ]/g, '_');
     const patientFolderId = await getOrCreateFolder(sanitizedPatientName, dayFolderId);
 
-    // 2. Upload the file to the final patient folder
+    // 2. Generate automated file name: patient_name + " " + tests + " " + date(mm/dd/yyyy) + " " + bookingId
+    const formattedDate = `${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}/${now.getFullYear()}`;
+    const testsString = testTitles.join(' + ');
+    const automatedFileName = `${patientName} ${testsString} ${formattedDate} ${bookingId}.pdf`;
+
+    // 3. Upload the file to the final patient folder with automated name
     const fileMetadata = {
-      name: fileName,
+      name: automatedFileName,
       parents: [patientFolderId],
     };
 
@@ -105,14 +114,15 @@ export async function uploadReportToDrive(
     const fileId = file.data.id;
     if (!fileId) throw new Error('Google Drive upload failed: No ID returned');
 
-    // 3. Make the file publicly viewable
-          await drive.permissions.create({
-            fileId: fileId,
-            requestBody: {
-              role: 'reader',
-              type: 'anyone',
-            },
-          });
+    // 4. Make the file publicly viewable (maintain current public sharing permissions)
+    await drive.permissions.create({
+      fileId: fileId,
+      requestBody: {
+        role: 'reader',
+        type: 'anyone',
+      },
+    });
+
     return {
       fileId: fileId,
       webViewLink: file.data.webViewLink,

@@ -38,11 +38,15 @@ export async function PATCH(
 
       let reportUrl = '';
       try {
+        // Extract test titles from booking
+        const testTitles = booking.tests.map((t: any) => t.title || t.testTitle || 'Unknown Test');
+        
         const driveResponse = await uploadReportToDrive(
             buffer, 
-            `Report_${id}_${Date.now()}.pdf`, 
             file.type,
-            booking.patientName // Pass patient name for nested folder
+            booking.patientName,
+            testTitles,
+            id
         );
         reportUrl = driveResponse.webViewLink || '';
       } catch (driveError) {

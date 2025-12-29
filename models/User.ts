@@ -7,7 +7,8 @@ const UserSchema = new Schema({
   role: { type: String, enum: ['admin', 'partner', 'patient'], default: 'patient' },
   operationalRole: { type: String, default: 'none' },
   phone: String,
-  email: { type: String, required: true }
+  email: { type: String, required: true },
+  address: String
 }, { timestamps: true });
 
 export default models.User || model('User', UserSchema);

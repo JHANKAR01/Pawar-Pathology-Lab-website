@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, HeartHandshake, Settings as SettingsIcon, 
-  ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home, Loader2, Calendar
+  ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home, Loader2, Calendar, FileText, X, CheckCircle, XCircle, Ticket
 } from 'lucide-react';
 import { FlaskConical } from 'lucide-react';
 
@@ -18,6 +18,9 @@ interface BookingType {
   status: string;
   tests: { title: string; category: string }[];
   assignedPartnerName?: string;
+  reportFileUrl?: string;
+  reportStatus?: string;
+  pathologistNotes?: string;
 }
 
 interface Partner {
@@ -44,6 +47,12 @@ export default function AdminPage() {
   const [isVerified, setIsVerified] = useState(false);
   const [blackoutDates, setBlackoutDates] = useState<BlackoutDateType[]>([]);
   const [newBlackout, setNewBlackout] = useState({ reason: '', startDate: '', endDate: '' });
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedBookingForReview, setSelectedBookingForReview] = useState<BookingType | null>(null);
+  const [rejectNotes, setRejectNotes] = useState('');
+  const [isProcessingReview, setIsProcessingReview] = useState(false);
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [newCoupon, setNewCoupon] = useState({ code: '', discountType: 'percentage' as 'percentage' | 'fixed', value: 0, expiryDate: '', usageLimit: '' });
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -66,6 +75,7 @@ export default function AdminPage() {
           fetchPartners();
           fetchConfig();
           fetchBlackoutDates();
+          fetchCoupons();
         } else {
           throw new Error('Not admin');
         }
@@ -195,6 +205,138 @@ export default function AdminPage() {
     }
   };
 
+  const handleOpenReview = (booking: BookingType) => {
+    setSelectedBookingForReview(booking);
+    setRejectNotes('');
+    setReviewModalOpen(true);
+  };
+
+  const handleReleaseReport = async () => {
+    if (!selectedBookingForReview) return;
+    setIsProcessingReview(true);
+    const token = localStorage.getItem('pawar_lab_auth_token');
+    try {
+      const res = await fetch(`/api/bookings/${selectedBookingForReview._id}`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          status: 'completed',
+          reportStatus: 'released'
+        })
+      });
+      if (!res.ok) throw new Error('Failed to release report');
+      setReviewModalOpen(false);
+      setSelectedBookingForReview(null);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to release report');
+    } finally {
+      setIsProcessingReview(false);
+    }
+  };
+
+  const handleRejectReport = async () => {
+    if (!selectedBookingForReview || !rejectNotes.trim()) {
+      alert('Please provide rejection notes');
+      return;
+    }
+    setIsProcessingReview(true);
+    const token = localStorage.getItem('pawar_lab_auth_token');
+    try {
+      const res = await fetch(`/api/bookings/${selectedBookingForReview._id}`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          status: 'sample_collected',
+          reportStatus: 'rejected',
+          pathologistNotes: rejectNotes
+        })
+      });
+      if (!res.ok) throw new Error('Failed to reject report');
+      setReviewModalOpen(false);
+      setSelectedBookingForReview(null);
+      setRejectNotes('');
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to reject report');
+    } finally {
+      setIsProcessingReview(false);
+    }
+  };
+
+  const fetchCoupons = async () => {
+    const token = localStorage.getItem('pawar_lab_auth_token');
+    try {
+      const res = await fetch('/api/coupons', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCoupons(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch coupons', error);
+    }
+  };
+
+  const handleAddCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('pawar_lab_auth_token');
+    try {
+      const res = await fetch('/api/coupons', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          code: newCoupon.code.toUpperCase().trim(),
+          discountType: newCoupon.discountType,
+          value: newCoupon.value,
+          expiryDate: newCoupon.expiryDate,
+          usageLimit: newCoupon.usageLimit ? parseInt(newCoupon.usageLimit) : undefined
+        })
+      });
+      if (res.ok) {
+        setNewCoupon({ code: '', discountType: 'percentage', value: 0, expiryDate: '', usageLimit: '' });
+        fetchCoupons();
+      } else {
+        const error = await res.json();
+        alert(error.error || 'Failed to create coupon');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to create coupon');
+    }
+  };
+
+  const handleDeleteCoupon = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this coupon?')) return;
+    const token = localStorage.getItem('pawar_lab_auth_token');
+    try {
+      const res = await fetch(`/api/coupons/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) {
+        fetchCoupons();
+      } else {
+        alert('Failed to delete coupon');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete coupon');
+    }
+  };
+
   const handleToggleConfig = async () => {
     const newConfig = { ...config, requireVerification: !config.requireVerification };
     setConfig(newConfig);
@@ -277,6 +419,7 @@ export default function AdminPage() {
             { id: 'Bookings', icon: FlaskConical },
             { id: 'Specimens', icon: FlaskConical },
             { id: 'Partners', icon: HeartHandshake },
+            { id: 'Coupons', icon: Ticket },
             { id: 'Config', icon: SettingsIcon }
           ].map(tab => (
             <button
@@ -408,6 +551,15 @@ export default function AdminPage() {
                         Approve Booking
                       </button>
                     )}
+                    {b.status === 'report_uploaded' && b.reportFileUrl && (
+                      <button 
+                        onClick={() => handleOpenReview(b)} 
+                        className="mt-4 self-start bg-clinical-rose/10 text-clinical-rose px-6 py-3 rounded-xl font-bold text-xs hover:bg-clinical-rose/20 transition-all border-2 border-clinical-rose/20 flex items-center gap-2"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Review Report
+                      </button>
+                    )}
                   </motion.div>
                 ))}
               </motion.div>
@@ -509,6 +661,135 @@ export default function AdminPage() {
         </AnimatePresence>
 
         <AnimatePresence mode="wait">
+          {activeTab === 'Coupons' && (
+            <motion.div
+              key="Coupons"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+            >
+              <motion.div 
+                className="card-premium p-12"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <h3 className="text-2xl font-black text-slate-900 mb-8">Create New Coupon</h3>
+                <form onSubmit={handleAddCoupon} className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Coupon Code</label>
+                    <input 
+                      className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all placeholder:text-slate-400 uppercase" 
+                      placeholder="SAVE10" 
+                      value={newCoupon.code} 
+                      onChange={e => setNewCoupon({...newCoupon, code: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Discount Type</label>
+                    <select
+                      className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all"
+                      value={newCoupon.discountType}
+                      onChange={e => setNewCoupon({...newCoupon, discountType: e.target.value as 'percentage' | 'fixed'})}
+                      required
+                    >
+                      <option value="percentage">Percentage (%)</option>
+                      <option value="fixed">Fixed Amount (₹)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                      {newCoupon.discountType === 'percentage' ? 'Discount Percentage (0-100)' : 'Discount Amount (₹)'}
+                    </label>
+                    <input 
+                      type="number"
+                      min="0"
+                      max={newCoupon.discountType === 'percentage' ? 100 : undefined}
+                      className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all placeholder:text-slate-400" 
+                      placeholder={newCoupon.discountType === 'percentage' ? '10' : '100'} 
+                      value={newCoupon.value || ''} 
+                      onChange={e => setNewCoupon({...newCoupon, value: parseFloat(e.target.value) || 0})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Expiry Date</label>
+                    <input 
+                      type="date"
+                      className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all" 
+                      value={newCoupon.expiryDate} 
+                      onChange={e => setNewCoupon({...newCoupon, expiryDate: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Usage Limit (Optional)</label>
+                    <input 
+                      type="number"
+                      min="1"
+                      className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all placeholder:text-slate-400" 
+                      placeholder="Leave empty for unlimited" 
+                      value={newCoupon.usageLimit} 
+                      onChange={e => setNewCoupon({...newCoupon, usageLimit: e.target.value})}
+                    />
+                  </div>
+                  <button type="submit" className="w-full bg-clinical-rose text-white py-4 rounded-2xl font-black uppercase text-sm tracking-widest shadow-rose-lg hover:bg-clinical-rose-dark transition-all">Create Coupon</button>
+                </form>
+              </motion.div>
+              <motion.div 
+                className="card-premium p-12"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <h3 className="text-2xl font-black text-slate-900 mb-8">Active Coupons</h3>
+                <div className="space-y-4">
+                  {coupons.length > 0 ? (
+                    coupons.map(coupon => (
+                      <div key={coupon._id} className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border-2 border-slate-200">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <p className="font-black text-lg text-slate-900">{coupon.code}</p>
+                            {new Date(coupon.expiryDate) < new Date() && (
+                              <span className="text-xs font-bold text-clinical-rose uppercase">Expired</span>
+                            )}
+                            {!coupon.isActive && (
+                              <span className="text-xs font-bold text-slate-500 uppercase">Inactive</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-slate-600 font-bold">
+                            {coupon.discountType === 'percentage' 
+                              ? `${coupon.value}% off` 
+                              : `₹${coupon.value} off`}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            Expires: {new Date(coupon.expiryDate).toLocaleDateString()}
+                            {coupon.usageLimit && ` • Used: ${coupon.usedCount}/${coupon.usageLimit}`}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteCoupon(coupon._id)}
+                          className="p-2 hover:bg-clinical-rose-light rounded-lg transition-colors ml-4"
+                        >
+                          <Trash2 className="text-slate-500 hover:text-clinical-rose" size={20} />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-slate-500">
+                      <p>No coupons created yet</p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence mode="wait">
           {activeTab === 'Config' && (
             <motion.div
               key="Config"
@@ -593,6 +874,115 @@ export default function AdminPage() {
         </AnimatePresence>
         </div>
       </main>
+
+      {/* Review Report Modal */}
+      <AnimatePresence>
+        {reviewModalOpen && selectedBookingForReview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={() => !isProcessingReview && setReviewModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b-2 border-slate-200">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900">Review Report</h2>
+                  <p className="text-sm text-slate-600 mt-1">
+                    {selectedBookingForReview.patientName} - {selectedBookingForReview.tests.map(t => t.title).join(' + ')}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setReviewModalOpen(false)}
+                  disabled={isProcessingReview}
+                  className="p-2 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  <X className="w-6 h-6 text-slate-600" />
+                </button>
+              </div>
+
+              {/* PDF Viewer */}
+              <div className="flex-1 overflow-hidden p-6">
+                {selectedBookingForReview.reportFileUrl ? (
+                  <iframe
+                    src={selectedBookingForReview.reportFileUrl}
+                    className="w-full h-full min-h-[500px] border-2 border-slate-200 rounded-xl"
+                    title="Report Preview"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-slate-500">
+                    <p>No report file available</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer with Actions */}
+              <div className="p-6 border-t-2 border-slate-200 space-y-4">
+                {/* Reject Notes Input */}
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Rejection Notes (Required for Reject)
+                  </label>
+                  <textarea
+                    value={rejectNotes}
+                    onChange={(e) => setRejectNotes(e.target.value)}
+                    placeholder="Enter notes for the partner about why the report is being rejected..."
+                    className="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-medium focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all resize-none"
+                    rows={3}
+                    disabled={isProcessingReview}
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-4">
+                  <button
+                    onClick={handleReleaseReport}
+                    disabled={isProcessingReview}
+                    className="flex-1 bg-success text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-success/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isProcessingReview ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-5 h-5" />
+                        Release Report
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleRejectReport}
+                    disabled={isProcessingReview || !rejectNotes.trim()}
+                    className="flex-1 bg-clinical-rose text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-clinical-rose-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isProcessingReview ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="w-5 h-5" />
+                        Reject / Re-upload
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

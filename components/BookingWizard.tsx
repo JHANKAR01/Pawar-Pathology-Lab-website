@@ -25,6 +25,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
   const [discount, setDiscount] = useState(0);
   const [amountTaken, setAmountTaken] = useState(0); // For partial payments
   const [error, setError] = useState('');
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
   const [blackoutDates, setBlackoutDates] = useState<BlackoutDate[]>([]);
 
   const [formData, setFormData] = useState({
@@ -90,13 +91,43 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
 
   const balanceAmount = Math.max(0, finalTotal - amountTaken);
 
-  const applyPromo = () => {
-    if (promoCode.toUpperCase() === 'SAVE10') {
-      setDiscount(baseTotal * 0.1);
-      setError('');
-    } else {
+  const applyPromo = async () => {
+    if (!promoCode.trim()) {
+      setError('Please enter a coupon code');
       setDiscount(0);
-      setError('Invalid Promo Code');
+      return;
+    }
+
+    setIsValidatingCoupon(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: promoCode.trim(),
+          totalAmount: baseTotal
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.valid) {
+        setDiscount(data.discount || 0);
+        setError('');
+      } else {
+        setDiscount(0);
+        setError(data.error || 'Invalid coupon code');
+      }
+    } catch (err) {
+      console.error('Coupon validation error:', err);
+      setDiscount(0);
+      setError('Failed to validate coupon. Please try again.');
+    } finally {
+      setIsValidatingCoupon(false);
     }
   };
 
@@ -377,7 +408,20 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                   value={promoCode}
                   onChange={e => setPromoCode(e.target.value)}
                 />
-                <button onClick={applyPromo} className="text-clinical-rose font-black text-sm uppercase hover:text-clinical-rose-dark">Apply</button>
+                <button 
+                  onClick={applyPromo} 
+                  disabled={isValidatingCoupon}
+                  className="text-clinical-rose font-black text-sm uppercase hover:text-clinical-rose-dark disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isValidatingCoupon ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Validating...
+                    </>
+                  ) : (
+                    'Apply'
+                  )}
+                </button>
               </div>
 
               {currentUser?.role !== 'patient' && (

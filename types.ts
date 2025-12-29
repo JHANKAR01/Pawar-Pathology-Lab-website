@@ -15,6 +15,12 @@ export enum BookingStatus {
   DECLINED = 'declined'
 }
 
+export enum ReportStatus {
+  PENDING_REVIEW = 'pending_review',
+  RELEASED = 'released',
+  REJECTED = 'rejected'
+}
+
 export enum CollectionType {
   HOME = 'home',
   LAB_VISIT = 'lab_visit'
@@ -80,6 +86,8 @@ export interface IBooking {
   assignedPartnerId?: string;
   assignedPartnerName?: string;
   reportFileUrl?: string;
+  reportStatus?: ReportStatus;
+  pathologistNotes?: string;
   createdAt: string;
   updatedAt: string;
 }

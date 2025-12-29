@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document, models, model } from 'mongoose';
-import { BookingStatus, CollectionType, PaymentStatus, IBooking, IBookingTest } from '@/types';
+import { BookingStatus, CollectionType, PaymentStatus, ReportStatus, IBooking, IBookingTest } from '@/types';
 
 const BookingSchema = new Schema<IBooking & Document>(
   {
@@ -39,6 +39,12 @@ const BookingSchema = new Schema<IBooking & Document>(
     paymentMode: { type: String, enum: ['online', 'cash'], default: 'cash' },
     paymentStatus: { type: String, enum: Object.values(PaymentStatus), default: PaymentStatus.UNPAID },
     reportFileUrl: { type: String },
+    reportStatus: {
+      type: String,
+      enum: Object.values(ReportStatus),
+      default: ReportStatus.PENDING_REVIEW
+    },
+    pathologistNotes: { type: String, trim: true },
     referredBy: { type: String, default: 'Self' },
     assignedPartnerId: { type: String },
     assignedPartnerName: { type: String }
