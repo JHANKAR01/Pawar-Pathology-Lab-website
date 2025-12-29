@@ -254,103 +254,113 @@ export default function PartnerPage() {
 
   if (!isVerified) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="w-12 h-12 animate-spin text-rose-500" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="w-12 h-12 animate-spin text-clinical-rose" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      <nav className="bg-white border-b px-8 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center">
-            <Package className="text-white w-6 h-6" />
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+      <nav className="bg-white border-b-2 border-slate-200 px-8 py-5 flex justify-between items-center sticky top-0 z-50 shadow-medium">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-clinical-rose rounded-2xl flex items-center justify-center shadow-rose">
+            <Package className="text-white w-7 h-7" />
           </div>
           <div>
-            <h1 className="font-black text-lg uppercase tracking-tight">FIELD OPS HUB</h1>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Secure Logistics Node</p>
+            <h1 className="font-black text-xl uppercase tracking-tight text-slate-900">FIELD OPS HUB</h1>
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Secure Logistics Node</p>
           </div>
         </div>
         <div className="flex gap-4">
           <button 
             onClick={() => setIsRegisterOpen(true)}
-            className="flex items-center gap-2 bg-slate-900 text-white px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest"
+            className="flex items-center gap-2 bg-clinical-rose text-white px-6 py-3 rounded-xl text-sm font-black uppercase tracking-widest shadow-rose-lg hover:bg-clinical-rose-dark transition-all"
           >
-            <Plus size={16} /> Direct Add
+            <Plus size={18} /> Direct Add
           </button>
-          <button onClick={() => router.push('/')} className="text-gray-400 hover:text-red-600 font-bold text-sm flex items-center gap-2 transition-colors">
-            <LogOut className="w-4 h-4" /> Exit
+          <button onClick={() => router.push('/')} className="text-slate-600 hover:text-clinical-rose font-bold text-sm flex items-center gap-2 transition-colors px-4 py-2 rounded-xl hover:bg-clinical-rose-light">
+            <LogOut className="w-5 h-5" /> Exit
           </button>
         </div>
       </nav>
 
       <main className="p-8 max-w-5xl mx-auto w-full">
-        <div className="mb-12 flex justify-between items-end">
+        <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           <div>
-            <h2 className="text-3xl font-black text-gray-900 tracking-tight uppercase">Assigned Tasks</h2>
-            <p className="text-gray-500 font-medium">Specimens requiring immediate clinical acquisition.</p>
+            <h2 className="text-4xl font-black text-slate-900 tracking-tight uppercase">Assigned Tasks</h2>
+            <p className="text-slate-600 font-medium mt-2">Specimens requiring immediate clinical acquisition.</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3 items-center">
             <input
               type="text"
               placeholder="Search patient or ID..."
-              className="px-4 py-2 rounded-xl text-sm font-bold bg-white text-gray-700 border border-gray-200"
+              className="px-5 py-3 rounded-xl text-sm font-bold bg-white text-slate-900 border-2 border-slate-200 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all placeholder:text-slate-400"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             <button
               onClick={() => setStatusFilter('active')}
-              className={`px-4 py-2 rounded-xl text-sm font-bold ${statusFilter === 'active' ? 'bg-slate-900 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}
+              className={`px-5 py-3 rounded-xl text-sm font-bold transition-all ${
+                statusFilter === 'active' 
+                  ? 'bg-clinical-rose text-white shadow-rose-lg' 
+                  : 'bg-white text-slate-600 border-2 border-slate-200 hover:border-clinical-rose'
+              }`}
             >
               Active
             </button>
             <button
               onClick={() => setStatusFilter('completed')}
-              className={`px-4 py-2 rounded-xl text-sm font-bold ${statusFilter === 'completed' ? 'bg-slate-900 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}
+              className={`px-5 py-3 rounded-xl text-sm font-bold transition-all ${
+                statusFilter === 'completed' 
+                  ? 'bg-clinical-rose text-white shadow-rose-lg' 
+                  : 'bg-white text-slate-600 border-2 border-slate-200 hover:border-clinical-rose'
+              }`}
             >
               Completed
             </button>
+            <button onClick={fetchBookings} className="p-3 bg-white border-2 border-slate-200 rounded-xl hover:bg-clinical-rose-light hover:border-clinical-rose shadow-soft transition-all">
+              <RefreshCw className={`w-5 h-5 text-clinical-rose ${loading ? 'animate-spin' : ''}`} />
+            </button>
           </div>
-          <button onClick={fetchBookings} className="p-3 bg-white border border-gray-100 rounded-full hover:bg-gray-50 shadow-sm">
-            <RefreshCw className={`w-5 h-5 text-gray-400 ${loading ? 'animate-spin' : ''}`} />
-          </button>
         </div>
 
         <div className="space-y-6">
           {filteredTasks.length === 0 ? (
-            <div className="text-center py-24 bg-white rounded-[3rem] border-2 border-dashed border-gray-100 flex flex-col items-center">
-              <ClipboardList className="w-16 h-16 text-gray-100 mb-4" />
-              <p className="text-gray-400 font-bold">No active collections assigned.</p>
+            <div className="text-center py-24 bg-white rounded-3xl border-2 border-dashed border-slate-300 flex flex-col items-center">
+              <ClipboardList className="w-20 h-20 text-slate-300 mb-4" />
+              <p className="text-slate-500 font-bold text-lg">No active collections assigned.</p>
             </div>
           ) : (
             filteredTasks.map(task => (
-              <div key={task._id} className="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between gap-8 items-center">
+              <div key={task._id} className="card-premium p-10 flex flex-col md:flex-row justify-between gap-8 items-center">
                 <div className="flex-1 w-full">
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                      task.status === 'sample_collected' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest border-2 ${
+                      task.status === 'sample_collected' 
+                        ? 'bg-warning/10 text-warning border-warning/20' 
+                        : 'bg-blue-500/10 text-blue-600 border-blue-500/20'
                     }`}>
                       {task.status.replace('_', ' ')}
                     </span>
-                    <span className="text-[10px] text-gray-300 font-bold tracking-widest uppercase">NODE: {task._id.slice(-6)}</span>
+                    <span className="text-xs text-slate-500 font-bold tracking-widest uppercase">NODE: {task._id.slice(-6)}</span>
                   </div>
                   
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{task.patientName}</h3>
-                  <div className="flex gap-2 mb-6">
+                  <h3 className="text-3xl font-black text-slate-900 mb-3">{task.patientName}</h3>
+                  <div className="flex gap-2 mb-6 flex-wrap">
                     {task.tests?.map((t: any) => (
-                      <span key={t.id} className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg text-xs font-bold text-slate-600">{t.title}</span>
+                      <span key={t.id} className="px-4 py-2 bg-clinical-rose-light border-2 border-clinical-rose/20 rounded-xl text-sm font-bold text-clinical-rose">{t.title}</span>
                     ))}
                   </div>
 
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-gray-700 text-sm font-bold bg-slate-50 p-3 rounded-xl inline-flex">
-                      <MapPin className="w-4 h-4 text-red-500" />
+                    <div className="flex items-center gap-3 text-slate-700 text-sm font-bold bg-slate-50 p-4 rounded-xl inline-flex border-2 border-slate-200">
+                      <MapPin className="w-5 h-5 text-clinical-rose" />
                       {task.address || "Flagship Center Lab Visit"}
                     </div>
                     {task.balanceAmount > 0 && (
-                       <div className="flex items-center gap-2 text-rose-600 text-xs font-black uppercase tracking-widest bg-rose-50 p-3 rounded-xl inline-flex ml-3">
-                          <DollarSign size={14} /> Balance: ₹{task.balanceAmount}
+                       <div className="flex items-center gap-2 text-clinical-rose text-sm font-black uppercase tracking-widest bg-clinical-rose-light p-4 rounded-xl inline-flex ml-3 border-2 border-clinical-rose/20">
+                          <DollarSign size={16} /> Balance: ₹{task.balanceAmount}
                        </div>
                     )}
                   </div>
@@ -363,14 +373,14 @@ export default function PartnerPage() {
                         <a 
                           href={`http://www.google.com/maps/search/?api=1&query=${task.coordinates.lat},${task.coordinates.lng}`}
                           target="_blank"
-                          className="flex items-center gap-3 px-6 py-4 bg-white border border-gray-100 text-gray-900 rounded-2xl font-bold text-sm shadow-sm hover:bg-gray-50"
+                          className="flex items-center gap-3 px-6 py-4 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl font-bold text-sm shadow-soft hover:bg-clinical-rose-light hover:border-clinical-rose transition-all"
                         >
-                          <Navigation className="w-5 h-5 text-blue-500" /> Navigate
+                          <Navigation className="w-5 h-5 text-clinical-rose" /> Navigate
                         </a>
                       )}
                       <button 
                         onClick={() => handleUpdateStatus(task._id, 'reached')}
-                        className="flex items-center gap-3 px-8 py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm shadow-xl"
+                        className="flex items-center gap-3 px-8 py-4 bg-clinical-rose text-white rounded-2xl font-bold text-sm shadow-rose-lg hover:bg-clinical-rose-dark transition-all"
                       >
                          Reached Site
                       </button>
@@ -380,7 +390,7 @@ export default function PartnerPage() {
                   {task.status === 'reached' && (
                     <button 
                       onClick={() => handleCollectSample(task._id)}
-                      className="flex items-center gap-3 px-10 py-4 bg-emerald-600 text-white rounded-2xl font-bold text-sm shadow-xl"
+                      className="flex items-center gap-3 px-10 py-4 bg-success text-white rounded-2xl font-bold text-sm shadow-lg hover:bg-success/90 transition-all"
                     >
                       Collect Specimen
                     </button>
@@ -397,7 +407,7 @@ export default function PartnerPage() {
                       />
                       <button 
                         onClick={() => document.getElementById(`file-${task._id}`)?.click()}
-                        className="flex items-center gap-3 px-8 py-4 bg-rose-600 text-white rounded-2xl font-bold text-sm shadow-xl"
+                        className="flex items-center gap-3 px-8 py-4 bg-clinical-rose text-white rounded-2xl font-bold text-sm shadow-rose-lg hover:bg-clinical-rose-dark transition-all"
                       >
                         <Upload size={18} /> Upload Analysis PDF
                       </button>
@@ -411,51 +421,51 @@ export default function PartnerPage() {
       </main>
 
       {isRegisterOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-6">
-          <div className="bg-white w-full max-w-xl rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300">
-            <div className="bg-slate-900 p-10 text-white flex justify-between items-center">
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border border-slate-200">
+            <div className="bg-gradient-to-r from-clinical-rose to-clinical-rose-dark p-10 text-white flex justify-between items-center">
               <div>
                  <h3 className="text-2xl font-black uppercase tracking-tight">Direct Entry</h3>
-                 <p className="text-slate-400 font-medium">Walk-in or Immediate acquisition</p>
+                 <p className="text-rose-100 font-medium">Walk-in or Immediate acquisition</p>
               </div>
-              <button onClick={() => setIsRegisterOpen(false)}><X size={24} /></button>
+              <button onClick={() => setIsRegisterOpen(false)} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><X size={24} /></button>
             </div>
             <form onSubmit={handleWalkInRegistration} className="p-10 space-y-6 max-h-[70vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-6">
                  <div>
-                    <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Name</label>
-                    <input required className="w-full bg-slate-50 p-4 rounded-xl outline-none font-bold" value={newPatient.name} onChange={e => setNewPatient({...newPatient, name: e.target.value})} />
+                    <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Name</label>
+                    <input required className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-bold text-slate-900 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all" value={newPatient.name} onChange={e => setNewPatient({...newPatient, name: e.target.value})} />
                  </div>
                  <div>
-                    <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Phone</label>
-                    <input required className="w-full bg-slate-50 p-4 rounded-xl outline-none font-bold" value={newPatient.phone} maxLength={10} onChange={e => setNewPatient({...newPatient, phone: e.target.value})} />
+                    <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Phone</label>
+                    <input required className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-bold text-slate-900 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all" value={newPatient.phone} maxLength={10} onChange={e => setNewPatient({...newPatient, phone: e.target.value})} />
                  </div>
               </div>
               
               <div>
-                 <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Email Address (Optional)</label>
-                 <input className="w-full bg-slate-50 p-4 rounded-xl outline-none font-bold" placeholder="For reporting" value={newPatient.email} onChange={e => setNewPatient({...newPatient, email: e.target.value})} />
+                 <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Email Address (Optional)</label>
+                 <input className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-bold text-slate-900 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all placeholder:text-slate-400" placeholder="For reporting" value={newPatient.email} onChange={e => setNewPatient({...newPatient, email: e.target.value})} />
               </div>
 
               <div>
-                <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Investigation Panel</label>
-                <input className="w-full bg-slate-50 p-4 rounded-xl outline-none font-bold" value={newPatient.testTitle} onChange={e => setNewPatient({...newPatient, testTitle: e.target.value})} />
+                <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Investigation Panel</label>
+                <input className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-bold text-slate-900 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all" value={newPatient.testTitle} onChange={e => setNewPatient({...newPatient, testTitle: e.target.value})} />
               </div>
-              <div className="grid grid-cols-2 gap-6 p-6 bg-slate-50 rounded-3xl">
+              <div className="grid grid-cols-2 gap-6 p-6 bg-slate-50 rounded-3xl border-2 border-slate-200">
                  <div>
-                    <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Total Bill</label>
-                    <input type="number" className="w-full bg-white p-4 rounded-xl outline-none font-black text-xl" value={newPatient.totalAmount} onChange={e => setNewPatient({...newPatient, totalAmount: Number(e.target.value)})} />
+                    <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Total Bill</label>
+                    <input type="number" className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-black text-xl text-slate-900 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all" value={newPatient.totalAmount} onChange={e => setNewPatient({...newPatient, totalAmount: Number(e.target.value)})} />
                  </div>
                  <div>
-                    <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Amount Taken</label>
-                    <input type="number" className="w-full bg-white p-4 rounded-xl outline-none font-black text-xl text-emerald-600" value={newPatient.amountTaken} onChange={e => setNewPatient({...newPatient, amountTaken: Number(e.target.value)})} />
+                    <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Amount Taken</label>
+                    <input type="number" className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-black text-xl text-success focus:border-success focus:ring-2 focus:ring-success/20 transition-all" value={newPatient.amountTaken} onChange={e => setNewPatient({...newPatient, amountTaken: Number(e.target.value)})} />
                  </div>
               </div>
-              <div className="flex justify-between items-center font-black uppercase text-xs p-4 border-2 border-dashed border-slate-100 rounded-2xl">
-                 <span className="text-slate-400">Balance Calculated:</span>
-                 <span className="text-rose-600 text-lg">₹{newPatient.totalAmount - newPatient.amountTaken}</span>
+              <div className="flex justify-between items-center font-black uppercase text-sm p-5 border-2 border-slate-200 rounded-2xl bg-slate-50">
+                 <span className="text-slate-600">Balance Calculated:</span>
+                 <span className="text-clinical-rose text-xl">₹{newPatient.totalAmount - newPatient.amountTaken}</span>
               </div>
-              <button className="w-full bg-rose-600 text-white py-6 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-rose-900/20">Confirm & Log Specimen</button>
+              <button className="w-full bg-clinical-rose text-white py-6 rounded-2xl font-black uppercase tracking-widest shadow-rose-lg hover:bg-clinical-rose-dark transition-all">Confirm & Log Specimen</button>
             </form>
           </div>
         </div>

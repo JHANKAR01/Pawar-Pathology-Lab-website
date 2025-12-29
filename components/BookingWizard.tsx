@@ -210,17 +210,17 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     });
   };
 
-  const inputStyles = "w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none transition-all font-bold text-white focus:border-rose-500 focus:bg-white/10";
+  const inputStyles = "w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-2xl outline-none transition-all font-bold text-slate-900 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 placeholder:text-slate-400";
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="glass-dark w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 max-h-[90vh] flex flex-col border-0">
-        <div className="bg-black/20 px-10 py-8 border-b border-white/10 flex justify-between items-center">
+    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 max-h-[90vh] flex flex-col border border-slate-200">
+        <div className="bg-gradient-to-r from-clinical-rose to-clinical-rose-dark px-10 py-8 flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-black text-white tracking-tight">Clinical Scheduler</h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Diagnostic Intake V2</p>
+            <h2 className="text-2xl font-black text-white tracking-tight">Clinical Scheduler</h2>
+            <p className="text-xs font-bold text-rose-100 uppercase tracking-widest mt-1">Diagnostic Intake V2</p>
           </div>
-          <button onClick={onCancel} className="text-gray-400 hover:text-rose-500 transition-colors">
+          <button onClick={onCancel} className="text-white hover:text-rose-200 transition-colors p-2 hover:bg-white/10 rounded-lg">
             <X size={24} />
           </button>
         </div>
@@ -241,35 +241,35 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
 
           {step === 1 && (
             <div className="space-y-6">
-              <h3 className="font-black text-lg mb-6 tracking-tight text-white uppercase">Review Selected Tests</h3>
+              <h3 className="font-black text-xl mb-6 tracking-tight text-slate-900 uppercase">Review Selected Tests</h3>
               {selectedTests.map(t => (
-                <div key={t._id} className="flex justify-between items-center p-6 bg-white/5 rounded-[1.5rem] border border-white/10">
+                <div key={t._id} className="flex justify-between items-center p-6 bg-slate-50 rounded-2xl border-2 border-slate-200">
                   <div>
-                    <span className="font-bold text-white">{t.title}</span>
+                    <span className="font-bold text-slate-900">{t.title}</span>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="font-black text-rose-500">₹{t.price}</span>
-                    <button onClick={() => onTestRemove(t)} className="text-slate-400 hover:text-rose-500 p-2 rounded-full hover:bg-rose-500/10 transition-all">
-                      <X size={16} />
+                    <span className="font-black text-clinical-rose text-lg">₹{t.price}</span>
+                    <button onClick={() => onTestRemove(t)} className="text-slate-400 hover:text-clinical-rose p-2 rounded-full hover:bg-clinical-rose-light transition-all">
+                      <X size={18} />
                     </button>
                   </div>
                 </div>
               ))}
-              <div className="border-t border-white/10 pt-8 mt-10 flex justify-between items-center">
-                <span className="text-lg font-black text-white">Base Estimate</span>
-                <p className="text-3xl font-black text-rose-500 tracking-tighter">₹{baseTotal}</p>
+              <div className="border-t-2 border-slate-200 pt-8 mt-10 flex justify-between items-center">
+                <span className="text-xl font-black text-slate-900">Base Estimate</span>
+                <p className="text-4xl font-black text-clinical-rose tracking-tighter">₹{baseTotal}</p>
               </div>
             </div>
           )}
 
           {step === 2 && (
             <div className="space-y-8 animate-in slide-in-from-right-4">
-              <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl mb-4">
-                 <UserPlus className="text-rose-500" />
-                 <span className="text-sm font-bold text-white">Booking for someone else?</span>
+              <div className="flex items-center gap-4 p-5 bg-clinical-rose-light rounded-2xl mb-4 border-2 border-clinical-rose/20">
+                 <UserPlus className="text-clinical-rose" size={20} />
+                 <span className="text-sm font-bold text-slate-900">Booking for someone else?</span>
                  <input 
                     type="checkbox" 
-                    className="ml-auto w-5 h-5 accent-rose-500"
+                    className="ml-auto w-5 h-5 accent-clinical-rose"
                     checked={!isBookingForSelf}
                     onChange={() => setIsBookingForSelf(!isBookingForSelf)}
                  />
@@ -277,20 +277,20 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 ml-2">Patient Name</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-600 mb-3">Patient Name</label>
                   <input className={inputStyles} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Full name" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 ml-2">Contact Number</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-600 mb-3">Contact Number</label>
                   <div className="relative">
-                    <span className="absolute left-6 top-1/2 -translate-y-1/2 font-bold text-slate-400">+91</span>
+                    <span className="absolute left-6 top-1/2 -translate-y-1/2 font-bold text-slate-500">+91</span>
                     <input className={`${inputStyles} pl-16`} value={formData.phone} maxLength={10} onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} placeholder="10 digits" />
                   </div>
                 </div>
               </div>
               
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 ml-2">Email Address</label>
+                <label className="block text-xs font-black uppercase tracking-widest text-slate-600 mb-3">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                   <input className={`${inputStyles} pl-16`} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="For report delivery (Optional)" readOnly={isBookingForSelf} />
@@ -298,7 +298,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 ml-2">Referred By</label>
+                <label className="block text-xs font-black uppercase tracking-widest text-slate-600 mb-3">Referred By</label>
                 <input className={inputStyles} value={formData.referredBy} onChange={e => setFormData({...formData, referredBy: e.target.value})} placeholder="e.g., Dr. Smith or Self" />
               </div>
             </div>
@@ -311,10 +311,10 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                    <button 
                      key={type}
                      onClick={() => setFormData({...formData, collectionType: type})}
-                     className={`flex-1 p-8 rounded-[2rem] border transition-all text-left ${formData.collectionType === type ? 'border-rose-500 bg-rose-500/10 shadow-xl' : 'border-white/10'}`}
+                     className={`flex-1 p-8 rounded-2xl border-2 transition-all text-left ${formData.collectionType === type ? 'border-clinical-rose bg-clinical-rose-light shadow-rose' : 'border-slate-200 bg-slate-50'}`}
                    >
-                     <span className={`block font-black text-xl mb-1 ${formData.collectionType === type ? 'text-rose-500' : 'text-white'}`}>{type === CollectionType.HOME ? 'Home Dispatch' : 'Lab Visit'}</span>
-                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{type === CollectionType.HOME ? 'Collection at site' : 'Visit Link Road'}</span>
+                     <span className={`block font-black text-xl mb-2 ${formData.collectionType === type ? 'text-clinical-rose' : 'text-slate-900'}`}>{type === CollectionType.HOME ? 'Home Dispatch' : 'Lab Visit'}</span>
+                     <span className={`text-xs font-bold uppercase tracking-widest ${formData.collectionType === type ? 'text-clinical-rose-dark' : 'text-slate-600'}`}>{type === CollectionType.HOME ? 'Collection at site' : 'Visit Link Road'}</span>
                    </button>
                  ))}
                </div>
@@ -325,9 +325,13 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                       type="button"
                       onClick={captureLocation}
                       disabled={isCapturingLocation}
-                      className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-[0.2em] transition-all ${formData.coordinates ? 'bg-emerald-500/10 text-emerald-500' : 'bg-white/5 text-white'}`}
+                      className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-black text-sm uppercase tracking-wider transition-all border-2 ${
+                        formData.coordinates 
+                          ? 'bg-success/10 text-success border-success' 
+                          : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+                      }`}
                     >
-                      {isCapturingLocation ? <Loader2 className="animate-spin" /> : formData.coordinates ? <CheckCircle /> : <Navigation />}
+                      {isCapturingLocation ? <Loader2 className="animate-spin" /> : formData.coordinates ? <CheckCircle size={20} /> : <Navigation size={20} />}
                       {formData.coordinates ? 'Location Synced' : 'Sync Current Location'}
                     </button>
                     <textarea 
@@ -340,45 +344,51 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                )}
 
                <div className="grid grid-cols-2 gap-6">
-                  <input type="date" className={inputStyles} value={formData.date} onChange={handleDateChange} min={getTodayDate()} />
-                  <select className={inputStyles} value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})}>
-                    <option value="">Select Time Slot</option>
-                    <option>08:00 AM - 10:00 AM</option>
-                    <option>10:00 AM - 12:00 PM</option>
-                    <option>12:00 PM - 04:00 PM</option>
-                  </select>
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-slate-600 mb-3">Date</label>
+                    <input type="date" className={inputStyles} value={formData.date} onChange={handleDateChange} min={getTodayDate()} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-slate-600 mb-3">Time Slot</label>
+                    <select className={inputStyles} value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})}>
+                      <option value="">Select Time Slot</option>
+                      <option>08:00 AM - 10:00 AM</option>
+                      <option>10:00 AM - 12:00 PM</option>
+                      <option>12:00 PM - 04:00 PM</option>
+                    </select>
+                  </div>
                </div>
             </div>
           )}
 
           {step === 4 && (
             <div className="space-y-8 text-center">
-              <div className="bg-black/20 p-10 rounded-[3rem]">
-                 <p className="text-slate-400 uppercase font-black tracking-widest text-[10px] mb-2">Final Amount</p>
-                 <p className="text-6xl font-black tracking-tighter text-rose-500 text-glow">₹{finalTotal}</p>
-                 {discount > 0 && <p className="text-xs font-bold text-emerald-400 mt-2 uppercase">Promo Applied (-₹{discount})</p>}
+              <div className="bg-gradient-to-br from-clinical-rose-light to-white p-10 rounded-3xl border-2 border-clinical-rose/20">
+                 <p className="text-slate-600 uppercase font-black tracking-widest text-xs mb-2">Final Amount</p>
+                 <p className="text-6xl font-black tracking-tighter text-clinical-rose">₹{finalTotal}</p>
+                 {discount > 0 && <p className="text-sm font-bold text-success mt-2 uppercase">Promo Applied (-₹{discount})</p>}
               </div>
 
-              <div className="flex gap-4 p-4 bg-white/5 rounded-2xl border border-white/10">
-                <Ticket className="text-rose-500" />
+              <div className="flex gap-4 p-5 bg-slate-50 rounded-2xl border-2 border-slate-200">
+                <Ticket className="text-clinical-rose" size={20} />
                 <input 
                   placeholder="Coupon Code" 
-                  className="bg-transparent border-0 outline-none font-bold text-white flex-1 uppercase"
+                  className="bg-transparent border-0 outline-none font-bold text-slate-900 flex-1 uppercase placeholder:text-slate-400"
                   value={promoCode}
                   onChange={e => setPromoCode(e.target.value)}
                 />
-                <button onClick={applyPromo} className="text-rose-500 font-black text-xs uppercase hover:text-rose-400">Apply</button>
+                <button onClick={applyPromo} className="text-clinical-rose font-black text-sm uppercase hover:text-clinical-rose-dark">Apply</button>
               </div>
 
               {currentUser?.role !== 'patient' && (
-                <div className="p-6 bg-white/5 rounded-2xl text-left space-y-4">
+                <div className="p-6 bg-slate-50 rounded-2xl text-left space-y-4 border-2 border-slate-200">
                    <div>
-                      <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Amount Paid Now (Cash/Partial)</label>
+                      <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Amount Paid Now (Cash/Partial)</label>
                       <div className="relative">
-                          <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                          <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                           <input 
                               type="number" 
-                              className={`${inputStyles} pl-10`}
+                              className={`${inputStyles} pl-12`}
                               value={amountTaken}
                               onChange={(e) => setAmountTaken(Number(e.target.value))}
                               max={finalTotal}
@@ -386,33 +396,33 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                           />
                       </div>
                    </div>
-                   <div className="flex justify-between items-center pt-2 border-t border-white/10">
-                      <span className="font-bold text-sm text-slate-400">Balance Due:</span>
-                      <span className="font-black text-rose-500 text-lg">₹{balanceAmount}</span>
+                   <div className="flex justify-between items-center pt-3 border-t-2 border-slate-200">
+                      <span className="font-bold text-sm text-slate-600">Balance Due:</span>
+                      <span className="font-black text-clinical-rose text-xl">₹{balanceAmount}</span>
                    </div>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-6">
-                 <button onClick={() => setPaymentMethod('online')} className={`p-6 rounded-[2rem] border transition-all ${paymentMethod === 'online' ? 'border-rose-500 bg-rose-500/10 shadow-xl' : 'border-white/10'}`}>
-                    <p className="font-black text-white uppercase text-xs">Online</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">UPI / Card</p>
+                 <button onClick={() => setPaymentMethod('online')} className={`p-6 rounded-2xl border-2 transition-all text-left ${paymentMethod === 'online' ? 'border-clinical-rose bg-clinical-rose-light shadow-rose' : 'border-slate-200 bg-white'}`}>
+                    <p className={`font-black uppercase text-sm mb-1 ${paymentMethod === 'online' ? 'text-clinical-rose' : 'text-slate-900'}`}>Online</p>
+                    <p className={`text-xs font-bold uppercase ${paymentMethod === 'online' ? 'text-clinical-rose-dark' : 'text-slate-600'}`}>UPI / Card</p>
                  </button>
-                 <button onClick={() => setPaymentMethod('cash')} className={`p-6 rounded-[2rem] border transition-all ${paymentMethod === 'cash' ? 'border-rose-500 bg-rose-500/10 shadow-xl' : 'border-white/10'}`}>
-                    <p className="font-black text-white uppercase text-xs">Cash</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Pay at Lab</p>
+                 <button onClick={() => setPaymentMethod('cash')} className={`p-6 rounded-2xl border-2 transition-all text-left ${paymentMethod === 'cash' ? 'border-clinical-rose bg-clinical-rose-light shadow-rose' : 'border-slate-200 bg-white'}`}>
+                    <p className={`font-black uppercase text-sm mb-1 ${paymentMethod === 'cash' ? 'text-clinical-rose' : 'text-slate-900'}`}>Cash</p>
+                    <p className={`text-xs font-bold uppercase ${paymentMethod === 'cash' ? 'text-clinical-rose-dark' : 'text-slate-600'}`}>Pay at Lab</p>
                  </button>
               </div>
             </div>
           )}
         </div>
 
-        <div className="bg-black/20 px-10 py-8 border-t border-white/10 flex justify-between items-center">
-          <button disabled={step === 1} onClick={prevStep} className="font-black text-[10px] uppercase tracking-widest text-slate-400 hover:text-white disabled:opacity-0">Back</button>
+        <div className="bg-slate-50 px-10 py-8 border-t-2 border-slate-200 flex justify-between items-center">
+          <button disabled={step === 1} onClick={prevStep} className="font-black text-sm uppercase tracking-widest text-slate-500 hover:text-clinical-rose disabled:opacity-30 transition-colors">Back</button>
           {step < 4 ? (
-            <button onClick={nextStep} className="bg-rose-600 text-white px-12 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-rose-700 transition-all">Continue</button>
+            <button onClick={nextStep} className="bg-clinical-rose text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-rose-lg hover:bg-clinical-rose-dark transition-all">Continue</button>
           ) : (
-            <button onClick={handleSubmit} className="bg-rose-600 text-white px-16 py-6 rounded-2xl font-black text-[11px] uppercase tracking-[0.4em] shadow-xl hover:bg-rose-700 transition-all">Confirm Booking</button>
+            <button onClick={handleSubmit} className="bg-clinical-rose text-white px-16 py-6 rounded-2xl font-black text-base uppercase tracking-wider shadow-rose-lg hover:bg-clinical-rose-dark transition-all">Confirm Booking</button>
           )}
         </div>
       </div>

@@ -240,34 +240,34 @@ export default function AdminPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    const base = 'px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest';
+    const base = 'px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest';
     switch (status) {
-      case 'pending': return `${base} bg-amber-500/10 text-amber-500`;
-      case 'accepted': return `${base} bg-emerald-500/10 text-emerald-500`;
-      case 'assigned': return `${base} bg-sky-500/10 text-sky-500`;
-      case 'completed': return `${base} bg-slate-500/10 text-slate-500`;
-      default: return `${base} bg-slate-700 text-slate-300`;
+      case 'pending': return `${base} bg-warning/10 text-warning border-2 border-warning/20`;
+      case 'accepted': return `${base} bg-success/10 text-success border-2 border-success/20`;
+      case 'assigned': return `${base} bg-blue-500/10 text-blue-600 border-2 border-blue-500/20`;
+      case 'completed': return `${base} bg-slate-200 text-slate-700 border-2 border-slate-300`;
+      default: return `${base} bg-slate-100 text-slate-600 border-2 border-slate-200`;
     }
   };
 
   if (!isVerified) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-rose-500" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="w-12 h-12 animate-spin text-clinical-rose" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row font-sans p-4 lg:p-8 gap-8">
-      <aside className="w-full lg:w-80 glass-dark rounded-[3.5rem] p-8 flex flex-col relative z-20">
-        <div className="flex items-center gap-4 mb-16 border-b border-white/5 pb-10">
-          <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center">
-            <ShieldCheck className="text-white w-6 h-6" />
+    <div className="min-h-screen flex flex-col lg:flex-row font-sans p-4 lg:p-8 gap-8 bg-slate-50">
+      <aside className="w-full lg:w-80 bg-white rounded-3xl p-8 flex flex-col relative z-20 shadow-large border border-slate-200">
+        <div className="flex items-center gap-4 mb-16 border-b-2 border-slate-200 pb-10">
+          <div className="w-14 h-14 bg-clinical-rose rounded-2xl flex items-center justify-center shadow-rose">
+            <ShieldCheck className="text-white w-7 h-7" />
           </div>
           <div>
-            <h2 className="text-xl font-black text-white tracking-tighter uppercase">ADMIN<span className="text-rose-600">OS</span></h2>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">V3.5 Clinical</p>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">ADMIN<span className="text-clinical-rose">OS</span></h2>
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">V3.5 Clinical</p>
           </div>
         </div>
         
@@ -282,10 +282,10 @@ export default function AdminPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-3 px-6 py-4 rounded-[2rem] text-sm font-bold transition-all ${
+              className={`w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all ${
                 activeTab === tab.id 
-                  ? 'bg-rose-600 text-white shadow-2xl' 
-                  : 'text-slate-500 hover:text-white hover:bg-white/5'
+                  ? 'bg-clinical-rose text-white shadow-rose-lg' 
+                  : 'text-slate-600 hover:text-clinical-rose hover:bg-clinical-rose-light'
               }`}
             >
               <tab.icon className="w-5 h-5" />
@@ -293,11 +293,11 @@ export default function AdminPage() {
             </button>
           ))}
         </nav>
-        <div className="mt-10 pt-10 border-t border-white/5">
-          <button onClick={() => router.push('/')} className="w-full flex items-center gap-3 px-6 py-4 rounded-[2rem] text-sm font-bold transition-all text-slate-500 hover:text-white hover:bg-white/5">
+        <div className="mt-10 pt-10 border-t-2 border-slate-200">
+          <button onClick={() => router.push('/')} className="w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all text-slate-600 hover:text-clinical-rose hover:bg-clinical-rose-light">
             <Home className="w-5 h-5" /> Homepage
           </button>
-          <button onClick={() => { localStorage.removeItem('pawar_lab_auth_token'); localStorage.removeItem('pawar_lab_user'); localStorage.removeItem('pawar_lab_user_role'); router.push('/login'); }} className="w-full mt-2 flex items-center gap-3 px-6 py-4 rounded-[2rem] text-sm font-bold transition-all text-slate-500 hover:text-rose-500">
+          <button onClick={() => { localStorage.removeItem('pawar_lab_auth_token'); localStorage.removeItem('pawar_lab_user'); localStorage.removeItem('pawar_lab_user_role'); router.push('/login'); }} className="w-full mt-2 flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all text-slate-600 hover:text-clinical-rose hover:bg-clinical-rose-light">
             <LogOut className="w-5 h-5" /> Logout
           </button>
         </div>
@@ -306,11 +306,11 @@ export default function AdminPage() {
       <main className="flex-1 space-y-8 overflow-y-auto">
         <header className="flex justify-between items-center">
           <div>
-            <span className="text-[10px] font-black text-rose-500 uppercase tracking-[0.5em] mb-3 block">Node System Monitor</span>
-            <h1 className="text-5xl font-black text-white tracking-tighter uppercase">{activeTab}</h1>
+            <span className="text-xs font-black text-clinical-rose uppercase tracking-wider mb-3 block">Node System Monitor</span>
+            <h1 className="text-5xl font-black text-slate-900 tracking-tighter uppercase">{activeTab}</h1>
           </div>
-          <button onClick={fetchData} className="w-16 h-16 glass-dark rounded-full flex items-center justify-center hover:bg-white/10 transition-all">
-            <RefreshCw className={`text-white w-6 h-6 ${loading ? 'animate-spin' : ''}`} />
+          <button onClick={fetchData} className="w-16 h-16 bg-white rounded-full flex items-center justify-center hover:bg-clinical-rose-light transition-all shadow-medium border-2 border-slate-200 hover:border-clinical-rose">
+            <RefreshCw className={`text-clinical-rose w-6 h-6 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </header>
 
@@ -325,31 +325,31 @@ export default function AdminPage() {
               className="grid grid-cols-1 md:grid-cols-3 gap-8"
             >
               <motion.div 
-                className="glass-dark p-10 rounded-[3rem]"
+                className="card-premium p-10"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">Total Revenue</p>
-                <p className="text-5xl font-black text-white">₹{bookings.reduce((acc, b) => acc + (b.totalAmount || 0), 0)}</p>
+                <p className="text-slate-500 text-xs font-black uppercase tracking-widest mb-4">Total Revenue</p>
+                <p className="text-5xl font-black text-slate-900">₹{bookings.reduce((acc, b) => acc + (b.totalAmount || 0), 0)}</p>
               </motion.div>
               <motion.div 
-                className="glass-dark p-10 rounded-[3rem]"
+                className="card-premium p-10"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <p className="text-amber-500 text-[10px] font-black uppercase tracking-widest mb-4">Pending Approval</p>
-                <p className="text-5xl font-black text-white">{bookings.filter(b => b.status === 'pending').length}</p>
+                <p className="text-warning text-xs font-black uppercase tracking-widest mb-4">Pending Approval</p>
+                <p className="text-5xl font-black text-slate-900">{bookings.filter(b => b.status === 'pending').length}</p>
               </motion.div>
               <motion.div 
-                className="glass-dark p-10 rounded-[3rem]"
+                className="card-premium p-10"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                <p className="text-emerald-500 text-[10px] font-black uppercase tracking-widest mb-4">Completed Cycles</p>
-                <p className="text-5xl font-black text-white">{bookings.filter(b => b.status === 'completed').length}</p>
+                <p className="text-success text-xs font-black uppercase tracking-widest mb-4">Completed Cycles</p>
+                <p className="text-5xl font-black text-slate-900">{bookings.filter(b => b.status === 'completed').length}</p>
               </motion.div>
             </motion.div>
           )}
@@ -385,25 +385,25 @@ export default function AdminPage() {
                       hidden: { opacity: 0, y: 20 },
                       show: { opacity: 1, y: 0 }
                     }}
-                    className="glass-dark p-8 rounded-[2.5rem] border border-white/5 flex flex-col gap-4"
+                    className="card-premium p-8 flex flex-col gap-4"
                   >
                     <div className="flex justify-between items-center">
-                      <h3 className="text-white font-black text-xl">{b.patientName}</h3>
+                      <h3 className="text-slate-900 font-black text-xl">{b.patientName}</h3>
                       <span className={getStatusBadge(b.status)}>{b.status}</span>
                     </div>
-                    <p className="text-slate-400 text-sm font-bold">{b.tests.map(t => t.title).join(' + ')}</p>
-                    <div className="flex gap-8 text-white border-t border-white/10 pt-4 mt-2">
+                    <p className="text-slate-600 text-sm font-bold">{b.tests.map(t => t.title).join(' + ')}</p>
+                    <div className="flex gap-8 text-slate-900 border-t-2 border-slate-200 pt-4 mt-2">
                       <div>
-                        <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">Total</p>
+                        <p className="text-slate-500 text-xs uppercase font-bold tracking-widest">Total</p>
                         <p className="font-bold text-lg">₹{b.totalAmount}</p>
                       </div>
                       <div>
-                        <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">Balance</p>
-                        <p className="font-bold text-lg text-rose-500">₹{b.balanceAmount}</p>
+                        <p className="text-slate-500 text-xs uppercase font-bold tracking-widest">Balance</p>
+                        <p className="font-bold text-lg text-clinical-rose">₹{b.balanceAmount}</p>
                       </div>
                     </div>
                     {b.status === 'pending' && (
-                      <button onClick={() => handleUpdateStatus(b._id, 'accepted')} className="mt-4 self-start bg-emerald-500/10 text-emerald-500 px-6 py-3 rounded-xl font-bold text-xs hover:bg-emerald-500/20 transition-all">
+                      <button onClick={() => handleUpdateStatus(b._id, 'accepted')} className="mt-4 self-start bg-success/10 text-success px-6 py-3 rounded-xl font-bold text-xs hover:bg-success/20 transition-all border-2 border-success/20">
                         Approve Booking
                       </button>
                     )}
@@ -422,30 +422,30 @@ export default function AdminPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="glass-dark p-8 rounded-[3rem]"
+              className="card-premium p-8 overflow-x-auto"
             >
-              <table className="w-full text-left text-white">
+              <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-white/10">
-                    <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-500">Patient</th>
-                    <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-500">Tests</th>
-                    <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-500">Status</th>
-                    <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-500">Assign Partner</th>
+                  <tr className="border-b-2 border-slate-200">
+                    <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-600">Patient</th>
+                    <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-600">Tests</th>
+                    <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-600">Status</th>
+                    <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-600">Assign Partner</th>
                   </tr>
                 </thead>
                 <tbody>
                   {bookings.filter(b => b.status === 'accepted' || b.status === 'assigned').map(b => (
-                    <tr key={b._id} className="border-b border-white/5">
-                      <td className="p-4 font-bold">{b.patientName}</td>
-                      <td className="p-4 text-slate-400 text-sm">{b.tests.map(t => t.title).join(', ')}</td>
+                    <tr key={b._id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                      <td className="p-4 font-bold text-slate-900">{b.patientName}</td>
+                      <td className="p-4 text-slate-600 text-sm">{b.tests.map(t => t.title).join(', ')}</td>
                       <td className="p-4">
                         <span className={getStatusBadge(b.status)}>{b.status}</span>
-                        {b.assignedPartnerName && <p className="text-xs text-sky-400 mt-1">{b.assignedPartnerName}</p>}
+                        {b.assignedPartnerName && <p className="text-xs text-blue-600 mt-2 font-bold">{b.assignedPartnerName}</p>}
                       </td>
                       <td className="p-4">
                         <select 
                           onChange={(e) => handleUpdateStatus(b._id, 'assigned', { assignedPartnerName: e.target.value })}
-                          className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white font-bold w-full"
+                          className="bg-white border-2 border-slate-200 rounded-lg px-4 py-2 text-slate-900 font-bold w-full focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all"
                           defaultValue={b.assignedPartnerName || ""}
                         >
                           <option value="" disabled>Select a partner</option>
@@ -473,32 +473,32 @@ export default function AdminPage() {
               className="grid grid-cols-1 lg:grid-cols-2 gap-8"
             >
               <motion.div 
-                className="glass-dark p-12 rounded-[4rem]"
+                className="card-premium p-12"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                <h3 className="text-2xl font-black text-white mb-8">Register New Partner</h3>
+                <h3 className="text-2xl font-black text-slate-900 mb-8">Register New Partner</h3>
                 <form onSubmit={handleAddPartner} className="space-y-6">
-                  <input className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold" placeholder="Full Name" value={newPartner.name} onChange={e => setNewPartner({...newPartner, name: e.target.value})} />
-                  <input className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold" placeholder="Email" type="email" value={newPartner.email} onChange={e => setNewPartner({...newPartner, email: e.target.value})} />
-                  <input className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold" placeholder="Username" value={newPartner.username} onChange={e => setNewPartner({...newPartner, username: e.target.value})} />
-                  <input className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold" placeholder="Password" type="password" value={newPartner.password} onChange={e => setNewPartner({...newPartner, password: e.target.value})} />
-                  <button type="submit" className="w-full bg-rose-600 text-white py-4 rounded-2xl font-black uppercase text-sm tracking-widest">Register</button>
+                  <input className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all placeholder:text-slate-400" placeholder="Full Name" value={newPartner.name} onChange={e => setNewPartner({...newPartner, name: e.target.value})} />
+                  <input className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all placeholder:text-slate-400" placeholder="Email" type="email" value={newPartner.email} onChange={e => setNewPartner({...newPartner, email: e.target.value})} />
+                  <input className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all placeholder:text-slate-400" placeholder="Username" value={newPartner.username} onChange={e => setNewPartner({...newPartner, username: e.target.value})} />
+                  <input className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all placeholder:text-slate-400" placeholder="Password" type="password" value={newPartner.password} onChange={e => setNewPartner({...newPartner, password: e.target.value})} />
+                  <button type="submit" className="w-full bg-clinical-rose text-white py-4 rounded-2xl font-black uppercase text-sm tracking-widest shadow-rose-lg hover:bg-clinical-rose-dark transition-all">Register</button>
                 </form>
               </motion.div>
               <motion.div 
-                className="glass-dark p-12 rounded-[4rem]"
+                className="card-premium p-12"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <h3 className="text-2xl font-black text-white mb-8">Active Partners</h3>
+                <h3 className="text-2xl font-black text-slate-900 mb-8">Active Partners</h3>
                 <div className="space-y-4">
                   {partners.map(p => (
-                    <div key={p._id} className="flex items-center justify-between p-6 bg-white/5 rounded-2xl">
-                      <p className="font-bold text-white text-lg">{p.name}</p>
-                      <p className="text-sm text-slate-400 font-bold uppercase">{p.operationalRole}</p>
+                    <div key={p._id} className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border-2 border-slate-200">
+                      <p className="font-bold text-slate-900 text-lg">{p.name}</p>
+                      <p className="text-sm text-slate-600 font-bold uppercase">{p.operationalRole}</p>
                     </div>
                   ))}
                 </div>
@@ -517,42 +517,42 @@ export default function AdminPage() {
               transition={{ duration: 0.3 }}
             >
               <motion.div 
-                className="glass-dark p-12 rounded-[4rem] max-w-2xl"
+                className="card-premium p-12 max-w-2xl"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                <h3 className="text-2xl font-black text-white mb-10 flex items-center gap-4">
-                  <Settings2 className="text-rose-600" /> Clinical Gateways
+                <h3 className="text-2xl font-black text-slate-900 mb-10 flex items-center gap-4">
+                  <Settings2 className="text-clinical-rose" size={28} /> Clinical Gateways
                 </h3>
                 <div className="space-y-8">
-                  <div className="flex items-center justify-between p-8 bg-white/5 rounded-[2.5rem] border border-white/10">
+                  <div className="flex items-center justify-between p-8 bg-slate-50 rounded-3xl border-2 border-slate-200">
                     <div>
-                      <p className="text-white font-black text-lg">Pathologist Verification</p>
-                      <p className="text-xs text-slate-500 font-medium mt-1">Require manual review before patient visibility.</p>
+                      <p className="text-slate-900 font-black text-lg">Pathologist Verification</p>
+                      <p className="text-sm text-slate-600 font-medium mt-1">Require manual review before patient visibility.</p>
                     </div>
                     <button 
                       onClick={handleToggleConfig}
-                      className={`w-16 h-8 rounded-full transition-all relative ${config.requireVerification ? 'bg-rose-600' : 'bg-slate-700'}`}
+                      className={`w-16 h-8 rounded-full transition-all relative ${config.requireVerification ? 'bg-clinical-rose' : 'bg-slate-300'}`}
                     >
-                      <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${config.requireVerification ? 'left-9' : 'left-1'}`} />
+                      <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all shadow-medium ${config.requireVerification ? 'left-9' : 'left-1'}`} />
                     </button>
                   </div>
                 </div>
               </motion.div>
               
               <motion.div 
-                className="glass-dark p-12 rounded-[4rem] max-w-2xl mt-8"
+                className="card-premium p-12 max-w-2xl mt-8"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <h3 className="text-2xl font-black text-white mb-10 flex items-center gap-4">
-                  <Calendar className="text-rose-600" /> Clinical Calendar Management
+                <h3 className="text-2xl font-black text-slate-900 mb-10 flex items-center gap-4">
+                  <Calendar className="text-clinical-rose" size={28} /> Clinical Calendar Management
                 </h3>
                 <form onSubmit={handleAddBlackout} className="space-y-4 mb-8">
                   <input 
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold"
+                    className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all placeholder:text-slate-400"
                     placeholder="Reason (e.g., Diwali, Maintenance)"
                     value={newBlackout.reason}
                     onChange={e => setNewBlackout({...newBlackout, reason: e.target.value})}
@@ -560,28 +560,28 @@ export default function AdminPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <input 
                       type="date"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold"
+                      className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all"
                       value={newBlackout.startDate}
                       onChange={e => setNewBlackout({...newBlackout, startDate: e.target.value})}
                     />
                     <input 
                       type="date"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold"
+                      className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all"
                       value={newBlackout.endDate}
                       onChange={e => setNewBlackout({...newBlackout, endDate: e.target.value})}
                     />
                   </div>
-                  <button type="submit" className="w-full bg-rose-600 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest">Add Block</button>
+                  <button type="submit" className="w-full bg-clinical-rose text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-rose-lg hover:bg-clinical-rose-dark transition-all">Add Block</button>
                 </form>
                 <div className="space-y-4">
                   {blackoutDates.map(date => (
-                    <div key={date._id} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl">
+                    <div key={date._id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border-2 border-slate-200">
                       <div>
-                        <p className="font-bold text-white">{date.reason}</p>
-                        <p className="text-xs text-slate-400">{date.startDate} to {date.endDate}</p>
+                        <p className="font-bold text-slate-900">{date.reason}</p>
+                        <p className="text-xs text-slate-600">{date.startDate} to {date.endDate}</p>
                       </div>
-                      <button onClick={() => handleDeleteBlackout(date._id)}>
-                        <Trash2 className="text-slate-500 hover:text-rose-500" />
+                      <button onClick={() => handleDeleteBlackout(date._id)} className="p-2 hover:bg-clinical-rose-light rounded-lg transition-colors">
+                        <Trash2 className="text-slate-500 hover:text-clinical-rose" size={20} />
                       </button>
                     </div>
                   ))}

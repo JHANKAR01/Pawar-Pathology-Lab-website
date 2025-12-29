@@ -116,12 +116,12 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <div className={`fixed top-0 left-0 w-full z-50 transition-all duration-700 px-4 md:px-12 ${isScrolled ? 'pt-2 md:pt-4' : 'pt-4 md:pt-8'}`}>
-        <header className={`max-w-[1440px] mx-auto glass-pro rounded-[1.5rem] md:rounded-[2.5rem] px-4 md:px-8 py-3 flex justify-between items-center shadow-2xl transition-all ${isScrolled ? 'py-3' : 'py-5'}`}>
+        <header className={`max-w-[1440px] mx-auto glass-pro rounded-2xl md:rounded-3xl px-6 md:px-10 py-4 flex justify-between items-center shadow-medium transition-all ${isScrolled ? 'py-3 shadow-large' : 'py-4'}`}>
           <div className="flex items-center gap-4 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center">
-              <FlaskConical className="text-white w-6 h-6" />
+            <div className="w-14 h-14 bg-clinical-rose rounded-2xl flex items-center justify-center shadow-rose">
+              <FlaskConical className="text-white w-7 h-7" />
             </div>
-            <h2 className="font-heading font-black text-2xl text-white tracking-tighter uppercase">PAWAR<span className="text-rose-600">LAB</span></h2>
+            <h2 className="font-heading font-black text-2xl md:text-3xl text-slate-900 tracking-tighter uppercase">PAWAR<span className="text-clinical-rose">LAB</span></h2>
           </div>
 
           <div className="hidden lg:flex items-center gap-10">
@@ -129,33 +129,33 @@ export default function Home() {
               <a 
                 key={item} 
                 href={`#${item.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-')}`}
-                className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-rose-600 transition-all"
+                className="text-sm font-bold uppercase tracking-wider text-slate-600 hover:text-clinical-rose transition-all"
               >
                 {item}
               </a>
             ))}
             {currentUser?.role === 'patient' && (
-              <Link href="/reports" className="text-[11px] font-black uppercase tracking-[0.2em] text-rose-600 hover:text-rose-700 transition-all">My Reports</Link>
+              <Link href="/reports" className="text-sm font-bold uppercase tracking-wider text-clinical-rose hover:text-clinical-rose-dark transition-all">My Reports</Link>
             )}
           </div>
 
           <div className="flex items-center gap-4">
             {currentUser ? (
                <div className="flex items-center gap-4">
-                  <span className="hidden md:block text-xs font-black uppercase text-slate-400">Hi, {currentUser.name}</span>
+                  <span className="hidden md:block text-sm font-bold text-slate-600">Hi, {currentUser.name}</span>
                   {currentUser.role === 'admin' && (
-                    <Link href="/admin" className="px-6 py-3 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:border-rose-600 hover:text-rose-600 transition-all">Go to Dashboard</Link>
+                    <Link href="/admin" className="px-6 py-3 border-2 border-slate-300 rounded-xl text-xs font-bold uppercase tracking-widest text-slate-700 hover:border-clinical-rose hover:text-clinical-rose transition-all">Dashboard</Link>
                   )}
                   {currentUser.role === 'partner' && (
-                    <Link href="/partner" className="px-6 py-3 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:border-rose-600 hover:text-rose-600 transition-all">Go to Dashboard</Link>
+                    <Link href="/partner" className="px-6 py-3 border-2 border-slate-300 rounded-xl text-xs font-bold uppercase tracking-widest text-slate-700 hover:border-clinical-rose hover:text-clinical-rose transition-all">Dashboard</Link>
                   )}
-                  <button onClick={handleLogout} className="p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-rose-600 hover:border-rose-200 transition-all"><LogOut className="w-4 h-4" /></button>
+                  <button onClick={handleLogout} className="p-3 bg-slate-100 border-2 border-slate-200 rounded-xl text-slate-600 hover:text-clinical-rose hover:border-clinical-rose transition-all"><LogOut className="w-5 h-5" /></button>
                </div>
             ) : (
-              <Link href="/login" className="px-6 py-3 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:border-rose-600 hover:text-rose-600 transition-all">Login</Link>
+              <Link href="/login" className="px-6 py-3 border-2 border-slate-300 rounded-xl text-xs font-bold uppercase tracking-widest text-slate-700 hover:border-clinical-rose hover:text-clinical-rose transition-all">Login</Link>
             )}
             {selectedTests.length > 0 && (
-              <button onClick={() => setIsWizardOpen(true)} className="bg-rose-600 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-rose-500/20 animate-in fade-in slide-in-from-right">
+              <button onClick={() => setIsWizardOpen(true)} className="bg-clinical-rose text-white px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest shadow-rose-lg hover:shadow-rose-lg animate-in fade-in slide-in-from-right">
                 Review Cart ({selectedTests.length})
               </button>
             )}
@@ -163,8 +163,8 @@ export default function Home() {
         </header>
       </div>
 
-      <main className="flex-1">
-        <section className="section-mask relative h-[90vh] md:h-screen w-full overflow-hidden bg-[#020203]">
+      <main className="flex-1 bg-white">
+        <section className="section-mask relative h-[90vh] md:h-screen w-full overflow-hidden bg-gradient-to-br from-white via-slate-50 to-rose-50/30">
           <Hero3DContainer />
         </section>
 
@@ -176,78 +176,85 @@ export default function Home() {
           />
         </section>
 
-        <section id="clinical-services" className="py-24 px-12">
+        <section id="clinical-services" className="py-32 px-12 bg-gradient-to-b from-white to-slate-50">
            <div className="max-w-[1440px] mx-auto text-center">
-              <h2 className="text-4xl font-black text-white mb-12">Clinical Excellence</h2>
+              <h2 className="text-5xl md:text-6xl font-black text-slate-900 mb-6">Clinical Excellence</h2>
+              <p className="text-slate-600 text-lg mb-16 max-w-2xl mx-auto">Trusted by thousands for precision diagnostics and exceptional care</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                  <motion.div 
-                   className="glass-dark p-12 rounded-[3rem]"
+                   className="card-premium p-12"
                    initial={{ opacity: 0, y: 30 }}
                    whileInView={{ opacity: 1, y: 0 }}
                    viewport={{ once: true }}
                    transition={{ duration: 0.5, delay: 0.1 }}
                  >
-                    <ShieldCheck className="mx-auto text-rose-600 mb-6" size={48} />
-                    <h3 className="text-xl font-bold text-white mb-4">NABL Accredited</h3>
-                    <p className="text-slate-400">Gold standard pathology reports recognized globally.</p>
+                    <div className="w-20 h-20 bg-clinical-rose-light rounded-2xl flex items-center justify-center mx-auto mb-6">
+                      <ShieldCheck className="text-clinical-rose" size={40} />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 mb-4">NABL Accredited</h3>
+                    <p className="text-slate-600 leading-relaxed">Gold standard pathology reports recognized globally.</p>
                  </motion.div>
                  <motion.div 
-                   className="glass-dark p-12 rounded-[3rem]"
+                   className="card-premium p-12"
                    initial={{ opacity: 0, y: 30 }}
                    whileInView={{ opacity: 1, y: 0 }}
                    viewport={{ once: true }}
                    transition={{ duration: 0.5, delay: 0.2 }}
                  >
-                    <Zap className="mx-auto text-rose-600 mb-6" size={48} />
-                    <h3 className="text-xl font-bold text-white mb-4">Fast Results</h3>
-                    <p className="text-slate-400">Same-day turnaround for most standard clinical panels.</p>
+                    <div className="w-20 h-20 bg-clinical-rose-light rounded-2xl flex items-center justify-center mx-auto mb-6">
+                      <Zap className="text-clinical-rose" size={40} />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 mb-4">Fast Results</h3>
+                    <p className="text-slate-600 leading-relaxed">Same-day turnaround for most standard clinical panels.</p>
                  </motion.div>
                  <motion.div 
-                   className="glass-dark p-12 rounded-[3rem]"
+                   className="card-premium p-12"
                    initial={{ opacity: 0, y: 30 }}
                    whileInView={{ opacity: 1, y: 0 }}
                    viewport={{ once: true }}
                    transition={{ duration: 0.5, delay: 0.3 }}
                  >
-                    <Clock className="mx-auto text-rose-600 mb-6" size={48} />
-                    <h3 className="text-xl font-bold text-white mb-4">24/7 Support</h3>
-                    <p className="text-slate-400">Clinical experts available for result consultation.</p>
+                    <div className="w-20 h-20 bg-clinical-rose-light rounded-2xl flex items-center justify-center mx-auto mb-6">
+                      <Clock className="text-clinical-rose" size={40} />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 mb-4">24/7 Support</h3>
+                    <p className="text-slate-600 leading-relaxed">Clinical experts available for result consultation.</p>
                  </motion.div>
               </div>
            </div>
         </section>
       </main>
 
-      <footer id="help-support" className="bg-slate-950 text-white py-24 px-12">
+      <footer id="help-support" className="bg-slate-900 text-white py-24 px-12">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 text-center md:text-left">
           {/* Left Column: Brand Identity */}
           <div>
-            <div className="flex items-center justify-center md:justify-start gap-4 mb-4">
-              <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center">
-                <FlaskConical className="text-white w-6 h-6" />
+            <div className="flex items-center justify-center md:justify-start gap-4 mb-6">
+              <div className="w-14 h-14 bg-clinical-rose rounded-2xl flex items-center justify-center shadow-rose">
+                <FlaskConical className="text-white w-7 h-7" />
               </div>
-              <h2 className="font-heading font-black text-2xl text-white tracking-tighter uppercase">PAWAR<span className="text-rose-600">LAB</span></h2>
+              <h2 className="font-heading font-black text-2xl md:text-3xl text-white tracking-tighter uppercase">PAWAR<span className="text-clinical-rose">LAB</span></h2>
             </div>
-            <p className="text-slate-500 max-w-sm mx-auto md:mx-0">Leading diagnostic intelligence provider in Madhya Pradesh. Precision analysis since 1998.</p>
+            <p className="text-slate-400 max-w-sm mx-auto md:mx-0 leading-relaxed">Leading diagnostic intelligence provider in Madhya Pradesh. Precision analysis since 1998.</p>
           </div>
 
           {/* Center Column: Contact Node */}
           <div className="flex flex-col items-center md:items-start">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-4">Contact Node</h4>
-            <p className="text-slate-400 font-bold mb-2">+91 9755553339</p>
-            <p className="text-slate-500">support@pawarlab.com</p>
+            <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Contact Node</h4>
+            <p className="text-white font-bold text-lg mb-2">+91 9755553339</p>
+            <p className="text-slate-400">support@pawarlab.com</p>
           </div>
 
           {/* Right Column: Laboratory Location */}
           <div className="flex flex-col items-center md:items-start">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-4">Laboratory Location</h4>
+            <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Laboratory Location</h4>
             <a 
               href="https://www.google.com/maps/search/?api=1&query=Pawar+Pathology+Lab+Betul" 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="text-slate-400 hover:text-rose-600 transition-colors flex items-center gap-2"
+              className="text-slate-300 hover:text-clinical-rose transition-colors flex items-center gap-2 font-medium"
             >
-              <MapPin size={16} />
+              <MapPin size={18} />
               <span>Find us on Google Maps</span>
             </a>
           </div>
@@ -255,16 +262,16 @@ export default function Home() {
       </footer>
 
       {bookingSuccess && (
-        <div className="fixed inset-0 z-[101] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-            <div className="bg-white rounded-[3rem] shadow-2xl p-12 text-center max-w-md animate-in fade-in zoom-in-95">
-                <CheckCircle className="text-emerald-500 w-24 h-24 mx-auto mb-6" />
+        <div className="fixed inset-0 z-[101] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl shadow-2xl p-12 text-center max-w-md animate-in fade-in zoom-in-95 border border-slate-200">
+                <CheckCircle className="text-success w-24 h-24 mx-auto mb-6" />
                 <h2 className="text-3xl font-black text-slate-900 mb-4">Booking Successful!</h2>
-                <p className="text-slate-500 mb-8">Your request has been submitted. Our team will contact you shortly to confirm the details.</p>
+                <p className="text-slate-600 mb-8 leading-relaxed">Your request has been submitted. Our team will contact you shortly to confirm the details.</p>
                 <button 
                     onClick={() => {
                       setBookingSuccess(false);
                     }}
-                    className="bg-slate-900 text-white px-12 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-rose-600 transition-all"
+                    className="bg-clinical-rose text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-rose-lg hover:bg-clinical-rose-dark transition-all"
                 >
                     Done
                 </button>
