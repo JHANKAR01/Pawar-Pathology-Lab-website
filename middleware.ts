@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { jwtVerify } from 'jose';
 
 interface DecodedToken {
   userId: string;
@@ -8,7 +8,8 @@ interface DecodedToken {
   name: string;
 }
 
-export function middleware(request: NextRequest) {
+// This function can be marked `async` if using `await` inside
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Protect admin and partner routes
@@ -22,8 +23,9 @@ export function middleware(request: NextRequest) {
     }
 
     try {
-      // Try to verify JWT token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedToken;
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+      const { payload } = await jwtVerify(token, secret);
+      const decoded = payload as DecodedToken;
       
       // Check role-based access
       if (pathname.startsWith('/admin') && decoded.role !== 'admin') {
@@ -31,8 +33,8 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL(redirectUrl, request.url));
       }
 
-      if (pathname.startsWith('/partner') && decoded.role !== 'partner') {
-        const redirectUrl = decoded.role === 'admin' ? '/admin' : '/login';
+      if (pathname.startsWith('/partner') && (decoded.role !== 'partner' && decoded.role !== 'admin')) {
+        const redirectUrl = '/login';
         return NextResponse.redirect(new URL(redirectUrl, request.url));
       }
 
@@ -40,6 +42,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.next();
     } catch (error) {
       // Token is invalid, redirect to login
+      console.error("JWT Verification Error:", error);
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
@@ -52,4 +55,3 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/admin/:path*', '/partner/:path*'],
 };
-
