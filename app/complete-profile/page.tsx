@@ -20,7 +20,10 @@ export default function CompleteProfilePage() {
         router.push('/login');
       }
     }
-  }, [status, router]);
+    if (status === 'authenticated' && !(session as any)?.needsProfileCompletion) {
+        router.push('/');
+    }
+  }, [session, status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

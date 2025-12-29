@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
+import { useSession } from 'next-auth/react';
 import { 
   Phone, MapPin, FlaskConical, LogIn, Activity, 
   Award, Zap, Globe, Instagram, Facebook, Clock, 
@@ -23,12 +24,19 @@ const Hero3DContainer = dynamic(() => import('@/components/3D/Hero3DContainer'),
 
 export default function Home() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [tests, setTests] = useState<Test[]>([]);
   const [selectedTests, setSelectedTests] = useState<Test[]>([]);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+
+  useEffect(() => {
+    if (status === 'authenticated' && (session as any)?.needsProfileCompletion) {
+      router.push('/complete-profile');
+    }
+  }, [session, status, router]);
 
   useEffect(() => {
     const fetchTests = async () => {

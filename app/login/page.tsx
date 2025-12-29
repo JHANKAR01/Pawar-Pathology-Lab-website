@@ -65,7 +65,7 @@ export default function LoginPage() {
     setError('');
     try {
       const result = await signIn('google', {
-        callbackUrl: '/complete-profile',
+        callbackUrl: '/',
         redirect: true,
       });
       if (result?.error) {
