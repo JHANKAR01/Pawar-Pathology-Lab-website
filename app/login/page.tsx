@@ -33,6 +33,7 @@ export default function LoginPage() {
 
       const { token, user } = await response.json();
       
+      document.cookie = `pawar_lab_auth_token=${token}; path=/; max-age=86400; SameSite=Lax`;
       localStorage.setItem('pawar_lab_auth_token', token);
       localStorage.setItem('pawar_lab_user_role', user.role);
       localStorage.setItem('pawar_lab_user', JSON.stringify(user));

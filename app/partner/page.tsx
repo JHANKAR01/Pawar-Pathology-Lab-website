@@ -268,8 +268,8 @@ export default function PartnerPage() {
           >
             <Plus size={18} /> Direct Add
           </button>
-          <button onClick={() => router.push('/')} className="text-slate-600 hover:text-clinical-rose font-bold text-sm flex items-center gap-2 transition-colors px-4 py-2 rounded-xl hover:bg-clinical-rose-light">
-            <LogOut className="w-5 h-5" /> Exit
+          <button onClick={() => { localStorage.removeItem('pawar_lab_auth_token'); localStorage.removeItem('pawar_lab_user'); localStorage.removeItem('pawar_lab_user_role'); document.cookie = "pawar_lab_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;"; router.push('/login'); }} className="text-slate-600 hover:text-clinical-rose font-bold text-sm flex items-center gap-2 transition-colors px-4 py-2 rounded-xl hover:bg-clinical-rose-light">
+            <LogOut className="w-5 h-5" /> Logout
           </button>
         </div>
       </nav>

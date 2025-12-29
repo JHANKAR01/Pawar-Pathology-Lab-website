@@ -107,6 +107,7 @@ export default function Home() {
     localStorage.removeItem('pawar_lab_auth_token');
     localStorage.removeItem('pawar_lab_user');
     localStorage.removeItem('pawar_lab_user_role');
+    document.cookie = "pawar_lab_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
     setCurrentUser(null);
     router.push('/login');
   };

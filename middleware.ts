@@ -13,9 +13,7 @@ export function middleware(request: NextRequest) {
 
   // Protect admin and partner routes
   if (pathname.startsWith('/admin') || pathname.startsWith('/partner')) {
-    const token = request.cookies.get('next-auth.session-token')?.value || 
-                  request.headers.get('authorization')?.replace('Bearer ', '') ||
-                  request.cookies.get('pawar_lab_auth_token')?.value;
+    const token = request.cookies.get('pawar_lab_auth_token')?.value;
 
     if (!token) {
       const loginUrl = new URL('/login', request.url);
