@@ -16,23 +16,64 @@ export default function ReportsPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [allBookings, setAllBookings] = useState<IBooking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isVerified, setIsVerified] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>('newest');
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('pawar_lab_auth_token') || '{}');
-    if (user?.role !== 'patient') {
-      router.push(user?.role === 'admin' ? '/admin' : '/login');
-    } else {
-      setCurrentUser(user);
-    }
+    const checkUserStatus = async () => {
+      const token = localStorage.getItem('pawar_lab_auth_token');
+      
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/auth/verify', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          router.push('/login');
+          return;
+        }
+
+        const data = await res.json();
+
+        // Check the role from the server response (server-verified, not localStorage)
+        if (data.role === 'patient' || data.role === 'user') {
+          setCurrentUser({
+            _id: data.userId,
+            name: data.name,
+            role: data.role
+          });
+          setIsVerified(true);
+        } else if (data.role === 'admin') {
+          router.push('/admin');
+        } else if (data.role === 'partner') {
+          router.push('/partner');
+        } else {
+          router.push('/login');
+        }
+      } catch (err) {
+        console.error('User verification error:', err);
+        router.push('/login');
+      }
+    };
+    checkUserStatus();
   }, [router]);
 
   useEffect(() => {
-    if (currentUser?._id) {
+    if (isVerified && currentUser?._id) {
       const fetchBookings = async () => {
         setIsLoading(true);
         try {
-          const response = await fetch(`/api/bookings?userId=${currentUser._id}`);
+          const token = localStorage.getItem('pawar_lab_auth_token');
+          const response = await fetch(`/api/bookings?userId=${currentUser._id}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
           if (response.ok) {
             const data = await response.json();
             setAllBookings(data);
@@ -45,7 +86,7 @@ export default function ReportsPage() {
       };
       fetchBookings();
     }
-  }, [currentUser]);
+  }, [isVerified, currentUser]);
 
   const sortedBookings = useMemo(() => {
     return [...allBookings].sort((a, b) => {
@@ -70,7 +111,7 @@ export default function ReportsPage() {
     router.push('/login');
   };
 
-  if (!currentUser) {
+  if (!isVerified || !currentUser) {
     return <div className="flex flex-col min-h-screen items-center justify-center bg-slate-50/50"><Loader2 className="animate-spin text-rose-600" size={48} /></div>;
   }
 

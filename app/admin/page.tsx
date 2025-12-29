@@ -260,7 +260,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row font-sans p-4 lg:p-8 gap-8 bg-slate-50">
-      <aside className="w-full lg:w-80 bg-white rounded-3xl p-8 flex flex-col relative z-20 shadow-large border border-slate-200">
+      <aside className="w-full lg:w-80 lg:sticky lg:top-8 lg:h-[calc(100vh-4rem)] bg-white rounded-3xl p-8 flex flex-col relative z-20 shadow-large border border-slate-200">
         <div className="flex items-center gap-4 mb-16 border-b-2 border-slate-200 pb-10">
           <div className="w-14 h-14 bg-clinical-rose rounded-2xl flex items-center justify-center shadow-rose">
             <ShieldCheck className="text-white w-7 h-7" />
@@ -303,16 +303,17 @@ export default function AdminPage() {
         </div>
       </aside>
 
-      <main className="flex-1 space-y-8 overflow-y-auto">
-        <header className="flex justify-between items-center">
-          <div>
-            <span className="text-xs font-black text-clinical-rose uppercase tracking-wider mb-3 block">Node System Monitor</span>
-            <h1 className="text-5xl font-black text-slate-900 tracking-tighter uppercase">{activeTab}</h1>
-          </div>
-          <button onClick={fetchData} className="w-16 h-16 bg-white rounded-full flex items-center justify-center hover:bg-clinical-rose-light transition-all shadow-medium border-2 border-slate-200 hover:border-clinical-rose">
-            <RefreshCw className={`text-clinical-rose w-6 h-6 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-        </header>
+      <main className="flex-1 lg:sticky lg:top-8 lg:h-[calc(100vh-4rem)] lg:overflow-y-auto">
+        <div className="bg-white rounded-3xl p-8 shadow-large border border-slate-200 space-y-8">
+          <header className="flex justify-between items-center">
+            <div>
+              <span className="text-xs font-black text-clinical-rose uppercase tracking-wider mb-3 block">Node System Monitor</span>
+              <h1 className="text-5xl font-black text-slate-900 tracking-tighter uppercase">{activeTab}</h1>
+            </div>
+            <button onClick={fetchData} className="w-16 h-16 bg-white rounded-full flex items-center justify-center hover:bg-clinical-rose-light transition-all shadow-medium border-2 border-slate-200 hover:border-clinical-rose">
+              <RefreshCw className={`text-clinical-rose w-6 h-6 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </header>
 
         <AnimatePresence mode="wait">
           {activeTab === 'Intelligence' && (
@@ -590,6 +591,7 @@ export default function AdminPage() {
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </main>
     </div>
   );

@@ -42,25 +42,14 @@ export default function PartnerPage() {
   useEffect(() => {
     const checkPartnerStatus = async () => {
       const token = localStorage.getItem('pawar_lab_auth_token');
-      const storedRole = localStorage.getItem('pawar_lab_user_role');
       
       if (!token) {
         router.push('/login');
         return;
       }
 
-      // Quick check: if stored role is not partner, redirect immediately
-      if (storedRole && storedRole !== 'partner') {
-        if (storedRole === 'admin') {
-          router.push('/admin');
-        } else {
-          router.push('/login');
-        }
-        return;
-      }
-
       try {
-        const res = await fetch('/api/auth/check-admin', {
+        const res = await fetch('/api/auth/verify', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -79,7 +68,7 @@ export default function PartnerPage() {
 
         const data = await res.json();
 
-        // Check the role from the response
+        // Check the role from the server response (server-verified, not localStorage)
         if (data.role === 'partner') {
           setIsVerified(true);
           fetchBookings();
