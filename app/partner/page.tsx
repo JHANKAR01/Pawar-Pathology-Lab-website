@@ -11,6 +11,7 @@ export default function PartnerPage() {
   const router = useRouter();
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isVerified, setIsVerified] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('active'); // 'active' or 'completed'
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,23 +40,79 @@ export default function PartnerPage() {
   });
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('pawar_lab_auth_token') || '{}');
-    if (user?.role !== 'partner') {
-      router.push(user?.role === 'admin' ? '/admin' : '/login');
-    }
-    fetchBookings();
+    const checkPartnerStatus = async () => {
+      const token = localStorage.getItem('pawar_lab_auth_token');
+      const storedRole = localStorage.getItem('pawar_lab_user_role');
+      
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      // Quick check: if stored role is not partner, redirect immediately
+      if (storedRole && storedRole !== 'partner') {
+        if (storedRole === 'admin') {
+          router.push('/admin');
+        } else {
+          router.push('/login');
+        }
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/auth/check-admin', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          // Try to get error message
+          let errorData;
+          try {
+            errorData = await res.json();
+          } catch {
+            errorData = { error: 'Unknown error' };
+          }
+          console.error('Partner verification failed:', errorData);
+          router.push('/login');
+          return;
+        }
+
+        const data = await res.json();
+
+        // Check the role from the response
+        if (data.role === 'partner') {
+          setIsVerified(true);
+          fetchBookings();
+        } else if (data.role === 'admin') {
+          router.push('/admin');
+        } else {
+          // Role is missing or invalid
+          console.error('Invalid or missing role in response:', data);
+          router.push('/login');
+        }
+      } catch (err) {
+        console.error('Partner verification error:', err);
+        router.push('/login');
+      }
+    };
+    checkPartnerStatus();
   }, [router]);
 
   const fetchBookings = async () => {
     setLoading(true);
+    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
-      const res = await fetch('/api/bookings');
+      const res = await fetch('/api/bookings', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (res.ok) {
         const data = await res.json();
         // For the demo, we show tasks assigned or in progress
         setTasks(data.filter((b: any) => 
           ['assigned', 'reached', 'sample_collected', 'report_uploaded', 'completed'].includes(b.status)
         ));
+      } else if (res.status === 401 || res.status === 403) {
+        router.push('/login');
       }
     } catch (e) {
       console.error(e);
@@ -69,13 +126,18 @@ export default function PartnerPage() {
       task._id === id ? { ...task, status: newStatus, ...extraData } : task
     ));
 
+    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
       const res = await fetch(`/api/bookings/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ status: newStatus, ...extraData })
       });
       if (!res.ok) {
+        if (res.status === 401 || res.status === 403) router.push('/login');
         throw new Error('Failed to update status');
       }
       const updatedBooking = await res.json();
@@ -117,10 +179,14 @@ export default function PartnerPage() {
     };
     setTasks(prev => [optimisticTask, ...prev]);
 
+    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
       const res = await fetch('/api/bookings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           patientName: newPatient.name,
           contactNumber: newPatient.phone,
@@ -139,6 +205,7 @@ export default function PartnerPage() {
       });
 
       if (!res.ok) {
+        if (res.status === 401 || res.status === 403) router.push('/login');
         throw new Error('Failed to register walk-in');
       }
       const createdBooking = await res.json();
@@ -162,12 +229,18 @@ export default function PartnerPage() {
       task._id === id ? { ...task, status: 'report_uploaded', reportFileUrl: 'uploading...' } : task // Optimistic update
     ));
 
+    const token = localStorage.getItem('pawar_lab_auth_token');
     const formData = new FormData();
     formData.append('file', file);
     formData.append('status', 'report_uploaded');
     try {
-      const res = await fetch(`/api/bookings/${id}`, { method: 'PATCH', body: formData });
+      const res = await fetch(`/api/bookings/${id}`, { 
+        method: 'PATCH', 
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData 
+      });
       if (!res.ok) {
+        if (res.status === 401 || res.status === 403) router.push('/login');
         throw new Error('Upload failed');
       }
       const updatedBooking = await res.json();
@@ -178,6 +251,14 @@ export default function PartnerPage() {
       setTasks(originalTasks); // Rollback
     }
   };
+
+  if (!isVerified) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="w-12 h-12 animate-spin text-rose-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">

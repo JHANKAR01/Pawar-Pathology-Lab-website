@@ -18,10 +18,13 @@ export async function GET(request: Request) {
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedToken;
 
+    // Return role information for both admin and partner verification
     if (decoded.role === 'admin') {
-      return NextResponse.json({ isAdmin: true, message: 'Admin verified' });
+      return NextResponse.json({ isAdmin: true, role: decoded.role, message: 'Admin verified' });
+    } else if (decoded.role === 'partner') {
+      return NextResponse.json({ isAdmin: false, role: decoded.role, message: 'Partner verified' });
     } else {
-      return NextResponse.json({ error: 'Forbidden: Not an admin' }, { status: 403 });
+      return NextResponse.json({ error: 'Forbidden: Invalid role' }, { status: 403 });
     }
 
   } catch (error) {
