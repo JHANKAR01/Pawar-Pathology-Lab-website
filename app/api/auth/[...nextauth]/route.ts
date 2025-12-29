@@ -43,7 +43,7 @@ export const authOptions: NextAuthOptions = {
           const dbUser = await User.findOne({ email: token.email });
           
           if (dbUser) {
-              // Re-calculate profile completion status on every check
+              token.name = dbUser.name; // Ensure DB name is used
               token.needsProfileCompletion = !dbUser.phone || !dbUser.address;
               token.role = dbUser.role; // Ensure role is up-to-date
               token.userId = dbUser._id.toString();
@@ -67,6 +67,11 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token) {
+        if (session.user) {
+          session.user.name = token.name as string; // Force session to use DB name
+          (session.user as any).role = token.role as string;
+          (session.user as any)._id = token.userId as string;
+        }
         session.accessToken = token.accessToken as string;
         session.userId = token.userId as string;
         session.role = token.role as string;

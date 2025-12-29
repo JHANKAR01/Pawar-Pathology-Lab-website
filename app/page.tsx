@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { 
   Phone, MapPin, FlaskConical, LogIn, Activity, 
   Award, Zap, Globe, Instagram, Facebook, Clock, 
@@ -45,6 +45,10 @@ export default function Home() {
       if (token) {
         const currentToken = localStorage.getItem('pawar_lab_auth_token');
         if (token !== currentToken) {
+          // Force State Update: Clear old user data first
+          localStorage.removeItem('pawar_lab_user');
+          localStorage.removeItem('pawar_lab_user_role');
+
           document.cookie = `pawar_lab_auth_token=${token}; path=/; max-age=86400; SameSite=Lax`;
           localStorage.setItem('pawar_lab_auth_token', token);
 
@@ -52,7 +56,7 @@ export default function Home() {
           if (user) {
             localStorage.setItem('pawar_lab_user', JSON.stringify(user));
             localStorage.setItem('pawar_lab_user_role', user.role);
-            setCurrentUser(user);
+            setCurrentUser(user); // This now has the correct DB name
           }
         } else if (!currentUser && localStorage.getItem('pawar_lab_user')) {
             // Sync from local storage if session is valid but UI state is missing
@@ -155,12 +159,14 @@ export default function Home() {
   };
 
   const handleLogout = () => {
+    // Clear our custom token and user data
     localStorage.removeItem('pawar_lab_auth_token');
     localStorage.removeItem('pawar_lab_user');
     localStorage.removeItem('pawar_lab_user_role');
     document.cookie = "pawar_lab_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-    setCurrentUser(null);
-    router.push('/login');
+    
+    // Sign out from NextAuth
+    signOut({ callbackUrl: '/login' });
   };
   
   const navItems = ['Test Directory', 'Clinical Services', 'Help & Support'];
