@@ -57,17 +57,8 @@ export default function CompleteProfilePage() {
       localStorage.setItem('pawar_lab_user_role', user.role);
       localStorage.setItem('pawar_lab_user', JSON.stringify(user));
 
-      // Redirect based on role
-      switch (user.role) {
-        case 'admin':
-          router.push('/admin');
-          break;
-        case 'partner':
-          router.push('/partner');
-          break;
-        default:
-          router.push('/');
-      }
+      // Hard redirect to refresh session state
+      window.location.href = '/';
     } catch (err: any) {
       setError(err.message || 'Failed to complete profile');
       setIsLoading(false);

@@ -33,10 +33,49 @@ export default function Home() {
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
   useEffect(() => {
-    if (status === 'authenticated' && (session as any)?.needsProfileCompletion) {
-      router.push('/complete-profile');
+    if (status === 'authenticated') {
+      // Handle profile completion redirect
+      if ((session as any)?.needsProfileCompletion) {
+        router.push('/complete-profile');
+        return; // Early return to avoid further processing
+      }
+
+      // Synchronize token and user data from NextAuth session
+      const token = (session as any)?.accessToken;
+      if (token) {
+        const currentToken = localStorage.getItem('pawar_lab_auth_token');
+        if (token !== currentToken) {
+          document.cookie = `pawar_lab_auth_token=${token}; path=/; max-age=86400; SameSite=Lax`;
+          localStorage.setItem('pawar_lab_auth_token', token);
+
+          const user = (session as any)?.user;
+          if (user) {
+            localStorage.setItem('pawar_lab_user', JSON.stringify(user));
+            localStorage.setItem('pawar_lab_user_role', user.role);
+            setCurrentUser(user);
+          }
+        }
+      }
+    } else if (status === 'unauthenticated') {
+        // If there's no next-auth session, check for our manual token
+        const manualToken = localStorage.getItem('pawar_lab_auth_token');
+        if (manualToken) {
+            const userJson = localStorage.getItem('pawar_lab_user');
+            if(userJson) {
+                const user = JSON.parse(userJson);
+                // Set user if not already set
+                if(currentUser?.email !== user.email) {
+                    setCurrentUser(user);
+                }
+            }
+        } else {
+            // If no tokens exist, clear out any stale user data
+            if(currentUser) {
+                setCurrentUser(null);
+            }
+        }
     }
-  }, [session, status, router]);
+  }, [session, status, router, currentUser]);
 
   useEffect(() => {
     const fetchTests = async () => {
@@ -56,10 +95,9 @@ export default function Home() {
     fetchTests();
     const handleScroll = () => setIsScrolled(window.scrollY > 40);
     window.addEventListener('scroll', handleScroll);
-    const userJson = localStorage.getItem('pawar_lab_user');
-    if (userJson) {
-      setCurrentUser(JSON.parse(userJson));
-    }
+    
+    // currentUser is now managed by the session useEffect
+    
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
