@@ -2,32 +2,25 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Loader2, FlaskConical, CheckCircle } from 'lucide-react';
 
 export default function CompleteProfilePage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Check if user is authenticated via NextAuth or JWT
-    const checkAuth = async () => {
+    if (status === 'unauthenticated') {
       const token = localStorage.getItem('pawar_lab_auth_token');
-      const nextAuthToken = document.cookie.split('; ').find(row => row.startsWith('next-auth.session-token='));
-      
-      if (!token && !nextAuthToken) {
+      if (!token) {
         router.push('/login');
-        return;
       }
-      
-      setIsChecking(false);
-    };
-    
-    checkAuth();
-  }, [router]);
+    }
+  }, [status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +49,7 @@ export default function CompleteProfilePage() {
       const { token, user } = await response.json();
       
       // Store token and user data
+      document.cookie = `pawar_lab_auth_token=${token}; path=/; max-age=86400; SameSite=Lax`;
       localStorage.setItem('pawar_lab_auth_token', token);
       localStorage.setItem('pawar_lab_user_role', user.role);
       localStorage.setItem('pawar_lab_user', JSON.stringify(user));
@@ -77,7 +71,7 @@ export default function CompleteProfilePage() {
     }
   };
 
-  if (isChecking) {
+  if (status === 'loading') {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <Loader2 className="w-12 h-12 text-clinical-rose animate-spin" />
@@ -155,4 +149,3 @@ export default function CompleteProfilePage() {
     </div>
   );
 }
-
