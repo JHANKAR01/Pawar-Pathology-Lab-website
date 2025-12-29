@@ -2,9 +2,15 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Booking, { IBooking } from '@/models/Booking';
+import { verifyAdmin } from '@/lib/auth';
 
 // GET /api/bookings - Fetch all bookings (Admin/Partner view)
 export async function GET(request: Request) {
+  const authResult = await verifyAdmin(request);
+  if (authResult.response) {
+    return authResult.response;
+  }
+
   await dbConnect();
   try {
     const { searchParams } = new URL(request.url);

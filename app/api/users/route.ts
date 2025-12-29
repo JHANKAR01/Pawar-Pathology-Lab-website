@@ -2,8 +2,14 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import User from '@/models/User';
+import { verifyAdmin } from '@/lib/auth';
 
 export async function GET(request: Request) {
+  const authResult = await verifyAdmin(request);
+  if (authResult.response) {
+    return authResult.response;
+  }
+
   await dbConnect();
   try {
     const { searchParams } = new URL(request.url);

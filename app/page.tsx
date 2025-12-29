@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { motion } from 'framer-motion';
 import { 
   Phone, MapPin, FlaskConical, LogIn, Activity, 
   Award, Zap, Globe, Instagram, Facebook, Clock, 
@@ -179,21 +180,39 @@ export default function Home() {
            <div className="max-w-[1440px] mx-auto text-center">
               <h2 className="text-4xl font-black text-white mb-12">Clinical Excellence</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                 <div className="glass-dark p-12 rounded-[3rem]">
+                 <motion.div 
+                   className="glass-dark p-12 rounded-[3rem]"
+                   initial={{ opacity: 0, y: 30 }}
+                   whileInView={{ opacity: 1, y: 0 }}
+                   viewport={{ once: true }}
+                   transition={{ duration: 0.5, delay: 0.1 }}
+                 >
                     <ShieldCheck className="mx-auto text-rose-600 mb-6" size={48} />
                     <h3 className="text-xl font-bold text-white mb-4">NABL Accredited</h3>
                     <p className="text-slate-400">Gold standard pathology reports recognized globally.</p>
-                 </div>
-                 <div className="glass-dark p-12 rounded-[3rem]">
+                 </motion.div>
+                 <motion.div 
+                   className="glass-dark p-12 rounded-[3rem]"
+                   initial={{ opacity: 0, y: 30 }}
+                   whileInView={{ opacity: 1, y: 0 }}
+                   viewport={{ once: true }}
+                   transition={{ duration: 0.5, delay: 0.2 }}
+                 >
                     <Zap className="mx-auto text-rose-600 mb-6" size={48} />
                     <h3 className="text-xl font-bold text-white mb-4">Fast Results</h3>
                     <p className="text-slate-400">Same-day turnaround for most standard clinical panels.</p>
-                 </div>
-                 <div className="glass-dark p-12 rounded-[3rem]">
+                 </motion.div>
+                 <motion.div 
+                   className="glass-dark p-12 rounded-[3rem]"
+                   initial={{ opacity: 0, y: 30 }}
+                   whileInView={{ opacity: 1, y: 0 }}
+                   viewport={{ once: true }}
+                   transition={{ duration: 0.5, delay: 0.3 }}
+                 >
                     <Clock className="mx-auto text-rose-600 mb-6" size={48} />
                     <h3 className="text-xl font-bold text-white mb-4">24/7 Support</h3>
                     <p className="text-slate-400">Clinical experts available for result consultation.</p>
-                 </div>
+                 </motion.div>
               </div>
            </div>
         </section>

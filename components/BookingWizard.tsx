@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { Check, Calendar, CreditCard, User, CheckCircle, MapPin, Loader2, Navigation, Ticket, UserPlus, X, AlertTriangle, DollarSign, Mail } from 'lucide-react';
 import { Test, CollectionType } from '../types';
 
@@ -226,9 +227,16 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
 
         <div className="p-10 overflow-y-auto">
           {error && (
-            <div className="mb-6 bg-rose-500/10 border border-rose-500/20 p-4 rounded-2xl flex items-center gap-3 text-rose-500 font-bold text-sm animate-in slide-in-from-top">
-              <AlertTriangle size={18} /> {error}
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="mb-6 bg-[#E11D48] border-2 border-rose-600 p-5 rounded-2xl flex items-center gap-3 text-white font-black text-sm shadow-2xl shadow-rose-900/50"
+            >
+              <AlertTriangle size={20} className="text-white flex-shrink-0" /> 
+              <span className="text-white">{error}</span>
+            </motion.div>
           )}
 
           {step === 1 && (

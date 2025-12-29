@@ -3,122 +3,159 @@ import { Canvas, useFrame, ThreeElements } from '@react-three/fiber';
 import { Environment, Stars, PresentationControls } from '@react-three/drei';
 import * as THREE from 'three';
 
-const InstancedCells = ({ isMobile }: { isMobile: boolean }) => {
-  const rbcMesh = useRef<THREE.InstancedMesh>(null);
-  const wbcMesh = useRef<THREE.InstancedMesh>(null);
-  
-  // 1. Reduced particle count by 50%
-  const count = isMobile ? 20 : 50;
-  
-  const data = useMemo(() => {
-    return Array.from({ length: count }, () => ({
-      position: new THREE.Vector3(
-        (Math.random() - 0.5) * 30,
-        (Math.random() - 0.5) * 20,
-        (Math.random() - 0.5) * 15 - 5
-      ),
-      rotation: new THREE.Euler(Math.random() * Math.PI, Math.random() * Math.PI, 0),
-      scale: 0.5 + Math.random() * 0.8,
-      // 3. Increased movement speed
-      speed: 0.5 + Math.random() * 0.8,
-      type: Math.random() > 0.85 ? 'wbc' : 'rbc'
-    }));
-  }, [count]);
+const FloatingSyringe = ({ position, speed, rotationSpeed }: { position: [number, number, number], speed: number, rotationSpeed: number }) => {
+  const syringeRef = useRef<THREE.Group>(null);
+  const baseY = position[1];
 
   useFrame((state) => {
-    const time = state.clock.getElapsedTime();
-    let rbcIdx = 0;
-    let wbcIdx = 0;
-
-    const tempObj = new THREE.Object3D();
-
-    data.forEach((d) => {
-      tempObj.position.copy(d.position);
-      // Increased vertical movement range and speed
-      tempObj.position.y += Math.sin(time * d.speed + d.position.x) * 0.2;
-      tempObj.rotation.copy(d.rotation);
-      tempObj.rotation.x += time * 0.2 * d.speed;
-      tempObj.rotation.y += time * 0.2 * d.speed;
-      tempObj.scale.setScalar(d.scale);
-      tempObj.updateMatrix();
-
-      if (d.type === 'rbc' && rbcMesh.current) {
-        rbcMesh.current.setMatrixAt(rbcIdx++, tempObj.matrix);
-      } else if (d.type === 'wbc' && wbcMesh.current) {
-        wbcMesh.current.setMatrixAt(wbcIdx++, tempObj.matrix);
-      }
-    });
-
-    if (rbcMesh.current) rbcMesh.current.instanceMatrix.needsUpdate = true;
-    if (wbcMesh.current) wbcMesh.current.instanceMatrix.needsUpdate = true;
+    if (syringeRef.current) {
+      const time = state.clock.getElapsedTime();
+      // Smooth vertical micro-oscillation
+      syringeRef.current.position.y = baseY + Math.sin(time * speed) * 0.15;
+      // Slow rotation for zero-gravity effect
+      syringeRef.current.rotation.y += rotationSpeed;
+      syringeRef.current.rotation.x = Math.sin(time * speed * 0.5) * 0.1;
+    }
   });
 
   return (
-    <>
-      <instancedMesh ref={rbcMesh} args={[undefined, undefined, count]}>
-        {/* 2. Simplified RBC geometry */}
-        <torusGeometry args={[0.3, 0.15, 8, 16]} />
+    <group ref={syringeRef} position={position}>
+      {/* Syringe barrel (cylinder) */}
+      <mesh>
+        <cylinderGeometry args={[0.08, 0.08, 0.6, 16]} />
         <meshStandardMaterial 
           color="#E11D48" 
-          roughness={0.2} 
-          metalness={0.6} 
-          emissive="#300000" 
-          emissiveIntensity={0.4}
+          roughness={0.3} 
+          metalness={0.7}
+          emissive="#300000"
+          emissiveIntensity={0.3}
         />
-      </instancedMesh>
-      <instancedMesh ref={wbcMesh} args={[undefined, undefined, count]}>
-        {/* 2. Simplified WBC geometry */}
-        <sphereGeometry args={[0.25, 12, 12]} />
+      </mesh>
+      {/* Syringe plunger */}
+      <mesh position={[0, 0.25, 0]}>
+        <cylinderGeometry args={[0.06, 0.06, 0.15, 12]} />
         <meshStandardMaterial 
-          color="#F8FAFC" 
-          roughness={0.4} 
-          metalness={0.1} 
-          emissive="#ffffff" 
-          emissiveIntensity={0.1}
+          color="#ffffff" 
+          roughness={0.2} 
+          metalness={0.8}
         />
-      </instancedMesh>
-    </>
+      </mesh>
+      {/* Needle tip */}
+      <mesh position={[0, -0.35, 0]}>
+        <coneGeometry args={[0.02, 0.1, 8]} />
+        <meshStandardMaterial 
+          color="#C0C0C0" 
+          roughness={0.1} 
+          metalness={0.9}
+        />
+      </mesh>
+    </group>
   );
 };
 
-const DNAHelix = () => {
-  const helixRef = useRef<THREE.Group>(null);
-  
-  const helixData = useMemo(() => {
-    const points = [];
-    const count = 45;
-    for (let i = 0; i < count; i++) {
-      const angle = (i / 5) * Math.PI;
-      const y = (i - count/2) * 0.4;
-      const p1 = { x: Math.sin(angle) * 2, z: Math.cos(angle) * 2, y };
-      const p2 = { x: -Math.sin(angle) * 2, z: -Math.cos(angle) * 2, y };
-      points.push({ p1, p2 });
-    }
-    return { points };
-  }, []);
+const FloatingFlask = ({ position, speed, rotationSpeed }: { position: [number, number, number], speed: number, rotationSpeed: number }) => {
+  const flaskRef = useRef<THREE.Group>(null);
+  const baseY = position[1];
 
-  useFrame(() => {
-    if (helixRef.current) {
-      helixRef.current.rotation.y += 0.002;
+  useFrame((state) => {
+    if (flaskRef.current) {
+      const time = state.clock.getElapsedTime();
+      // Smooth vertical micro-oscillation
+      flaskRef.current.position.y = baseY + Math.sin(time * speed + position[0]) * 0.12;
+      // Slow rotation for zero-gravity effect
+      flaskRef.current.rotation.y += rotationSpeed;
+      flaskRef.current.rotation.z = Math.sin(time * speed * 0.3) * 0.05;
     }
   });
 
   return (
-    <group ref={helixRef}>
-      {helixData.points.map((d, i) => (
-        <group key={`dna-group-${i}`}>
-          <mesh position={[d.p1.x, d.p1.y, d.p1.z]}>
-            {/* 2. Simplified DNA geometry */}
-            <sphereGeometry args={[0.1, 6, 6]} />
-            <meshStandardMaterial color="#E11D48" emissive="#E11D48" emissiveIntensity={1} />
-          </mesh>
-          <mesh position={[d.p2.x, d.p2.y, d.p2.z]}>
-            <sphereGeometry args={[0.1, 6, 6]} />
-            <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.4} />
-          </mesh>
-        </group>
-      ))}
+    <group ref={flaskRef} position={position}>
+      {/* Flask body (rounded bottom flask) */}
+      <mesh>
+        <sphereGeometry args={[0.25, 16, 16, 0, Math.PI * 2, 0, Math.PI]} />
+        <meshPhysicalMaterial 
+          color="#ffffff"
+          transparent
+          opacity={0.15}
+          roughness={0.1}
+          metalness={0.0}
+          transmission={0.9}
+          thickness={0.1}
+          clearcoat={1.0}
+          clearcoatRoughness={0.1}
+        />
+      </mesh>
+      {/* Flask neck */}
+      <mesh position={[0, 0.25, 0]}>
+        <cylinderGeometry args={[0.08, 0.25, 0.2, 16]} />
+        <meshPhysicalMaterial 
+          color="#ffffff"
+          transparent
+          opacity={0.2}
+          roughness={0.1}
+          metalness={0.0}
+          transmission={0.9}
+          thickness={0.1}
+        />
+      </mesh>
+      {/* Liquid inside (optional, for visual depth) */}
+      <mesh position={[0, -0.1, 0]}>
+        <sphereGeometry args={[0.2, 16, 16, 0, Math.PI * 2, 0, Math.PI]} />
+        <meshStandardMaterial 
+          color="#E11D48"
+          transparent
+          opacity={0.3}
+          emissive="#E11D48"
+          emissiveIntensity={0.2}
+        />
+      </mesh>
     </group>
+  );
+};
+
+const LaboratoryObjects = ({ isMobile }: { isMobile: boolean }) => {
+  const count = isMobile ? 4 : 8;
+  
+  const objects = useMemo(() => {
+    return Array.from({ length: count }, (_, i) => {
+      const isSyringe = i % 2 === 0;
+      return {
+        type: isSyringe ? 'syringe' : 'flask',
+        position: [
+          (Math.random() - 0.5) * 20,
+          (Math.random() - 0.5) * 12,
+          (Math.random() - 0.5) * 10 - 3
+        ] as [number, number, number],
+        speed: 0.3 + Math.random() * 0.4,
+        rotationSpeed: 0.001 + Math.random() * 0.002
+      };
+    });
+  }, [count]);
+
+  return (
+    <>
+      {objects.map((obj, i) => {
+        if (obj.type === 'syringe') {
+          return (
+            <FloatingSyringe 
+              key={`syringe-${i}`}
+              position={obj.position}
+              speed={obj.speed}
+              rotationSpeed={obj.rotationSpeed}
+            />
+          );
+        } else {
+          return (
+            <FloatingFlask 
+              key={`flask-${i}`}
+              position={obj.position}
+              speed={obj.speed}
+              rotationSpeed={obj.rotationSpeed}
+            />
+          );
+        }
+      })}
+    </>
   );
 };
 
@@ -174,8 +211,7 @@ const Hero3D = () => {
         >
           <PresentationControls global rotation={[0, 0, 0]} polar={[-0.1, 0.1]} azimuth={[-0.1, 0.1]}>
             <group>
-              <DNAHelix />
-              <InstancedCells isMobile={isMobile} />
+              <LaboratoryObjects isMobile={isMobile} />
             </group>
           </PresentationControls>
           <Stars radius={70} count={isMobile ? 1000 : 3000} factor={5} fade speed={2} />

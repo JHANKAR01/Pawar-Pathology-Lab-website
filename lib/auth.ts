@@ -30,3 +30,23 @@ export async function verifyAdmin(request: Request): Promise<{ isAdmin: boolean,
     return { isAdmin: false, response: NextResponse.json({ error: 'Internal Server Error' }, { status: 500 }) };
   }
 }
+
+export async function verifyToken(request: Request): Promise<{ isValid: boolean, decoded?: DecodedToken, response?: NextResponse }> {
+  try {
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return { isValid: false, response: NextResponse.json({ error: 'Unauthorized: No token provided' }, { status: 401 }) };
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedToken;
+
+    return { isValid: true, decoded };
+  } catch (error) {
+    if (error instanceof jwt.JsonWebTokenError) {
+      return { isValid: false, response: NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 }) };
+    }
+    console.error('Token verification error:', error);
+    return { isValid: false, response: NextResponse.json({ error: 'Internal Server Error' }, { status: 500 }) };
+  }
+}
