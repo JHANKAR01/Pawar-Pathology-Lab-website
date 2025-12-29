@@ -28,6 +28,7 @@ export const authOptions: NextAuthOptions = {
             password: '', // No password for Google users
             role: 'patient',
             phone: '', // Will be collected in profile completion
+            address: '', // Ensures field exists for completion check
           });
         }
         
@@ -36,29 +37,31 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async jwt({ token, user, account }) {
-      if (account?.provider === 'google') {
-        await dbConnect();
-        const dbUser = await User.findOne({ email: token.email });
-        
-        if (dbUser) {
-          // Generate JWT token for the user
-          const jwtToken = jwt.sign(
-            {
-              userId: dbUser._id.toString(),
-              role: dbUser.role,
-              name: dbUser.name,
-              email: dbUser.email,
-            },
-            process.env.JWT_SECRET!,
-            { expiresIn: '7d' }
-          );
+      // This block now runs for any JWT creation or update, not just Google sign-in
+      if (token.email) {
+          await dbConnect();
+          const dbUser = await User.findOne({ email: token.email });
           
-          token.accessToken = jwtToken;
-          token.userId = dbUser._id.toString();
-          token.role = dbUser.role;
-          token.phone = dbUser.phone;
-          token.needsProfileCompletion = !dbUser.phone || !dbUser.address;
-        }
+          if (dbUser) {
+              // Re-calculate profile completion status on every check
+              token.needsProfileCompletion = !dbUser.phone || !dbUser.address;
+              token.role = dbUser.role; // Ensure role is up-to-date
+              token.userId = dbUser._id.toString();
+
+              // Re-generate our custom access token to ensure it has the latest data
+              const jwtToken = jwt.sign(
+                  {
+                      userId: dbUser._id.toString(),
+                      role: dbUser.role,
+                      name: dbUser.name,
+                      email: dbUser.email,
+                  },
+                  process.env.JWT_SECRET!,
+                  { expiresIn: '7d' }
+              );
+              
+              token.accessToken = jwtToken;
+          }
       }
       return token;
     },
