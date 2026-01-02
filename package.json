@@ -9,6 +9,7 @@
   "dependencies": {
     "@react-three/drei": "9.96.0",
     "@react-three/fiber": "8.15.12",
+    "bcryptjs": "^2.4.3",
     "clsx": "^2.1.0",
     "framer-motion": "^12.23.26",
     "googleapis": "^133.0.0",
@@ -16,14 +17,15 @@
     "lucide-react": "^0.344.0",
     "mongodb": "^7.0.0",
     "mongoose": "^8.2.0",
-    "next-auth": "^4.24.5",
     "next": "14.1.0",
+    "next-auth": "^4.24.5",
     "react": "^18",
     "react-dom": "^18",
     "tailwind-merge": "^2.2.1",
     "three": "0.160.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20",
     "@types/react": "^18",

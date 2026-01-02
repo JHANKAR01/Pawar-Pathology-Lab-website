@@ -1,8 +1,33 @@
-import NextAuth, { NextAuthOptions } from 'next-auth';
+import NextAuth, { NextAuthOptions, DefaultSession } from 'next-auth';
+import { JWT } from 'next-auth/jwt';
 import GoogleProvider from 'next-auth/providers/google';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import dbConnect from '@/lib/dbConnect';
 import User from '@/models/User';
-import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+
+// Module Augmentation to extend Session and JWT interfaces
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string;
+    userId?: string;
+    role?: string;
+    needsProfileCompletion?: boolean;
+    user: {
+      role?: string;
+      _id?: string;
+    } & DefaultSession["user"];
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    role?: string;
+    userId?: string;
+    accessToken?: string;
+    needsProfileCompletion?: boolean;
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -10,72 +35,81 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        if (!credentials?.username || !credentials?.password) return null;
+        
+        await dbConnect();
+        const user = await User.findOne({ 
+          $or: [{ username: credentials.username }, { email: credentials.username }] 
+        });
+
+        if (!user) throw new Error('No user found');
+        if (!user.password) throw new Error('User registered with Google. Please use Google to sign in.');
+
+        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+        if (!isPasswordValid) throw new Error('Invalid password');
+
+        return {
+          id: user._id.toString(),
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        };
+      }
+    })
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       if (account?.provider === 'google') {
         await dbConnect();
-        
-        // Check if user exists
         let dbUser = await User.findOne({ email: user.email });
-        
         if (!dbUser) {
-          // Create new user with Google sign-in
-          dbUser = await User.create({
+          await User.create({
             username: user.email?.split('@')[0] || `user_${Date.now()}`,
             email: user.email!,
             name: user.name || 'User',
-            password: '', // No password for Google users
+            password: '', 
             role: 'patient',
-            phone: '', // Will be collected in profile completion
-            address: '', // Ensures field exists for completion check
+            phone: '', 
+            address: '', 
           });
         }
-        
-        return true;
       }
       return true;
     },
-    async jwt({ token, user, account }) {
-      // This block now runs for any JWT creation or update, not just Google sign-in
-      if (token.email) {
-          await dbConnect();
-          const dbUser = await User.findOne({ email: token.email });
-          
-          if (dbUser) {
-              token.name = dbUser.name; // Ensure DB name is used
-              token.needsProfileCompletion = !dbUser.phone || !dbUser.address;
-              token.role = dbUser.role; // Ensure role is up-to-date
-              token.userId = dbUser._id.toString();
+    async jwt({ token, user }) {
+      // This is the initial sign-in
+      if (user) {
+        token.role = (user as any).role;
+        token.userId = user.id;
+      }
 
-              // Re-generate our custom access token to ensure it has the latest data
-              const jwtToken = jwt.sign(
-                  {
-                      userId: dbUser._id.toString(),
-                      role: dbUser.role,
-                      name: dbUser.name,
-                      email: dbUser.email,
-                  },
-                  process.env.JWT_SECRET!,
-                  { expiresIn: '7d' }
-              );
-              
-              token.accessToken = jwtToken;
-          }
+      // Every time JWT is updated, sync with DB
+      if (token.email) {
+        await dbConnect();
+        const dbUser = await User.findOne({ email: token.email }).lean();
+        if (dbUser) {
+          token.role = dbUser.role;
+          token.userId = dbUser._id.toString();
+          token.needsProfileCompletion = !dbUser.phone || !dbUser.address;
+        }
       }
       return token;
     },
     async session({ session, token }) {
-      if (token) {
-        if (session.user) {
-          session.user.name = token.name as string; // Force session to use DB name
-          (session.user as any).role = token.role as string;
-          (session.user as any)._id = token.userId as string;
-        }
-        session.accessToken = token.accessToken as string;
-        session.userId = token.userId as string;
-        session.role = token.role as string;
-        session.needsProfileCompletion = token.needsProfileCompletion as boolean;
+      if (token && session.user) {
+        session.user.role = token.role;
+        session.user._id = token.userId;
+        session.userId = token.userId;
+        session.role = token.role;
+        session.needsProfileCompletion = token.needsProfileCompletion;
+        // The accessToken from the old system is no longer needed here
       }
       return session;
     },
@@ -92,4 +126,3 @@ export const authOptions: NextAuthOptions = {
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
-
