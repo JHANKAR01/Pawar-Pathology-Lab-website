@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LayoutDashboard, HeartHandshake, Settings as SettingsIcon, 
+import {
+  LayoutDashboard, HeartHandshake, Settings as SettingsIcon,
   ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home, Loader2, Calendar, FileText, X, CheckCircle, XCircle, Ticket
 } from 'lucide-react';
 import { FlaskConical } from 'lucide-react';
@@ -54,45 +55,30 @@ export default function AdminPage() {
   const [coupons, setCoupons] = useState<any[]>([]);
   const [newCoupon, setNewCoupon] = useState({ code: '', discountType: 'percentage' as 'percentage' | 'fixed', value: 0, expiryDate: '', usageLimit: '' });
 
+  const { data: session, status } = useSession();
+
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      const token = localStorage.getItem('pawar_lab_auth_token');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-      try {
-        const res = await fetch('/api/auth/check-admin', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+    if (status === 'loading') return;
 
-        if (!res.ok) throw new Error('Not admin');
+    if (status === 'unauthenticated' || session?.user?.role !== 'admin') {
+      router.push('/login');
+      return;
+    }
 
-        const data = await res.json();
-        if (data.isAdmin) {
-          setIsVerified(true);
-          fetchData();
-          fetchPartners();
-          fetchConfig();
-          fetchBlackoutDates();
-          fetchCoupons();
-        } else {
-          throw new Error('Not admin');
-        }
-      } catch (err) {
-        router.push('/login');
-      }
-    };
-    checkAdminStatus();
-  }, [router]);
+    if (session?.user?.role === 'admin') {
+      setIsVerified(true);
+      fetchData();
+      fetchPartners();
+      fetchConfig();
+      fetchBlackoutDates();
+      fetchCoupons();
+    }
+  }, [session, status, router]);
 
   const fetchData = async () => {
     setLoading(true);
-    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
-      const res = await fetch('/api/bookings', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const res = await fetch('/api/bookings');
       if (res.ok) setBookings(await res.json());
       else if (res.status === 401 || res.status === 403) router.push('/login');
     } catch (error) {
@@ -103,11 +89,8 @@ export default function AdminPage() {
   };
 
   const fetchPartners = async () => {
-    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
-      const res = await fetch('/api/users?role=partner', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const res = await fetch('/api/users?role=partner');
       if (res.ok) setPartners(await res.json());
       else if (res.status === 401 || res.status === 403) router.push('/login');
     } catch (error) {
@@ -116,11 +99,8 @@ export default function AdminPage() {
   };
 
   const fetchConfig = async () => {
-    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
-      const res = await fetch('/api/settings', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const res = await fetch('/api/settings');
       if (res.ok) setConfig(await res.json());
       else if (res.status === 401 || res.status === 403) router.push('/login');
     } catch (err) { console.error(err); }
@@ -139,11 +119,10 @@ export default function AdminPage() {
 
   const handleAddBlackout = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
       const res = await fetch('/api/settings/blackout-dates', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newBlackout),
       });
       if (res.ok) {
@@ -159,11 +138,9 @@ export default function AdminPage() {
 
   const handleDeleteBlackout = async (id: string) => {
     if (!confirm('Are you sure you want to remove this blackout period?')) return;
-    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
       const res = await fetch(`/api/settings/blackout-dates?id=${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
       });
       if (res.ok) {
         fetchBlackoutDates();
@@ -177,17 +154,15 @@ export default function AdminPage() {
 
   const handleUpdateStatus = async (id: string, newStatus: string, extraData: object = {}) => {
     const originalBookings = bookings;
-    setBookings(prev => prev.map(booking => 
+    setBookings(prev => prev.map(booking =>
       booking._id === id ? { ...booking, status: newStatus, ...extraData } : booking
     ));
 
-    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
       const res = await fetch(`/api/bookings/${id}`, {
         method: 'PATCH',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ status: newStatus, ...extraData })
       });
@@ -214,15 +189,13 @@ export default function AdminPage() {
   const handleReleaseReport = async () => {
     if (!selectedBookingForReview) return;
     setIsProcessingReview(true);
-    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
       const res = await fetch(`/api/bookings/${selectedBookingForReview._id}`, {
         method: 'PATCH',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           status: 'completed',
           reportStatus: 'released'
         })
@@ -245,15 +218,13 @@ export default function AdminPage() {
       return;
     }
     setIsProcessingReview(true);
-    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
       const res = await fetch(`/api/bookings/${selectedBookingForReview._id}`, {
         method: 'PATCH',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           status: 'sample_collected',
           reportStatus: 'rejected',
           pathologistNotes: rejectNotes
@@ -273,11 +244,8 @@ export default function AdminPage() {
   };
 
   const fetchCoupons = async () => {
-    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
-      const res = await fetch('/api/coupons', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const res = await fetch('/api/coupons');
       if (res.ok) {
         const data = await res.json();
         setCoupons(data);
@@ -289,13 +257,11 @@ export default function AdminPage() {
 
   const handleAddCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
       const res = await fetch('/api/coupons', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           code: newCoupon.code.toUpperCase().trim(),
@@ -320,11 +286,9 @@ export default function AdminPage() {
 
   const handleDeleteCoupon = async (id: string) => {
     if (!confirm('Are you sure you want to delete this coupon?')) return;
-    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
       const res = await fetch(`/api/coupons/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
       });
       if (res.ok) {
         fetchCoupons();
@@ -340,13 +304,11 @@ export default function AdminPage() {
   const handleToggleConfig = async () => {
     const newConfig = { ...config, requireVerification: !config.requireVerification };
     setConfig(newConfig);
-    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
       const res = await fetch('/api/settings', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(newConfig)
       });
@@ -356,13 +318,11 @@ export default function AdminPage() {
 
   const handleAddPartner = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ ...newPartner, role: 'partner', operationalRole: 'helper' })
       });

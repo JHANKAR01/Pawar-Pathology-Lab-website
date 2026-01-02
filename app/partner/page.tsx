@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
+import { useSession } from 'next-auth/react';
+import {
   CheckCircle, Upload, MapPin, Package, LogOut, Loader2, Navigation, ClipboardList, RefreshCw, Plus, X, Phone, DollarSign
 } from 'lucide-react';
 import { BookingStatus } from '@/types';
@@ -39,65 +40,34 @@ export default function PartnerPage() {
     amountTaken: 0
   });
 
+  const { data: session, status } = useSession();
+
   useEffect(() => {
-    const checkPartnerStatus = async () => {
-      const token = localStorage.getItem('pawar_lab_auth_token');
-      
-      if (!token) {
-        router.push('/login');
-        return;
-      }
+    if (status === 'loading') return;
 
-      try {
-        const res = await fetch('/api/auth/verify', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+    if (status === 'unauthenticated') {
+      router.push('/login');
+      return;
+    }
 
-        if (!res.ok) {
-          // Try to get error message
-          let errorData;
-          try {
-            errorData = await res.json();
-          } catch {
-            errorData = { error: 'Unknown error' };
-          }
-          console.error('Partner verification failed:', errorData);
-          router.push('/login');
-          return;
-        }
-
-        const data = await res.json();
-
-        // Check the role from the server response (server-verified, not localStorage)
-        if (data.role === 'partner') {
-          setIsVerified(true);
-          fetchBookings();
-        } else if (data.role === 'admin') {
-          router.push('/admin');
-        } else {
-          // Role is missing or invalid
-          console.error('Invalid or missing role in response:', data);
-          router.push('/login');
-        }
-      } catch (err) {
-        console.error('Partner verification error:', err);
-        router.push('/login');
-      }
-    };
-    checkPartnerStatus();
-  }, [router]);
+    if (session?.user?.role === 'partner') {
+      setIsVerified(true);
+      fetchBookings();
+    } else if (session?.user?.role === 'admin') {
+      router.push('/admin');
+    } else {
+      router.push('/login');
+    }
+  }, [session, status, router]);
 
   const fetchBookings = async () => {
     setLoading(true);
-    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
-      const res = await fetch('/api/bookings', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = await fetch('/api/bookings');
       if (res.ok) {
         const data = await res.json();
         // For the demo, we show tasks assigned or in progress
-        setTasks(data.filter((b: any) => 
+        setTasks(data.filter((b: any) =>
           ['assigned', 'reached', 'sample_collected', 'report_uploaded', 'completed'].includes(b.status)
         ));
       } else if (res.status === 401 || res.status === 403) {
@@ -111,17 +81,15 @@ export default function PartnerPage() {
 
   const handleUpdateStatus = async (id: string, newStatus: string, extraData: object = {}) => {
     const originalTasks = tasks;
-    setTasks(prev => prev.map(task => 
+    setTasks(prev => prev.map(task =>
       task._id === id ? { ...task, status: newStatus, ...extraData } : task
     ));
 
-    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
       const res = await fetch(`/api/bookings/${id}`, {
         method: 'PATCH',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ status: newStatus, ...extraData })
       });
