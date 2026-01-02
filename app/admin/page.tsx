@@ -60,12 +60,13 @@ export default function AdminPage() {
   useEffect(() => {
     if (status === 'loading') return;
 
-    if (status === 'unauthenticated' || session?.user?.role !== 'admin') {
+    if (status === 'unauthenticated') {
       router.push('/login');
       return;
     }
 
-    if (session?.user?.role === 'admin') {
+    // Middleware handles role-based access, so if we reach here, user is authenticated and authorized
+    if (status === 'authenticated') {
       setIsVerified(true);
       fetchData();
       fetchPartners();
