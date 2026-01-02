@@ -6,27 +6,20 @@ import dbConnect from '@/lib/dbConnect';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 
-// 1. Define an interface for the User document from MongoDB
-// This tells TypeScript which fields exist in your database schema
-interface DbUser {
-  _id: any;
-  role: string;
-  phone?: string;
-  address?: string;
-  name?: string;
-  email?: string;
-}
-
-// Module Augmentation to extend Session and JWT interfaces
+// 1. Update Module Augmentation to include phone and address
 declare module "next-auth" {
   interface Session {
     accessToken?: string;
     userId?: string;
     role?: string;
+    phone?: string; // Added
+    address?: string; // Added
     needsProfileCompletion?: boolean;
     user: {
       role?: string;
       _id?: string;
+      phone?: string; // Added
+      address?: string; // Added
     } & DefaultSession["user"];
   }
 }
@@ -35,6 +28,8 @@ declare module "next-auth/jwt" {
   interface JWT {
     role?: string;
     userId?: string;
+    phone?: string; // Added
+    address?: string; // Added
     accessToken?: string;
     needsProfileCompletion?: boolean;
   }
@@ -95,24 +90,20 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async jwt({ token, user }) {
-      // This is the initial sign-in
       if (user) {
         token.role = (user as any).role;
         token.userId = user.id;
       }
 
-      // Every time JWT is updated, sync with DB
       if (token.email) {
         await dbConnect();
-        
-        // 2. Cast the result of .lean() to the DbUser interface
-        // This removes the red highlights on role, _id, phone, and address
-        const dbUser = await User.findOne({ email: token.email }).lean() as DbUser | null;
+        const dbUser = await User.findOne({ email: token.email }).lean();
         
         if (dbUser) {
           token.role = dbUser.role;
           token.userId = dbUser._id.toString();
-          // Logic for profile completion based on your User model schema
+          token.phone = dbUser.phone; // Sync phone to token
+          token.address = dbUser.address; // Sync address to token
           token.needsProfileCompletion = !dbUser.phone || !dbUser.address;
         }
       }
@@ -122,8 +113,13 @@ export const authOptions: NextAuthOptions = {
       if (token && session.user) {
         session.user.role = token.role;
         session.user._id = token.userId;
+        session.user.phone = token.phone; // Sync phone to session user
+        session.user.address = token.address; // Sync address to session user
+        
         session.userId = token.userId;
         session.role = token.role;
+        session.phone = token.phone; // Optional: sync to root session
+        session.address = token.address; // Optional: sync to root session
         session.needsProfileCompletion = token.needsProfileCompletion;
       }
       return session;

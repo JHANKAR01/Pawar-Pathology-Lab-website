@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { Check, Calendar, CreditCard, User, CheckCircle, MapPin, Loader2, Navigation, Ticket, UserPlus, X, AlertTriangle, DollarSign, Mail } from 'lucide-react';
 import { Test, CollectionType } from '../types';
@@ -40,13 +41,10 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     referredBy: 'Self'
   });
 
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { data: session } = useSession();
+  const currentUser = session?.user;
 
   useEffect(() => {
-    const userJson = localStorage.getItem('pawar_lab_user');
-    if (userJson) {
-      setCurrentUser(JSON.parse(userJson));
-    }
     const fetchBlackoutDates = async () => {
       try {
         const res = await fetch('/api/settings/blackout-dates');
@@ -67,10 +65,12 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
         ...prev,
         name: currentUser.name || '',
         email: currentUser.email || '',
-        phone: currentUser.phone || ''
+        phone: currentUser.phone || '',
+        address: currentUser.address || '' // Added: Pre-fill address from DB
       }));
     } else {
-      setFormData(prev => ({ ...prev, name: '', email: '', phone: '' }));
+      // Clear fields if booking for someone else
+      setFormData(prev => ({ ...prev, name: '', email: '', phone: '', address: '' }));
     }
   }, [isBookingForSelf, currentUser]);
 
