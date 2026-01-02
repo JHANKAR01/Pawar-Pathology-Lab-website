@@ -6,6 +6,17 @@ import dbConnect from '@/lib/dbConnect';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 
+// 1. Define an interface for the User document from MongoDB
+// This tells TypeScript which fields exist in your database schema
+interface DbUser {
+  _id: any;
+  role: string;
+  phone?: string;
+  address?: string;
+  name?: string;
+  email?: string;
+}
+
 // Module Augmentation to extend Session and JWT interfaces
 declare module "next-auth" {
   interface Session {
@@ -93,10 +104,15 @@ export const authOptions: NextAuthOptions = {
       // Every time JWT is updated, sync with DB
       if (token.email) {
         await dbConnect();
-        const dbUser = await User.findOne({ email: token.email }).lean();
+        
+        // 2. Cast the result of .lean() to the DbUser interface
+        // This removes the red highlights on role, _id, phone, and address
+        const dbUser = await User.findOne({ email: token.email }).lean() as DbUser | null;
+        
         if (dbUser) {
           token.role = dbUser.role;
           token.userId = dbUser._id.toString();
+          // Logic for profile completion based on your User model schema
           token.needsProfileCompletion = !dbUser.phone || !dbUser.address;
         }
       }
@@ -109,7 +125,6 @@ export const authOptions: NextAuthOptions = {
         session.userId = token.userId;
         session.role = token.role;
         session.needsProfileCompletion = token.needsProfileCompletion;
-        // The accessToken from the old system is no longer needed here
       }
       return session;
     },
