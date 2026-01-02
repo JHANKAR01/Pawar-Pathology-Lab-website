@@ -6,20 +6,20 @@ import dbConnect from '@/lib/dbConnect';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 
-// 1. Update Module Augmentation to include phone and address
+// Module Augmentation to include all necessary fields
 declare module "next-auth" {
   interface Session {
     accessToken?: string;
     userId?: string;
     role?: string;
-    phone?: string; // Added
-    address?: string; // Added
+    phone?: string;
+    address?: string;
     needsProfileCompletion?: boolean;
     user: {
       role?: string;
       _id?: string;
-      phone?: string; // Added
-      address?: string; // Added
+      phone?: string;
+      address?: string;
     } & DefaultSession["user"];
   }
 }
@@ -28,8 +28,8 @@ declare module "next-auth/jwt" {
   interface JWT {
     role?: string;
     userId?: string;
-    phone?: string; // Added
-    address?: string; // Added
+    phone?: string;
+    address?: string;
     accessToken?: string;
     needsProfileCompletion?: boolean;
   }
@@ -100,6 +100,7 @@ export const authOptions: NextAuthOptions = {
         const dbUser = await User.findOne({ email: token.email }).lean();
         
         if (dbUser) {
+          token.name = dbUser.name; // Sync name to token
           token.role = dbUser.role;
           token.userId = dbUser._id.toString();
           token.phone = dbUser.phone; // Sync phone to token
@@ -111,15 +112,16 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token && session.user) {
+        session.user.name = token.name;
         session.user.role = token.role;
         session.user._id = token.userId;
-        session.user.phone = token.phone; // Sync phone to session user
-        session.user.address = token.address; // Sync address to session user
+        session.user.phone = token.phone;
+        session.user.address = token.address;
         
         session.userId = token.userId;
         session.role = token.role;
-        session.phone = token.phone; // Optional: sync to root session
-        session.address = token.address; // Optional: sync to root session
+        session.phone = token.phone;
+        session.address = token.address;
         session.needsProfileCompletion = token.needsProfileCompletion;
       }
       return session;

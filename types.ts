@@ -39,6 +39,7 @@ export interface User {
   username: string;
   email: string;
   phone?: string;
+  address?: string;
   role: UserRole;
   token?: string;
 }

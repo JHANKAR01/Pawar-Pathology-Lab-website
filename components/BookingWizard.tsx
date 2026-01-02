@@ -66,7 +66,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
         name: currentUser.name || '',
         email: currentUser.email || '',
         phone: currentUser.phone || '',
-        address: currentUser.address || '' // Added: Pre-fill address from DB
+        address: currentUser.address || ''
       }));
     } else {
       // Clear fields if booking for someone else
