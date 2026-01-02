@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import {
   CheckCircle, Upload, MapPin, Package, LogOut, Loader2, Navigation, ClipboardList, RefreshCw, Plus, X, Phone, DollarSign
 } from 'lucide-react';
@@ -115,7 +115,7 @@ export default function PartnerPage() {
   const handleWalkInRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
     const balance = newPatient.totalAmount - newPatient.amountTaken;
-    
+
     // Optimistic update - create a temporary ID for the new task
     const tempId = `temp-${Date.now()}`;
     const optimisticTask = {
@@ -136,13 +136,11 @@ export default function PartnerPage() {
     };
     setTasks(prev => [optimisticTask, ...prev]);
 
-    const token = localStorage.getItem('pawar_lab_auth_token');
     try {
       const res = await fetch('/api/bookings', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           patientName: newPatient.name,
@@ -182,19 +180,17 @@ export default function PartnerPage() {
     if (!file) return;
 
     const originalTasks = tasks;
-    setTasks(prev => prev.map(task => 
+    setTasks(prev => prev.map(task =>
       task._id === id ? { ...task, status: 'report_uploaded', reportFileUrl: 'uploading...' } : task // Optimistic update
     ));
 
-    const token = localStorage.getItem('pawar_lab_auth_token');
     const formData = new FormData();
     formData.append('file', file);
     formData.append('status', 'report_uploaded');
     try {
-      const res = await fetch(`/api/bookings/${id}`, { 
-        method: 'PATCH', 
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData 
+      const res = await fetch(`/api/bookings/${id}`, {
+        method: 'PATCH',
+        body: formData
       });
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) router.push('/login');
@@ -202,7 +198,7 @@ export default function PartnerPage() {
       }
       const updatedBooking = await res.json();
       setTasks(prev => prev.map(task => task._id === id ? updatedBooking : task));
-    } catch (err) { 
+    } catch (err) {
       console.error(err);
       alert('Upload failed. Reverting changes.');
       setTasks(originalTasks); // Rollback
@@ -236,7 +232,7 @@ export default function PartnerPage() {
           >
             <Plus size={18} /> Direct Add
           </button>
-          <button onClick={() => { localStorage.removeItem('pawar_lab_auth_token'); localStorage.removeItem('pawar_lab_user'); localStorage.removeItem('pawar_lab_user_role'); document.cookie = "pawar_lab_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;"; router.push('/login'); }} className="text-slate-600 hover:text-clinical-rose font-bold text-sm flex items-center gap-2 transition-colors px-4 py-2 rounded-xl hover:bg-clinical-rose-light">
+          <button onClick={() => signOut({ callbackUrl: '/login' })} className="text-slate-600 hover:text-clinical-rose font-bold text-sm flex items-center gap-2 transition-colors px-4 py-2 rounded-xl hover:bg-clinical-rose-light">
             <LogOut className="w-5 h-5" /> Logout
           </button>
         </div>

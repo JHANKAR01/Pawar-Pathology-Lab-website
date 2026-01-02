@@ -1,18 +1,19 @@
 
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
-import Booking, { IBooking } from '@/models/Booking';
-import { verifyToken } from '@/lib/auth';
+import Booking from '@/models/Booking';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 // GET /api/bookings - Fetch all bookings (Admin/Partner view) or user's own bookings (Patient/User)
 export async function GET(request: Request) {
-  const authResult = await verifyToken(request);
-  if (authResult.response) {
-    return authResult.response;
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const role = authResult.decoded?.role;
-  const authenticatedUserId = authResult.decoded?.userId;
+  const role = session.user.role;
+  const authenticatedUserId = session.user._id;
 
   await dbConnect();
   try {
