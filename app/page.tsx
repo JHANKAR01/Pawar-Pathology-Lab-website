@@ -25,60 +25,19 @@ const Hero3DContainer = dynamic(() => import('@/components/3D/Hero3DContainer'),
 export default function Home() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const currentUser = session?.user;
+
   const [tests, setTests] = useState<Test[]>([]);
   const [selectedTests, setSelectedTests] = useState<Test[]>([]);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
   useEffect(() => {
-    if (status === 'authenticated') {
-      // Handle profile completion redirect
-      if ((session as any)?.needsProfileCompletion === true) {
-        router.push('/complete-profile');
-        return; // Early return to avoid further processing
-      }
-
-      // Synchronize token and user data from NextAuth session
-      const token = (session as any)?.accessToken;
-      if (token) {
-        const currentToken = localStorage.getItem('pawar_lab_auth_token');
-        if (token !== currentToken) {
-          // Force State Update: Clear old user data first
-          localStorage.removeItem('pawar_lab_user');
-          localStorage.removeItem('pawar_lab_user_role');
-
-          document.cookie = `pawar_lab_auth_token=${token}; path=/; max-age=86400; SameSite=Lax`;
-          localStorage.setItem('pawar_lab_auth_token', token);
-
-          const user = (session as any)?.user;
-          if (user) {
-            localStorage.setItem('pawar_lab_user', JSON.stringify(user));
-            localStorage.setItem('pawar_lab_user_role', user.role);
-            setCurrentUser(user); // This now has the correct DB name
-          }
-        } else if (!currentUser && localStorage.getItem('pawar_lab_user')) {
-            // Sync from local storage if session is valid but UI state is missing
-            setCurrentUser(JSON.parse(localStorage.getItem('pawar_lab_user')!));
-        }
-      }
-    } else if (status === 'unauthenticated') {
-        // If there's no next-auth session, check for our manual token
-        const manualToken = localStorage.getItem('pawar_lab_auth_token');
-        if (manualToken) {
-            const userJson = localStorage.getItem('pawar_lab_user');
-            if(userJson && !currentUser) {
-                setCurrentUser(JSON.parse(userJson));
-            }
-        } else {
-            // If no tokens exist, clear out any stale user data
-            if(currentUser) {
-                setCurrentUser(null);
-            }
-        }
+    if (status === 'authenticated' && session?.needsProfileCompletion === true) {
+      router.push('/complete-profile');
     }
-  }, [session, status, router, currentUser]);
+  }, [session, status, router]);
 
   useEffect(() => {
     const fetchTests = async () => {
@@ -112,13 +71,14 @@ export default function Home() {
 
   const handleBookingComplete = async (bookingData: any) => {
     try {
-      const { name, phone, date, paymentMethod, time, ...rest } = bookingData;
+      const { name, phone, date, paymentMethod, time, address, ...rest } = bookingData;
       const payload = {
         ...rest,
         patientName: name,
-        contactNumber: phone,
+        contactNumber: phone || currentUser?.phone,
         scheduledDate: date,
         paymentMode: paymentMethod,
+        address: address || currentUser?.address,
         tests: selectedTests.map(({ _id, title, price, category }) => ({ id: _id, title, price, category })),
         status: BookingStatus.PENDING,
         bookedByEmail: currentUser?.email || 'guest',
@@ -159,13 +119,6 @@ export default function Home() {
   };
 
   const handleLogout = () => {
-    // Clear our custom token and user data
-    localStorage.removeItem('pawar_lab_auth_token');
-    localStorage.removeItem('pawar_lab_user');
-    localStorage.removeItem('pawar_lab_user_role');
-    document.cookie = "pawar_lab_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-    
-    // Sign out from NextAuth
     signOut({ callbackUrl: '/login' });
   };
   
@@ -235,7 +188,7 @@ export default function Home() {
         </section>
 
         <section id="clinical-services" className="py-32 px-12 bg-gradient-to-b from-white to-slate-50">
-           <div className="max-w-[1440px] mx-auto text-.center">
+           <div className="max-w-[1440px] mx-auto text-center">
               <h2 className="text-5xl md:text-6xl font-black text-slate-900 mb-6">Clinical Excellence</h2>
               <p className="text-slate-600 text-lg mb-16 max-w-2xl mx-auto">Trusted by thousands for precision diagnostics and exceptional care</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

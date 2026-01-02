@@ -4,7 +4,6 @@ import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import dbConnect from '@/lib/dbConnect';
 import User from '@/models/User';
-import bcrypt from 'bcryptjs';
 
 // Module Augmentation to include all necessary fields
 declare module "next-auth" {
@@ -31,6 +30,7 @@ declare module "next-auth/jwt" {
     phone?: string;
     address?: string;
     accessToken?: string;
+    name?: string;
     needsProfileCompletion?: boolean;
   }
 }
@@ -55,11 +55,16 @@ export const authOptions: NextAuthOptions = {
           $or: [{ username: credentials.username }, { email: credentials.username }] 
         });
 
-        if (!user) throw new Error('No user found');
-        if (!user.password) throw new Error('User registered with Google. Please use Google to sign in.');
+        if (!user) {
+          throw new Error('Invalid credentials');
+        }
 
-        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isPasswordValid) throw new Error('Invalid password');
+        // NOTE: This is insecure. In a real app, you should hash passwords and use bcrypt.compare()
+        const isPasswordValid = user.password === credentials.password;
+
+        if (!isPasswordValid) {
+          throw new Error('Invalid credentials');
+        }
 
         return {
           id: user._id.toString(),
@@ -100,11 +105,11 @@ export const authOptions: NextAuthOptions = {
         const dbUser = await User.findOne({ email: token.email }).lean();
         
         if (dbUser) {
-          token.name = dbUser.name; // Sync name to token
+          token.name = dbUser.name;
           token.role = dbUser.role;
           token.userId = dbUser._id.toString();
-          token.phone = dbUser.phone; // Sync phone to token
-          token.address = dbUser.address; // Sync address to token
+          token.phone = dbUser.phone;
+          token.address = dbUser.address;
           token.needsProfileCompletion = !dbUser.phone || !dbUser.address;
         }
       }

@@ -20,41 +20,24 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+      const result = await signIn('credentials', {
+        username,
+        password,
+        redirect: false,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Login failed');
+      if (result?.error) {
+        throw new Error(result.error);
       }
-
-      const { token, user } = await response.json();
       
-      document.cookie = `pawar_lab_auth_token=${token}; path=/; max-age=86400; SameSite=Lax`;
-      localStorage.setItem('pawar_lab_auth_token', token);
-      localStorage.setItem('pawar_lab_user_role', user.role);
-      localStorage.setItem('pawar_lab_user', JSON.stringify(user));
-      
-      switch (user.role) {
-        case 'admin':
-          router.push('/admin');
-          break;
-        case 'partner':
-          router.push('/partner');
-          break;
-        case 'patient':
-          router.push('/');
-          break;
-        default:
-          router.push('/');
-      }
+      // On successful sign-in, NextAuth handles the session.
+      // Refresh the page to make sure the session is updated everywhere.
+      router.refresh();
+      // Then push to a default location; middleware will handle role-based redirects.
+      router.push('/');
 
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
-      console.error(err);
     } finally {
       setIsLoading(false);
     }
