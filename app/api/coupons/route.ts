@@ -26,9 +26,11 @@ export async function GET(request: Request) {
 
 // POST /api/coupons - Create a new coupon (Admin only)
 export async function POST(request: Request) {
-  const authResult = await verifyAdmin(request);
-  if (authResult.response) {
-    return authResult.response;
+  const session = await getServerSession(authOptions);
+  const role = session?.user?.role?.toLowerCase();
+
+  if (!session || role !== 'admin') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   await dbConnect();

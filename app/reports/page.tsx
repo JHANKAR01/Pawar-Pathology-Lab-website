@@ -41,12 +41,7 @@ export default function ReportsPage() {
       const fetchBookings = async () => {
         setIsLoading(true);
         try {
-          const token = localStorage.getItem('pawar_lab_auth_token');
-          const response = await fetch(`/api/bookings?userId=${currentUser._id}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
+          const response = await fetch(`/api/bookings?userId=${currentUser._id}`);
           if (response.ok) {
             const data = await response.json();
             setAllBookings(data);

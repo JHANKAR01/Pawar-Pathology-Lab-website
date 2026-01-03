@@ -24,12 +24,10 @@ export async function PATCH(
   }
   // Allowing modifications by authenticated users, assuming logic below handles specifics or broadly allowing for now as per migration plan "Securing API".
   // Ideally check role here.
+  // Role check moved down to specific operations to allow self-cancellation
   const role = session.user.role?.toLowerCase();
-  if (role !== 'admin' && role !== 'partner') {
-    // NOTE: If patients need to update their own bookings, we add that check here.
-    // For now, locking to admin/partner as per "Master Migration Plan" implied context of dashboards.
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const userId = session.user.id;
+  const userEmail = session.user.email?.toLowerCase();
 
   await dbConnect();
   const { id } = params;
@@ -83,6 +81,27 @@ export async function PATCH(
 
       const oldBooking = await Booking.findById(id);
       if (!oldBooking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+
+      // Access Control:
+      // Admin/Partner: Can do almost anything (logic continues below)
+      // Patient/User: Can ONLY cancel OWN PENDING bookings
+      if (role !== 'admin' && role !== 'partner') {
+        const isOwner = (oldBooking.userId && oldBooking.userId.toString() === userId) || (oldBooking.bookedByEmail === userEmail);
+
+        if (!isOwner) {
+          return NextResponse.json({ error: 'Forbidden: Not your booking' }, { status: 403 });
+        }
+
+        // Verify they are only trying to cancel
+        // strict check: if body has anything other than 'status'='cancelled', or if trying to change to something else
+        if (body.status !== 'cancelled' || Object.keys(body).length > 1) { // loose check on keys, maybe too strict if extra metadata sent? keep simple.
+          return NextResponse.json({ error: 'Forbidden: You can only cancel bookings' }, { status: 403 });
+        }
+
+        if (oldBooking.status !== 'pending') {
+          return NextResponse.json({ error: 'Cannot cancel a booking that is already processed' }, { status: 400 });
+        }
+      }
 
       const updatedBooking = await Booking.findByIdAndUpdate(
         id,

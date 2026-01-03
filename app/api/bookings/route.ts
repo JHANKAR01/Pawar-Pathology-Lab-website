@@ -57,21 +57,92 @@ export async function GET(request: Request) {
 }
 
 // POST /api/bookings - Create a new booking (Patient Wizard)
+import Coupon from '@/models/Coupon';
+import Test from '@/models/Test';
+
+// POST /api/bookings - Create a new booking (Patient Wizard)
 export async function POST(request: Request) {
   await dbConnect();
   try {
     const body = await request.json();
+    const { tests, couponCode } = body;
 
-    // Calculate balance amount
-    const totalAmount = body.totalAmount || 0;
-    const amountTaken = body.amountTaken || 0;
-    body.balanceAmount = totalAmount - amountTaken;
+    // 1. Calculate Subtotal from Database
+    let serverSubtotal = 0;
+    // tests coming from frontend: [{ id, title, price, category }]
+    // We only trust the IDs
+    const testIds = tests.map((t: any) => t.id);
+    const dbTests = await Test.find({ _id: { $in: testIds } });
 
-    const booking = await Booking.create(body);
+    if (dbTests.length !== testIds.length) {
+      return NextResponse.json({ error: 'Invalid test IDs provided' }, { status: 400 });
+    }
+
+    // Sum up the real prices
+    for (const dbTest of dbTests) {
+      serverSubtotal += dbTest.price;
+    }
+
+    // 2. Validate Coupon & Calculate Discount
+    let discountAmount = 0;
+    let usedCoupon = null;
+
+    if (couponCode) {
+      usedCoupon = await Coupon.findOne({ code: couponCode.toUpperCase().trim() });
+
+      if (!usedCoupon) {
+        return NextResponse.json({ error: 'Invalid coupon code' }, { status: 400 });
+      }
+
+      if (!usedCoupon.isActive) {
+        return NextResponse.json({ error: 'Coupon is inactive' }, { status: 400 });
+      }
+
+      if (new Date(usedCoupon.expiryDate) < new Date()) {
+        return NextResponse.json({ error: 'Coupon has expired' }, { status: 400 });
+      }
+
+      if (usedCoupon.usageLimit && usedCoupon.usedCount >= usedCoupon.usageLimit) {
+        return NextResponse.json({ error: 'Coupon usage limit reached' }, { status: 400 });
+      }
+
+      if (usedCoupon.discountType === 'percentage') {
+        discountAmount = (serverSubtotal * usedCoupon.value) / 100;
+      } else {
+        discountAmount = usedCoupon.value;
+      }
+    }
+
+    // 3. Final Verification
+    const serverTotal = Math.max(0, serverSubtotal - discountAmount);
+
+    // Allow a small epsilon for floating point issues? Usually exact match is best for currency.
+    // Frontend sends 'totalAmount'.
+    if (Math.abs(serverTotal - body.totalAmount) > 1) { // 1 rupee tolerance
+      console.error(`Price Mismatch! Server: ${serverTotal}, Client: ${body.totalAmount}`);
+      return NextResponse.json({ error: 'Price integrity check failed.' }, { status: 400 });
+    }
+
+    // 4. Create Booking
+    const finalBookingData = {
+      ...body,
+      totalAmount: serverTotal,
+      discountAmount,
+      couponCode: couponCode ? couponCode.toUpperCase().trim() : undefined,
+      balanceAmount: (serverTotal - (body.amountTaken || 0)),
+      // Ensure paymentStatus is correct based on paymentMode/amounts (frontend handles logic but let's trust it for now unless critical)
+    };
+
+    const booking = await Booking.create(finalBookingData);
+
+    // 5. Increment Coupon Usage
+    if (usedCoupon) {
+      await Coupon.findByIdAndUpdate(usedCoupon._id, { $inc: { usedCount: 1 } });
+    }
 
     return NextResponse.json(booking, { status: 201 });
   } catch (error) {
-    console.error(error);
+    console.error("Booking Creation Error:", error);
     return NextResponse.json({ error: 'Failed to create booking' }, { status: 400 });
   }
 }
