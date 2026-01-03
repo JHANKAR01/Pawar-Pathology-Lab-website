@@ -1,17 +1,17 @@
-
 // lib/seedDatabase.ts
+import 'dotenv/config';
 import mongoose from 'mongoose';
-import dbConnect from './dbConnect.js'; // Added .js extension
-import User from '../models/User.js';    // Added .js extension
-import Test from '../models/Test.js';    // Added .js extension
+import dbConnect from './dbConnect.js';
+import User from '../models/User.js';
+import Test from '../models/Test.js';
 import Booking from '../models/Booking.js';
 import Settings from '../models/Settings.js';
-import { UserRole, BookingStatus } from '../types.js';
+import bcrypt from 'bcryptjs'; // Needed to hash passwords
 
 async function seed() {
   await dbConnect();
-  console.log('Clearing existing clinical data...');
-  
+  console.log('Clearing existing data...');
+
   await Promise.all([
     User.deleteMany({}),
     Test.deleteMany({}),
@@ -19,48 +19,48 @@ async function seed() {
     Settings.deleteMany({}),
   ]);
 
-  console.log('Seeding 16 Authorized Users...');
+  const hashedPassword = await bcrypt.hash('password123', 10);
+
+  console.log('Seeding Secure Users...');
   const users = await User.create([
-    { username: 'jhankar', password: 'jhankar', name: 'Jhankar', role: 'admin' },
-    { username: 'keshav', password: 'keshav', name: 'Keshav', role: 'admin' },
-    { username: 'vishal', password: 'vishal', name: 'Vishal', role: 'partner' },
-    { username: 'manoj', password: 'manoj', name: 'Manoj', role: 'partner' },
-    { username: 'shubham', password: 'shubham', name: 'Shubham', role: 'partner' },
-    { username: 'shankar', password: 'shankar', name: 'Shankar', role: 'partner' },
-    ...Array.from({ length: 10 }, (_, i) => ({
-      username: `user${i + 1}`,
-      password: `user${i + 1}`,
-      name: `Patient ${i + 1}`,
+    {
+      email: 'admin@gmail.com',
+      password: hashedPassword,
+      name: 'Jhankar Admin',
+      role: 'admin',
+      phone: '9999999999'
+    },
+    {
+      email: 'partner@gmail.com',
+      password: hashedPassword,
+      name: 'Vishal Partner',
+      role: 'partner',
+      phone: '8888888888'
+    },
+    {
+      email: 'user1@gmail.com',
+      password: hashedPassword,
+      name: 'Patient One',
       role: 'patient',
-    })),
+      phone: '7777777777'
+    }
   ]);
 
-  console.log('Seeding Lab Test Directory...');
+  console.log('Seeding Directory & Settings...');
   const tests = await Test.create([
     { title: 'CBC - Hematology Profile', price: 350, category: 'Hematology' },
     { title: 'Diabetes Screen (HbA1c)', price: 500, category: 'Biochemistry' },
-    { title: 'Thyroid Profile (T3, T4, TSH)', price: 450, category: 'Endocrinology' },
-    { title: 'Liver Function Test (LFT)', price: 800, category: 'Biochemistry' },
   ]);
 
-  console.log('Setting Default Referral logic...');
-  await Booking.create({
-    patientName: 'Seed Patient',
-    bookedByEmail: 'user1',
-    userId: users.find(u => u.username === 'user1')?._id,
-    tests: [tests[0]],
-    totalAmount: 350,
-    balanceAmount: 0,
-    amountTaken: 350,
-    status: 'completed',
-    referredBy: 'Self', // Verified default
-    scheduledDate: new Date(),
+  await Settings.create({
+    requireVerification: true,
+    maintenanceMode: false,
+    smsEnabled: true,
+    emailEnabled: true,
+    serviceRadius: 10
   });
 
-  console.log('Seeding Global Settings...');
-  await Settings.create({ requireVerification: true, maintenanceMode: false });
-
-  console.log('Database Seeded Successfully!');
+  console.log('Database Seeded Successfully! Use admin@gmail.com / password123 to login.');
   process.exit(0);
 }
 
