@@ -7,6 +7,8 @@ import {
   CheckCircle, Upload, MapPin, Package, LogOut, Loader2, Navigation, ClipboardList, RefreshCw, Plus, X, Phone, DollarSign
 } from 'lucide-react';
 import { BookingStatus } from '@/types';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { toast } from 'sonner';
 
 export default function PartnerPage() {
   const router = useRouter();
@@ -102,8 +104,8 @@ export default function PartnerPage() {
       setTasks(prev => prev.map(task => task._id === id ? updatedBooking : task));
     } catch (err) {
       console.error(err);
-      alert('Failed to update status. Reverting changes.');
       setTasks(originalTasks); // Rollback
+      toast.error('Failed to update status. Reverting changes.');
     }
   };
 
@@ -168,10 +170,11 @@ export default function PartnerPage() {
       setTasks(prev => prev.map(task => task._id === tempId ? createdBooking : task)); // Replace optimistic with real
       setIsRegisterOpen(false);
       setNewPatient({ name: '', phone: '', email: '', testTitle: 'CBC - Hematology Profile', totalAmount: 350, amountTaken: 0 });
-      alert('Walk-in patient registered and specimen logged.');
+      setNewPatient({ name: '', phone: '', email: '', testTitle: 'CBC - Hematology Profile', totalAmount: 350, amountTaken: 0 });
+      toast.success('Walk-in patient registered and specimen logged.');
     } catch (err) {
       console.error(err);
-      alert('Failed to register walk-in. Reverting changes.');
+      toast.error('Failed to register walk-in. Reverting changes.');
       setTasks(prev => prev.filter(task => task._id !== tempId)); // Rollback optimistic update
     }
   };
@@ -201,15 +204,36 @@ export default function PartnerPage() {
       setTasks(prev => prev.map(task => task._id === id ? updatedBooking : task));
     } catch (err) {
       console.error(err);
-      alert('Upload failed. Reverting changes.');
+      toast.error('Upload failed. Reverting changes.');
       setTasks(originalTasks); // Rollback
     }
   };
 
-  if (!isVerified) {
+  if (!isVerified || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-12 h-12 animate-spin text-clinical-rose" />
+      <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+        <div className="bg-white border-b-2 border-slate-200 px-8 py-5 flex justify-between items-center sticky top-0 z-50">
+          <Skeleton className="h-14 w-48 rounded-2xl" />
+          <div className="flex gap-4">
+            <Skeleton className="h-12 w-32 rounded-xl" />
+            <Skeleton className="h-12 w-24 rounded-xl" />
+          </div>
+        </div>
+        <main className="p-8 max-w-5xl mx-auto w-full space-y-8">
+          <div className="flex justify-between items-end">
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-64 rounded-lg" />
+              <Skeleton className="h-4 w-96 rounded" />
+            </div>
+            <div className="flex gap-3">
+              <Skeleton className="h-12 w-48 rounded-xl" />
+              <Skeleton className="h-12 w-24 rounded-xl" />
+            </div>
+          </div>
+          {[1, 2, 3].map(i => (
+            <Skeleton key={i} className="h-64 w-full rounded-3xl" />
+          ))}
+        </main>
       </div>
     );
   }
@@ -256,8 +280,8 @@ export default function PartnerPage() {
             <button
               onClick={() => setStatusFilter('active')}
               className={`px-5 py-3 rounded-xl text-sm font-bold transition-all ${statusFilter === 'active'
-                  ? 'bg-clinical-rose text-white shadow-rose-lg'
-                  : 'bg-white text-slate-600 border-2 border-slate-200 hover:border-clinical-rose'
+                ? 'bg-clinical-rose text-white shadow-rose-lg'
+                : 'bg-white text-slate-600 border-2 border-slate-200 hover:border-clinical-rose'
                 }`}
             >
               Active
@@ -265,8 +289,8 @@ export default function PartnerPage() {
             <button
               onClick={() => setStatusFilter('completed')}
               className={`px-5 py-3 rounded-xl text-sm font-bold transition-all ${statusFilter === 'completed'
-                  ? 'bg-clinical-rose text-white shadow-rose-lg'
-                  : 'bg-white text-slate-600 border-2 border-slate-200 hover:border-clinical-rose'
+                ? 'bg-clinical-rose text-white shadow-rose-lg'
+                : 'bg-white text-slate-600 border-2 border-slate-200 hover:border-clinical-rose'
                 }`}
             >
               Completed
@@ -289,8 +313,8 @@ export default function PartnerPage() {
                 <div className="flex-1 w-full">
                   <div className="flex items-center gap-3 mb-4">
                     <span className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest border-2 ${task.status === 'sample_collected'
-                        ? 'bg-warning/10 text-warning border-warning/20'
-                        : 'bg-blue-500/10 text-blue-600 border-blue-500/20'
+                      ? 'bg-warning/10 text-warning border-warning/20'
+                      : 'bg-blue-500/10 text-blue-600 border-blue-500/20'
                       }`}>
                       {task.status.replace('_', ' ')}
                     </span>

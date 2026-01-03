@@ -19,13 +19,13 @@ interface NotificationData {
 // 1. Setup Gmail OAuth2 Transporter
 const createTransporter = async () => {
     const oauth2Client = new google.auth.OAuth2(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET,
+        process.env.REPORTS_GOOGLE_CLIENT_ID,
+        process.env.REPORTS_GOOGLE_CLIENT_SECRET,
         "https://developers.google.com/oauthplayground"
     );
 
     oauth2Client.setCredentials({
-        refresh_token: process.env.GOOGLE_REFRESH_TOKEN
+        refresh_token: process.env.REPORTS_GOOGLE_REFRESH_TOKEN
     });
 
     const accessToken = await new Promise((resolve, reject) => {
@@ -42,9 +42,9 @@ const createTransporter = async () => {
         auth: {
             type: "OAuth2",
             user: "ReportsPawarPathLabBetul@gmail.com",
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+            clientId: process.env.REPORTS_GOOGLE_CLIENT_ID,
+            clientSecret: process.env.REPORTS_GOOGLE_CLIENT_SECRET,
+            refreshToken: process.env.REPORTS_GOOGLE_REFRESH_TOKEN,
             accessToken: accessToken as string,
         },
     });
@@ -137,7 +137,7 @@ export async function sendSmartNotification(
         }
 
         // C. Send Email (If enabled)
-        if (settings.emailEnabled && customerEmail && process.env.GOOGLE_CLIENT_ID) {
+        if (settings.emailEnabled && customerEmail && process.env.REPORTS_GOOGLE_CLIENT_ID) {
             try {
                 const transporter = await createTransporter();
                 await transporter.sendMail({
