@@ -18,9 +18,33 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: 'Pawar Pathology Lab | Precision Diagnostics in Betul',
-  description: 'Enterprise-grade clinical diagnostic platform for Betul\'s leading pathology laboratory.',
-  icons: { icon: '/favicon.ico' }
+  title: {
+    default: 'Pawar Pathology Lab | Precision Diagnostics in Betul',
+    template: '%s | Pawar Pathology Lab'
+  },
+  description: 'Enterprise-grade clinical diagnostic platform in Betul. Precision analysis since 1998.',
+  keywords: ['Pathology Lab Betul', 'Blood Test Betul', 'Diagnostic Center', 'Pawar Lab', 'Medical Lab Betul', 'Thyroid Test Betul', 'Sugar Test Betul'],
+  authors: [{ name: 'Pawar Pathology Lab' }],
+  creator: 'Pawar Pathology Lab',
+  openGraph: {
+    type: 'website',
+    locale: 'en_IN',
+    url: 'https://pawarlab.com',
+    siteName: 'Pawar Pathology Lab',
+    title: 'Pawar Pathology Lab | Precision Diagnostics',
+    description: 'Leading diagnostic intelligence provider in Madhya Pradesh. NABH Accredited Lab.',
+    images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: 'Pawar Lab Diagnostics' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Pawar Pathology Lab',
+    description: 'Precision Diagnostics in Betul. Book blood tests online.',
+    images: ['/og-image.jpg'],
+  },
+  icons: { icon: '/favicon.ico' },
+  alternates: {
+    canonical: 'https://pawarlab.com'
+  }
 };
 
 import { getServerSession } from 'next-auth';

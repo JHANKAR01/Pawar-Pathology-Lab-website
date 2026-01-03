@@ -29,6 +29,10 @@ const nextConfig = {
                     {
                         key: 'Permissions-Policy',
                         value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()'
+                    },
+                    {
+                        key: 'Content-Security-Policy',
+                        value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://www.google-analytics.com; font-src 'self'; object-src 'none'; frame-src 'self' https://calendar.google.com;"
                     }
                 ]
             }
