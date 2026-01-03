@@ -29,7 +29,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
         redirect: false,
       });
 
-      if (result?.error) throw new Error(result.error);
+      if (result?.error) {
+        if (result.error === 'CredentialsSignin') {
+          throw new Error('Invalid email or password.');
+        }
+        throw new Error(result.error);
+      }
 
       // Force redirect to home/dashboard which will then redirect based on role via client/middleware
       window.location.href = '/';

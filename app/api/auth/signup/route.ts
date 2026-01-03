@@ -14,8 +14,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, email, phone, password, role, operationalRole } = body;
 
+    const sanitizedEmail = email.toLowerCase().trim();
+
     // Remove username check, check strict email uniqueness
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: sanitizedEmail });
     if (existingUser) {
       return NextResponse.json({ error: 'Email already exists' }, { status: 400 });
     }
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
 
     const newUser = await User.create({
       name,
-      email,
+      email: sanitizedEmail,
       phone,
       password: hashedPassword,
       role: role || 'patient',

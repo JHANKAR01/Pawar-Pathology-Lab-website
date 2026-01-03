@@ -58,7 +58,7 @@ export const authOptions: NextAuthOptions = {
       // Sync with DB on subsequent requests to keep phone/address updated
       if (token.email) {
         await dbConnect();
-        const dbUser = await User.findOne({ email: token.email });
+        const dbUser = await User.findOne({ email: token.email.toLowerCase() });
         if (dbUser) {
           token.role = dbUser.role?.toLowerCase();
           token.phone = dbUser.phone;
