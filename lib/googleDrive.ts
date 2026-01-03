@@ -63,7 +63,7 @@ async function getOrCreateFolder(name: string, parentId: string): Promise<string
  * Deep Nesting: Year > Month > Day > Patient Name
  */
 export async function uploadReportToDrive(
-  fileBuffer: Buffer, 
+  fileBuffer: Buffer,
   mimeType: string,
   patientName: string,
   testTitles: string[],
@@ -84,7 +84,7 @@ export async function uploadReportToDrive(
     const yearFolderId = await getOrCreateFolder(year, rootFolderId);
     const monthFolderId = await getOrCreateFolder(month, yearFolderId);
     const dayFolderId = await getOrCreateFolder(day, monthFolderId);
-    
+
     // Sanitize patient name to be a valid folder name
     const sanitizedPatientName = patientName.replace(/[^a-zA-Z0-9 ]/g, '_');
     const patientFolderId = await getOrCreateFolder(sanitizedPatientName, dayFolderId);
@@ -114,14 +114,7 @@ export async function uploadReportToDrive(
     const fileId = file.data.id;
     if (!fileId) throw new Error('Google Drive upload failed: No ID returned');
 
-    // 4. Make the file publicly viewable (maintain current public sharing permissions)
-    await drive.permissions.create({
-      fileId: fileId,
-      requestBody: {
-        role: 'reader',
-        type: 'anyone',
-      },
-    });
+
 
     return {
       fileId: fileId,

@@ -4,8 +4,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { BookingStatus, IBooking } from '@/types';
-import { 
-  FlaskConical, LogOut, CheckCircle, Loader2, 
+import {
+  FlaskConical, LogOut, CheckCircle, Loader2,
   FileText, CalendarDays, ShieldX, ChevronDown
 } from 'lucide-react';
 
@@ -22,7 +22,7 @@ export default function ReportsPage() {
   useEffect(() => {
     const checkUserStatus = async () => {
       const token = localStorage.getItem('pawar_lab_auth_token');
-      
+
       if (!token) {
         router.push('/login');
         return;
@@ -141,7 +141,7 @@ export default function ReportsPage() {
                 <p className="text-slate-500">Your Digital Health Records</p>
               </div>
               <div className="relative">
-                <select 
+                <select
                   value={sortOption}
                   onChange={(e) => setSortOption(e.target.value as SortOption)}
                   className="appearance-none bg-slate-50 border border-slate-200 font-bold text-slate-700 rounded-xl px-6 py-3 pr-12 outline-none focus:ring-2 focus:ring-rose-500"
@@ -154,7 +154,7 @@ export default function ReportsPage() {
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
               </div>
             </div>
-            
+
             {isLoading ? (
               <div className="text-center py-16"><Loader2 className="animate-spin text-rose-600 mx-auto" size={32} /><p className="mt-4 text-slate-500">Fetching your reports...</p></div>
             ) : sortedBookings.length > 0 ? (
@@ -176,28 +176,27 @@ export default function ReportsPage() {
                       )}
                     </div>
                     <div className="text-right">
-                       <a
-                          href={booking.reportFileUrl || '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-disabled={!booking.reportFileUrl || booking.status !== BookingStatus.COMPLETED}
-                          className={`bg-rose-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-rose-200 transition-all inline-flex items-center gap-2 ${
-                            (!booking.reportFileUrl || booking.status !== BookingStatus.COMPLETED) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-rose-700'
+                      <a
+                        href={booking.reportFileUrl ? `/api/reports/download/${booking._id}` : '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-disabled={!booking.reportFileUrl || booking.status !== BookingStatus.COMPLETED}
+                        className={`bg-rose-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-rose-200 transition-all inline-flex items-center gap-2 ${(!booking.reportFileUrl || booking.status !== BookingStatus.COMPLETED) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-rose-700'
                           }`}
-                          onClick={(e) => (!booking.reportFileUrl || booking.status !== BookingStatus.COMPLETED) && e.preventDefault()}
-                        >
-                          <FileText size={14}/><span>Download</span>
-                        </a>
+                        onClick={(e) => (!booking.reportFileUrl || booking.status !== BookingStatus.COMPLETED) && e.preventDefault()}
+                      >
+                        <FileText size={14} /><span>Download</span>
+                      </a>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl">
-                  <ShieldX size={48} className="mx-auto text-slate-400 mb-4" />
-                  <h3 className="text-xl font-bold text-slate-700">No Reports Found</h3>
-                  <p className="text-slate-500 mt-2">It looks like you haven't booked any tests with us yet.</p>
-                  <Link href="/" className="mt-6 inline-block bg-rose-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-rose-200 hover:bg-rose-700 transition-all">Book a Test</Link>
+                <ShieldX size={48} className="mx-auto text-slate-400 mb-4" />
+                <h3 className="text-xl font-bold text-slate-700">No Reports Found</h3>
+                <p className="text-slate-500 mt-2">It looks like you haven't booked any tests with us yet.</p>
+                <Link href="/" className="mt-6 inline-block bg-rose-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-rose-200 hover:bg-rose-700 transition-all">Book a Test</Link>
               </div>
             )}
           </div>

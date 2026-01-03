@@ -1021,7 +1021,7 @@ export default function AdminPage() {
               <div className="flex-1 overflow-hidden p-6">
                 {selectedBookingForReview.reportFileUrl ? (
                   <iframe
-                    src={selectedBookingForReview.reportFileUrl}
+                    src={`/api/reports/download/${selectedBookingForReview._id}`}
                     className="w-full h-full min-h-[500px] border-2 border-slate-200 rounded-xl"
                     title="Report Preview"
                   />
