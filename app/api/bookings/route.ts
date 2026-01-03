@@ -126,6 +126,7 @@ export async function POST(request: Request) {
     // 4. Create Booking
     const finalBookingData = {
       ...body,
+      scheduledDate: body.scheduledDate || body.date, // Handle both 'scheduledDate' (from page.tsx) and 'date'
       totalAmount: serverTotal,
       discountAmount,
       couponCode: couponCode ? couponCode.toUpperCase().trim() : undefined,

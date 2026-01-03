@@ -37,11 +37,11 @@ export default function ReportsPage() {
   }, [status, session]);
 
   useEffect(() => {
-    if (isVerified && currentUser?._id) {
+    if (isVerified && currentUser?.id) { // Use .id, not ._id
       const fetchBookings = async () => {
         setIsLoading(true);
         try {
-          const response = await fetch(`/api/bookings?userId=${currentUser._id}`);
+          const response = await fetch(`/api/bookings?userId=${currentUser.id}`); // Use .id
           if (response.ok) {
             const data = await response.json();
             setAllBookings(data);
@@ -75,8 +75,25 @@ export default function ReportsPage() {
   }, [allBookings, sortOption]);
 
   const handleLogout = () => {
-    localStorage.removeItem('pawar_lab_auth_token');
-    router.push('/login');
+    const { signOut } = require('next-auth/react');
+    signOut({ callbackUrl: '/login' });
+  };
+
+  const handleCancel = async (bookingId: string) => {
+    if (!confirm("Are you sure you want to cancel this booking?")) return;
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' })
+      });
+      if (res.ok) {
+        setAllBookings(prev => prev.map(b => b._id === bookingId ? { ...b, status: BookingStatus.CANCELLED } : b));
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to cancel");
+      }
+    } catch (e) { alert("Error cancelling booking"); }
   };
 
   if (!isVerified || !currentUser) {
@@ -128,7 +145,7 @@ export default function ReportsPage() {
             ) : sortedBookings.length > 0 ? (
               <div className="space-y-4">
                 {sortedBookings.map(booking => (
-                  <div key={booking._id} className="grid grid-cols-[1fr_auto_auto] items-center gap-4 p-6 bg-slate-50/70 border border-slate-100 rounded-2xl">
+                  <div key={booking._id} className="grid grid-cols-[1fr_auto_auto] items-center gap-4 p-6 bg-slate-50/70 border border-slate-100 rounded-2xl transition-all hover:bg-white hover:shadow-lg hover:border-rose-100">
                     <div>
                       <h3 className="font-bold text-base md:text-lg text-slate-800">{booking.tests.map((t: any) => t.title).join(', ')}</h3>
                       <div className="flex items-center gap-2 text-slate-500 mt-1">
@@ -139,8 +156,20 @@ export default function ReportsPage() {
                     <div className="text-center">
                       {booking.status === BookingStatus.COMPLETED ? (
                         <div className="flex items-center gap-2 rounded-full bg-emerald-100 text-emerald-800 px-3 py-1"><CheckCircle size={14} /><span className="font-bold text-xs uppercase">Ready</span></div>
+                      ) : booking.status === BookingStatus.CANCELLED ? (
+                        <div className="flex items-center gap-2 rounded-full bg-red-100 text-red-800 px-3 py-1"><ShieldX size={14} /><span className="font-bold text-xs uppercase">Cancelled</span></div>
                       ) : (
-                        <div className="flex items-center gap-2 rounded-full bg-amber-100 text-amber-800 px-3 py-1"><Loader2 size={14} className="animate-spin" /><span className="font-bold text-xs uppercase">Analyzing</span></div>
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="flex items-center gap-2 rounded-full bg-amber-100 text-amber-800 px-3 py-1"><Loader2 size={14} className="animate-spin" /><span className="font-bold text-xs uppercase">Processing</span></div>
+                          {booking.status === 'pending' && (
+                            <button
+                              onClick={() => handleCancel(booking._id)}
+                              className="text-[10px] font-bold text-rose-500 hover:text-rose-700 underline uppercase tracking-wider"
+                            >
+                              Cancel Booking
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                     <div className="text-right">

@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { useSession, signOut } from 'next-auth/react';
-import { 
-  Phone, MapPin, FlaskConical, LogIn, Activity, 
-  Award, Zap, Globe, Instagram, Facebook, Clock, 
+import {
+  Phone, MapPin, FlaskConical, LogIn, Activity,
+  Award, Zap, Globe, Instagram, Facebook, Clock,
   CheckCircle, FileDown, LayoutDashboard, ChevronRight,
   ClipboardList, Navigation, ShieldCheck, UserCheck, LogOut, X,
   FileText, CalendarDays, Loader2
@@ -57,7 +57,7 @@ export default function Home() {
     fetchTests();
     const handleScroll = () => setIsScrolled(window.scrollY > 40);
     window.addEventListener('scroll', handleScroll);
-    
+
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -82,7 +82,7 @@ export default function Home() {
         tests: selectedTests.map(({ _id, title, price, category }) => ({ id: _id, title, price, category })),
         status: BookingStatus.PENDING,
         bookedByEmail: currentUser?.email || 'guest',
-        userId: currentUser?._id,
+        userId: currentUser?.id,
       };
 
       const response = await fetch('/api/bookings', {
@@ -121,7 +121,7 @@ export default function Home() {
   const handleLogout = () => {
     signOut({ callbackUrl: '/login' });
   };
-  
+
   const navItems = ['Test Directory', 'Clinical Services', 'Help & Support'];
 
   return (
@@ -137,8 +137,8 @@ export default function Home() {
 
           <div className="hidden lg:flex items-center gap-10">
             {navItems.map(item => (
-              <a 
-                key={item} 
+              <a
+                key={item}
                 href={`#${item.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-')}`}
                 className="text-sm font-bold uppercase tracking-wider text-slate-600 hover:text-clinical-rose transition-all"
               >
@@ -152,16 +152,16 @@ export default function Home() {
 
           <div className="flex items-center gap-4">
             {currentUser ? (
-               <div className="flex items-center gap-4">
-                  <span className="hidden md:block text-sm font-bold text-slate-600">Hi, {currentUser.name}</span>
-                  {currentUser.role === 'admin' && (
-                    <Link href="/admin" className="px-6 py-3 border-2 border-slate-300 rounded-xl text-xs font-bold uppercase tracking-widest text-slate-700 hover:border-clinical-rose hover:text-clinical-rose transition-all">Dashboard</Link>
-                  )}
-                  {currentUser.role === 'partner' && (
-                    <Link href="/partner" className="px-6 py-3 border-2 border-slate-300 rounded-xl text-xs font-bold uppercase tracking-widest text-slate-700 hover:border-clinical-rose hover:text-clinical-rose transition-all">Dashboard</Link>
-                  )}
-                  <button onClick={handleLogout} className="p-3 bg-slate-100 border-2 border-slate-200 rounded-xl text-slate-600 hover:text-clinical-rose hover:border-clinical-rose transition-all"><LogOut className="w-5 h-5" /></button>
-               </div>
+              <div className="flex items-center gap-4">
+                <span className="hidden md:block text-sm font-bold text-slate-600">Hi, {currentUser.name}</span>
+                {currentUser.role === 'admin' && (
+                  <Link href="/admin" className="px-6 py-3 border-2 border-slate-300 rounded-xl text-xs font-bold uppercase tracking-widest text-slate-700 hover:border-clinical-rose hover:text-clinical-rose transition-all">Dashboard</Link>
+                )}
+                {currentUser.role === 'partner' && (
+                  <Link href="/partner" className="px-6 py-3 border-2 border-slate-300 rounded-xl text-xs font-bold uppercase tracking-widest text-slate-700 hover:border-clinical-rose hover:text-clinical-rose transition-all">Dashboard</Link>
+                )}
+                <button onClick={handleLogout} className="p-3 bg-slate-100 border-2 border-slate-200 rounded-xl text-slate-600 hover:text-clinical-rose hover:border-clinical-rose transition-all"><LogOut className="w-5 h-5" /></button>
+              </div>
             ) : (
               <Link href="/login" className="px-6 py-3 border-2 border-slate-300 rounded-xl text-xs font-bold uppercase tracking-widest text-slate-700 hover:border-clinical-rose hover:text-clinical-rose transition-all">Login</Link>
             )}
@@ -180,59 +180,59 @@ export default function Home() {
         </section>
 
         <section id="test-directory" className="py-24 md:py-40">
-          <TestSearch 
-            tests={tests} 
+          <TestSearch
+            tests={tests}
             selectedIds={selectedTests.map(t => t._id)}
-            onSelect={handleTestSelect} 
+            onSelect={handleTestSelect}
           />
         </section>
 
         <section id="clinical-services" className="py-32 px-12 bg-gradient-to-b from-white to-slate-50">
-           <div className="max-w-[1440px] mx-auto text-center">
-              <h2 className="text-5xl md:text-6xl font-black text-slate-900 mb-6">Clinical Excellence</h2>
-              <p className="text-slate-600 text-lg mb-16 max-w-2xl mx-auto">Trusted by thousands for precision diagnostics and exceptional care</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                 <motion.div 
-                   className="card-premium p-12"
-                   initial={{ opacity: 0, y: 30 }}
-                   whileInView={{ opacity: 1, y: 0 }}
-                   viewport={{ once: true }}
-                   transition={{ duration: 0.5, delay: 0.1 }}
-                 >
-                    <div className="w-20 h-20 bg-clinical-rose-light rounded-2xl flex items-center justify-center mx-auto mb-6">
-                      <ShieldCheck className="text-clinical-rose" size={40} />
-                    </div>
-                    <h3 className="text-2xl font-black text-slate-900 mb-4">NABL Accredited</h3>
-                    <p className="text-slate-600 leading-relaxed">Gold standard pathology reports recognized globally.</p>
-                 </motion.div>
-                 <motion.div 
-                   className="card-premium p-12"
-                   initial={{ opacity: 0, y: 30 }}
-                   whileInView={{ opacity: 1, y: 0 }}
-                   viewport={{ once: true }}
-                   transition={{ duration: 0.5, delay: 0.2 }}
-                 >
-                    <div className="w-20 h-20 bg-clinical-rose-light rounded-2xl flex items-center justify-center mx-auto mb-6">
-                      <Zap className="text-clinical-rose" size={40} />
-                    </div>
-                    <h3 className="text-2xl font-black text-slate-900 mb-4">Fast Results</h3>
-                    <p className="text-slate-600 leading-relaxed">Same-day turnaround for most standard clinical panels.</p>
-                 </motion.div>
-                 <motion.div 
-                   className="card-premium p-12"
-                   initial={{ opacity: 0, y: 30 }}
-                   whileInView={{ opacity: 1, y: 0 }}
-                   viewport={{ once: true }}
-                   transition={{ duration: 0.5, delay: 0.3 }}
-                 >
-                    <div className="w-20 h-20 bg-clinical-rose-light rounded-2xl flex items-center justify-center mx-auto mb-6">
-                      <Clock className="text-clinical-rose" size={40} />
-                    </div>
-                    <h3 className="text-2xl font-black text-slate-900 mb-4">24/7 Support</h3>
-                    <p className="text-slate-600 leading-relaxed">Clinical experts available for result consultation.</p>
-                 </motion.div>
-              </div>
-           </div>
+          <div className="max-w-[1440px] mx-auto text-center">
+            <h2 className="text-5xl md:text-6xl font-black text-slate-900 mb-6">Clinical Excellence</h2>
+            <p className="text-slate-600 text-lg mb-16 max-w-2xl mx-auto">Trusted by thousands for precision diagnostics and exceptional care</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <motion.div
+                className="card-premium p-12"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <div className="w-20 h-20 bg-clinical-rose-light rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <ShieldCheck className="text-clinical-rose" size={40} />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 mb-4">NABL Accredited</h3>
+                <p className="text-slate-600 leading-relaxed">Gold standard pathology reports recognized globally.</p>
+              </motion.div>
+              <motion.div
+                className="card-premium p-12"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <div className="w-20 h-20 bg-clinical-rose-light rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Zap className="text-clinical-rose" size={40} />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 mb-4">Fast Results</h3>
+                <p className="text-slate-600 leading-relaxed">Same-day turnaround for most standard clinical panels.</p>
+              </motion.div>
+              <motion.div
+                className="card-premium p-12"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
+                <div className="w-20 h-20 bg-clinical-rose-light rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Clock className="text-clinical-rose" size={40} />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 mb-4">24/7 Support</h3>
+                <p className="text-slate-600 leading-relaxed">Clinical experts available for result consultation.</p>
+              </motion.div>
+            </div>
+          </div>
         </section>
       </main>
 
@@ -259,10 +259,10 @@ export default function Home() {
           {/* Right Column: Laboratory Location */}
           <div className="flex flex-col items-center md:items-start">
             <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Laboratory Location</h4>
-            <a 
-              href="https://www.google.com/maps/search/?api=1&query=Pawar+Pathology+Lab+Betul" 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href="https://www.google.com/maps/search/?api=1&query=Pawar+Pathology+Lab+Betul"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-slate-300 hover:text-clinical-rose transition-colors flex items-center gap-2 font-medium"
             >
               <MapPin size={18} />
@@ -274,25 +274,25 @@ export default function Home() {
 
       {bookingSuccess && (
         <div className="fixed inset-0 z-[101] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl shadow-2xl p-12 text-center max-w-md animate-in fade-in zoom-in-95 border border-slate-200">
-                <CheckCircle className="text-success w-24 h-24 mx-auto mb-6" />
-                <h2 className="text-3xl font-black text-slate-900 mb-4">Booking Successful!</h2>
-                <p className="text-slate-600 mb-8 leading-relaxed">Your request has been submitted. Our team will contact you shortly to confirm the details.</p>
-                <button 
-                    onClick={() => {
-                      setBookingSuccess(false);
-                    }}
-                    className="bg-clinical-rose text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-rose-lg hover:bg-clinical-rose-dark transition-all"
-                >
-                    Done
-                </button>
-            </div>
+          <div className="bg-white rounded-3xl shadow-2xl p-12 text-center max-w-md animate-in fade-in zoom-in-95 border border-slate-200">
+            <CheckCircle className="text-success w-24 h-24 mx-auto mb-6" />
+            <h2 className="text-3xl font-black text-slate-900 mb-4">Booking Successful!</h2>
+            <p className="text-slate-600 mb-8 leading-relaxed">Your request has been submitted. Our team will contact you shortly to confirm the details.</p>
+            <button
+              onClick={() => {
+                setBookingSuccess(false);
+              }}
+              className="bg-clinical-rose text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-rose-lg hover:bg-clinical-rose-dark transition-all"
+            >
+              Done
+            </button>
+          </div>
         </div>
       )}
 
       {isWizardOpen && (
-        <BookingWizard 
-          selectedTests={selectedTests} 
+        <BookingWizard
+          selectedTests={selectedTests}
           onTestRemove={handleTestSelect}
           onCancel={() => setIsWizardOpen(false)}
           onComplete={handleBookingComplete}

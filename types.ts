@@ -12,7 +12,8 @@ export enum BookingStatus {
   SAMPLE_COLLECTED = 'sample_collected',
   REPORT_UPLOADED = 'report_uploaded',
   COMPLETED = 'completed',
-  DECLINED = 'declined'
+  DECLINED = 'declined',
+  CANCELLED = 'cancelled'
 }
 
 export enum ReportStatus {
@@ -68,7 +69,7 @@ export interface IBooking {
   contactNumber?: string;
   email?: string;
   bookedByEmail?: string;
-  userId: string; 
+  userId: string;
   tests: IBookingTest[];
   totalAmount: number;
   amountTaken: number;

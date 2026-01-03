@@ -281,7 +281,9 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
       amountTaken: finalAmountTakenForSubmit,
       balanceAmount: finalCalculatedBalance,
       paymentStatus: finalPaymentStatus,
-      distanceFromLab: dist // Save calculated distance
+      distanceFromLab: dist, // Save calculated distance
+      couponCode: promoCode || undefined,
+      discountAmount: discount
     });
   };
 
