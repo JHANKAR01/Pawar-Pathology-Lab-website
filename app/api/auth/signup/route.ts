@@ -6,13 +6,21 @@ import User from '@/models/User';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../[...nextauth]/route';
 
+import bcrypt from 'bcryptjs';
+
 export async function POST(request: Request) {
   await dbConnect();
   try {
     const body = await request.json();
-    const { name, username, email, phone, role, operationalRole } = body;
+    const { name, email, phone, password, role, operationalRole } = body;
 
-    // Security Check: Restrict privileged role creation
+    // Remove username check, check strict email uniqueness
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return NextResponse.json({ error: 'Email already exists' }, { status: 400 });
+    }
+
+    // Role security check
     if (role && role !== 'patient') {
       const session = await getServerSession(authOptions);
       if (!session || session.user.role?.toLowerCase() !== 'admin') {
@@ -20,23 +28,26 @@ export async function POST(request: Request) {
       }
     }
 
-    const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      return NextResponse.json({ error: 'Username already taken' }, { status: 400 });
-    }
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await User.create({
       name,
-      username,
       email,
       phone,
-      password: username, // Password = Username for your setup
+      password: hashedPassword,
       role: role || 'patient',
       operationalRole: operationalRole || 'none',
     });
 
     return NextResponse.json({ message: 'Registration successful' }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
+    // Handle mongoose validation errors
+    if (error.name === 'ValidationError') {
+      // Extract the first validation message
+      const messages = Object.values(error.errors).map((err: any) => err.message);
+      return NextResponse.json({ error: messages[0] || 'Validation failed' }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Signup failed' }, { status: 500 });
   }
 }

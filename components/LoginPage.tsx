@@ -31,9 +31,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
 
       if (result?.error) throw new Error(result.error);
 
-      // REMOVE ALL localStorage.setItem calls
       // Force redirect to home/dashboard which will then redirect based on role via client/middleware
-      // Actually manually checking params or just going root is safer as per request.
       window.location.href = '/';
     } catch (err: any) {
       setError(err.message || 'Login failed');

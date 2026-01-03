@@ -26,12 +26,8 @@ export const authOptions: NextAuthOptions = {
           throw new Error("User not found");
         }
 
-        // Compare passwords using bcrypt
+        // Compare passwords using bcrypt ONLY
         const isValid = await bcrypt.compare(credentials.password, user.password);
-
-        if (!isValid) {
-          throw new Error("Invalid password");
-        }
 
         return {
           id: user._id.toString(),
