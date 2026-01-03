@@ -38,7 +38,7 @@ const createTransporter = async (accountType: 'REPORTS' | 'OTP' = 'REPORTS') => 
         clientId = process.env.OTP_GOOGLE_CLIENT_ID;
         clientSecret = process.env.OTP_GOOGLE_CLIENT_SECRET;
         refreshToken = process.env.OTP_GOOGLE_REFRESH_TOKEN;
-        userEmail = "SecurityPawarLab@gmail.com";
+        userEmail = "otppawarpathlabbetul@gmail.com";
 
         // Fallback for development if OTP vars aren't set yet, use Reports (Warning: Not for prod)
         if (!clientId) {
