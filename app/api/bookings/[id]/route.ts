@@ -107,6 +107,21 @@ export async function PATCH(
 
       if (!updatedBooking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
+      // Logic for Notifications on Approval (Manual by Admin/Partner)
+      if (updatedBooking.status === 'accepted' && oldBooking.status !== 'accepted') {
+        const contactEmail = updatedBooking.bookedByEmail !== 'guest' ? updatedBooking.bookedByEmail : updatedBooking.email;
+        sendSmartNotification('BOOKING_CONFIRMED', {
+          customerName: updatedBooking.patientName,
+          customerEmail: contactEmail,
+          customerPhone: updatedBooking.contactNumber,
+          bookingId: updatedBooking._id.toString(), // Use friendly ID
+          testNames: updatedBooking.tests.map((t: any) => t.title),
+          totalAmount: updatedBooking.totalAmount,
+          scheduledDate: updatedBooking.scheduledDate,
+          collectionType: updatedBooking.collectionType
+        });
+      }
+
       // Logic for Notifications on Verification
       if (updatedBooking.status === 'completed' && oldBooking.status !== 'completed') {
         const contactEmail = updatedBooking.bookedByEmail !== 'guest' ? updatedBooking.bookedByEmail : updatedBooking.email;

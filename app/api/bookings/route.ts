@@ -143,13 +143,16 @@ export async function POST(request: Request) {
     }
 
     // 6. Trigger Smart Notifications (Async - don't block response)
-    sendSmartNotification('BOOKING_CONFIRMED', {
+    // 6. Trigger Smart Notifications (Async - don't block response)
+    sendSmartNotification('STAFF_NEW_BOOKING', {
       customerName: newBooking.patientName,
       customerEmail: newBooking.bookedByEmail !== 'guest' ? newBooking.bookedByEmail : newBooking.email,
       customerPhone: newBooking.contactNumber,
       bookingId: newBooking.id, // Use friendly ID
       testNames: newBooking.tests.map((t: any) => t.title),
-      totalAmount: newBooking.totalAmount
+      totalAmount: newBooking.totalAmount,
+      scheduledDate: newBooking.scheduledDate,
+      collectionType: newBooking.collectionType
     });
 
     return NextResponse.json({ message: 'Booking created successfully', bookingId: newBooking._id }, { status: 201 });
