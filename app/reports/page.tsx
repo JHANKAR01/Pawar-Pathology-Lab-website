@@ -12,6 +12,9 @@ import {
 
 type SortOption = 'newest' | 'oldest' | 'month' | 'year';
 
+import { Skeleton } from '@/components/ui/Skeleton';
+import { toast } from 'sonner';
+
 export default function ReportsPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -48,6 +51,7 @@ export default function ReportsPage() {
           }
         } catch (error) {
           console.error("Failed to fetch user's bookings", error);
+          toast.error("Failed to fetch reports");
         } finally {
           setIsLoading(false);
         }
@@ -75,11 +79,14 @@ export default function ReportsPage() {
   }, [allBookings, sortOption]);
 
   const handleLogout = () => {
+    toast.success("Logged out successfully");
     const { signOut } = require('next-auth/react');
     signOut({ callbackUrl: '/login' });
   };
 
   const handleCancel = async (bookingId: string) => {
+    // using window.confirm for now as sonner doesn't have a confirmation modal built-in, 
+    // but could replace with a custom dialog component later.
     if (!confirm("Are you sure you want to cancel this booking?")) return;
     try {
       const res = await fetch(`/api/bookings/${bookingId}`, {
@@ -89,16 +96,29 @@ export default function ReportsPage() {
       });
       if (res.ok) {
         setAllBookings(prev => prev.map(b => b._id === bookingId ? { ...b, status: BookingStatus.CANCELLED } : b));
+        toast.success("Booking cancelled successfully");
       } else {
         const err = await res.json();
-        alert(err.error || "Failed to cancel");
+        toast.error(err.error || "Failed to cancel");
       }
-    } catch (e) { alert("Error cancelling booking"); }
+    } catch (e) { toast.error("Error cancelling booking"); }
   };
 
-  if (!isVerified || !currentUser) {
-    return <div className="flex flex-col min-h-screen items-center justify-center bg-slate-50/50"><Loader2 className="animate-spin text-rose-600" size={48} /></div>;
+  if (status === 'loading' || (!isVerified && status === 'authenticated')) {
+    // Initial page load skeleton
+    return (
+      <div className="flex flex-col min-h-screen bg-slate-100">
+        <div className="pt-40 px-12 max-w-[1440px] mx-auto w-full">
+          <Skeleton className="h-12 w-48 mb-6 rounded-xl" />
+          <div className="bg-white rounded-[3rem] p-12 shadow-2xl space-y-6">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)}
+          </div>
+        </div>
+      </div>
+    );
   }
+
+  if (!isVerified || !currentUser) return null; // Should redirect
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-100">
@@ -141,7 +161,9 @@ export default function ReportsPage() {
             </div>
 
             {isLoading ? (
-              <div className="text-center py-16"><Loader2 className="animate-spin text-rose-600 mx-auto" size={32} /><p className="mt-4 text-slate-500">Fetching your reports...</p></div>
+              <div className="space-y-4">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)}
+              </div>
             ) : sortedBookings.length > 0 ? (
               <div className="space-y-4">
                 {sortedBookings.map(booking => (
@@ -180,7 +202,12 @@ export default function ReportsPage() {
                         aria-disabled={!booking.reportFileUrl || booking.status !== BookingStatus.COMPLETED}
                         className={`bg-rose-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-rose-200 transition-all inline-flex items-center gap-2 ${(!booking.reportFileUrl || booking.status !== BookingStatus.COMPLETED) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-rose-700'
                           }`}
-                        onClick={(e) => (!booking.reportFileUrl || booking.status !== BookingStatus.COMPLETED) && e.preventDefault()}
+                        onClick={(e) => {
+                          if (!booking.reportFileUrl || booking.status !== BookingStatus.COMPLETED) {
+                            e.preventDefault();
+                            toast.error("Report not available yet");
+                          }
+                        }}
                       >
                         <FileText size={14} /><span>Download</span>
                       </a>

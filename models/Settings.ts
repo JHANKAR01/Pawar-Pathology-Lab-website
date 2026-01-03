@@ -21,7 +21,17 @@ const SettingsSchema = new Schema<ISettings & Document>(
     emailEnabled: { type: Boolean, default: true },
     serviceRadius: { type: Number, default: 10 },
     locationFencingEnabled: { type: Boolean, default: false },
-    blockSundays: { type: Boolean, default: true }
+    blockSundays: { type: Boolean, default: true },
+
+    // Detailed Maintenance
+    maintenanceModeUser: { type: Boolean, default: false },
+    maintenanceModePartner: { type: Boolean, default: false },
+
+    // Smart Notification Hub
+    whatsappEnabled: { type: Boolean, default: true },
+    whatsappOfficialEnabled: { type: Boolean, default: false }, // Default false (link only)
+    telegramEnabled: { type: Boolean, default: false },
+    telegramAdminChatId: { type: String, default: '' }
   },
   { timestamps: true }
 );

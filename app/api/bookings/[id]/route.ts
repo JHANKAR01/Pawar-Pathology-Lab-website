@@ -5,11 +5,7 @@ import { BookingStatus } from '@/types';
 import { uploadReportToDrive } from '@/lib/googleDrive';
 import { Buffer } from 'buffer';
 
-// Placeholder for notifications
-const sendNotification = async (type: 'SMS' | 'EMAIL', to: string, message: string) => {
-  console.log(`[NOTIFICATION][${type}] to ${to}: ${message}`);
-  // In a real implementation, you would integrate Twilio, SendGrid, etc.
-};
+import { sendSmartNotification } from '@/lib/notifications';
 
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
@@ -113,14 +109,26 @@ export async function PATCH(
 
       // Logic for Notifications on Verification
       if (updatedBooking.status === 'completed' && oldBooking.status !== 'completed') {
-        const message = `Pawar Lab: Hello ${updatedBooking.patientName}, your report for ${updatedBooking.tests[0].title} has been verified. You can download it now from your patient portal.`;
+        const contactEmail = updatedBooking.bookedByEmail !== 'guest' ? updatedBooking.bookedByEmail : updatedBooking.email;
+        sendSmartNotification('REPORT_READY', {
+          customerName: updatedBooking.patientName,
+          customerEmail: contactEmail,
+          customerPhone: updatedBooking.contactNumber,
+          bookingId: updatedBooking._id.toString(),
+          testNames: updatedBooking.tests.map((t: any) => t.title),
+          reportLink: updatedBooking.reportFileUrl || '#'
+        });
+      }
 
-        if (updatedBooking.email) {
-          await sendNotification('EMAIL', updatedBooking.email, message);
-        }
-        if (updatedBooking.contactNumber) {
-          await sendNotification('SMS', updatedBooking.contactNumber, message);
-        }
+      // Logic for Notifications on Cancellation
+      if (updatedBooking.status === 'cancelled' && oldBooking.status !== 'cancelled') {
+        const contactEmail = updatedBooking.bookedByEmail !== 'guest' ? updatedBooking.bookedByEmail : updatedBooking.email;
+        sendSmartNotification('BOOKING_CANCELLED', {
+          customerName: updatedBooking.patientName,
+          customerEmail: contactEmail,
+          customerPhone: updatedBooking.contactNumber,
+          bookingId: updatedBooking._id.toString()
+        });
       }
 
       return NextResponse.json(updatedBooking);

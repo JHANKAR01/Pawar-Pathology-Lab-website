@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-console.log('Attempting to load MONGODB_URI from .env...');
+// console.log('Attempting to load MONGODB_URI from .env...');
 
 const MONGODB_URI = process.env.MONGODB_URI;
 

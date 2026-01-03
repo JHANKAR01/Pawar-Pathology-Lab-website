@@ -97,5 +97,16 @@ export interface IBooking {
 export interface ISettings {
   requireVerification: boolean;
   maintenanceMode: boolean;
+  maintenanceModeUser: boolean;
+  maintenanceModePartner: boolean;
   announcement?: string;
+  smsEnabled: boolean;
+  emailEnabled: boolean;
+  whatsappEnabled: boolean;
+  whatsappOfficialEnabled: boolean;
+  telegramEnabled: boolean;
+  telegramAdminChatId?: string;
+  serviceRadius: number;
+  locationFencingEnabled: boolean;
+  blockSundays: boolean;
 }

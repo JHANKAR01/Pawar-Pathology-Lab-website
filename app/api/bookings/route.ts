@@ -59,6 +59,7 @@ export async function GET(request: Request) {
 // POST /api/bookings - Create a new booking (Patient Wizard)
 import Coupon from '@/models/Coupon';
 import Test from '@/models/Test';
+import { sendSmartNotification } from '@/lib/notifications';
 
 // POST /api/bookings - Create a new booking (Patient Wizard)
 export async function POST(request: Request) {
@@ -134,14 +135,24 @@ export async function POST(request: Request) {
       // Ensure paymentStatus is correct based on paymentMode/amounts (frontend handles logic but let's trust it for now unless critical)
     };
 
-    const booking = await Booking.create(finalBookingData);
+    const newBooking = await Booking.create(finalBookingData);
 
-    // 5. Increment Coupon Usage
+    // 5. Update Coupon Usage if applicable
     if (usedCoupon) {
       await Coupon.findByIdAndUpdate(usedCoupon._id, { $inc: { usedCount: 1 } });
     }
 
-    return NextResponse.json(booking, { status: 201 });
+    // 6. Trigger Smart Notifications (Async - don't block response)
+    sendSmartNotification('BOOKING_CONFIRMED', {
+      customerName: newBooking.patientName,
+      customerEmail: newBooking.bookedByEmail !== 'guest' ? newBooking.bookedByEmail : newBooking.email,
+      customerPhone: newBooking.contactNumber,
+      bookingId: newBooking.id, // Use friendly ID
+      testNames: newBooking.tests.map((t: any) => t.title),
+      totalAmount: newBooking.totalAmount
+    });
+
+    return NextResponse.json({ message: 'Booking created successfully', bookingId: newBooking._id }, { status: 201 });
   } catch (error) {
     console.error("Booking Creation Error:", error);
     return NextResponse.json({ error: 'Failed to create booking' }, { status: 400 });

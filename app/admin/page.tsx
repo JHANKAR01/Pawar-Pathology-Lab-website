@@ -4,11 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { toast } from 'sonner';
 import {
-  LayoutDashboard, HeartHandshake, Settings as SettingsIcon,
-  ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home, Loader2, Calendar, FileText, X, CheckCircle, XCircle, Ticket, MapPin
+  ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home, Loader2, Calendar, FileText, X, CheckCircle, XCircle, Ticket, MapPin, BellRing,
+  LayoutDashboard, HeartHandshake, Settings as SettingsIcon
 } from 'lucide-react';
 import { FlaskConical } from 'lucide-react';
+import { BookingStatus } from '@/types';
 
 interface BookingType {
   _id: string;
@@ -370,6 +373,17 @@ export default function AdminPage() {
     }
   };
 
+  // Dashboard Stats Logic
+  const stats = [
+    { label: 'Total Visits', value: bookings.length, icon: Calendar, color: 'bg-blue-500' },
+    { label: 'Pending Reports', value: bookings.filter((b: any) => b.status === BookingStatus.PENDING || b.status === BookingStatus.SAMPLE_COLLECTED).length, icon: FileText, color: 'bg-amber-500' },
+    { label: 'Revenue (Today)', value: `₹${bookings.filter((b: any) => new Date(b.createdAt).toDateString() === new Date().toDateString()).reduce((acc: number, curr: any) => acc + (curr.totalAmount || 0), 0)}`, icon: HeartHandshake, color: 'bg-emerald-500' },
+  ];
+
+  const handleLogout = () => {
+    toast.success("Logged out successfully");
+    signOut({ callbackUrl: '/login' });
+  };
   const getStatusBadge = (status: string) => {
     const base = 'px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest';
     switch (status) {
@@ -381,12 +395,19 @@ export default function AdminPage() {
     }
   };
 
-  if (!isVerified) {
+  if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-12 h-12 animate-spin text-clinical-rose" />
+      <div className="min-h-screen bg-slate-50 p-8 space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 w-full rounded-3xl" />)}
+        </div>
+        <Skeleton className="h-[500px] w-full rounded-3xl" />
       </div>
     );
+  }
+
+  if (!session || (session.user.role !== 'admin' && session.user.role !== 'partner')) {
+    return null;
   }
 
   return (
@@ -890,6 +911,48 @@ export default function AdminPage() {
                             ></label>
                             <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ease-in-out shadow-sm ${(config as any).blockSundays !== false ? 'translate-x-6' : '0'}`}></div>
                           </div>
+                        </div>
+                      </div>
+
+                      {/* Detailed Maintenance */}
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 md:col-span-2">
+                        <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2"><ShieldCheck size={18} /> System Maintenance</h4>
+                        <div className="grid md:grid-cols-2 gap-6">
+                          <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                            <div><h5 className="font-bold text-xs uppercase tracking-wide text-slate-700">Patient Portal</h5><p className="text-[10px] text-slate-500">Block patient access</p></div>
+                            <div className="relative inline-block w-10 h-5"><input type="checkbox" className="peer absolute w-full h-full opacity-0 cursor-pointer" checked={(config as any).maintenanceModeUser ?? false} onChange={(e) => updateConfig({ maintenanceModeUser: e.target.checked })} /><span className={`block w-full h-full rounded-full transition ${(config as any).maintenanceModeUser ? 'bg-rose-500' : 'bg-slate-300'}`}></span><span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).maintenanceModeUser ? 'translate-x-5' : ''}`}></span></div>
+                          </div>
+                          <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                            <div><h5 className="font-bold text-xs uppercase tracking-wide text-slate-700">Partner Portal</h5><p className="text-[10px] text-slate-500">Block partner access</p></div>
+                            <div className="relative inline-block w-10 h-5"><input type="checkbox" className="peer absolute w-full h-full opacity-0 cursor-pointer" checked={(config as any).maintenanceModePartner ?? false} onChange={(e) => updateConfig({ maintenanceModePartner: e.target.checked })} /><span className={`block w-full h-full rounded-full transition ${(config as any).maintenanceModePartner ? 'bg-rose-500' : 'bg-slate-300'}`}></span><span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).maintenanceModePartner ? 'translate-x-5' : ''}`}></span></div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Smart Notification Hub */}
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 md:col-span-2">
+                        <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2"><BellRing size={18} /> Smart Notification Hub</h4>
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center">
+                            <div><h5 className="font-bold text-sm text-slate-800">WhatsApp Integration</h5><p className="text-xs text-slate-500">Enable WhatsApp messaging</p></div>
+                            <div className="relative inline-block w-10 h-5"><input type="checkbox" className="peer absolute w-full h-full opacity-0 cursor-pointer" checked={(config as any).whatsappEnabled ?? true} onChange={(e) => updateConfig({ whatsappEnabled: e.target.checked })} /><span className={`block w-full h-full rounded-full transition ${(config as any).whatsappEnabled ? 'bg-emerald-500' : 'bg-slate-300'}`}></span><span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).whatsappEnabled ? 'translate-x-5' : ''}`}></span></div>
+                          </div>
+                          {(config as any).whatsappEnabled && (
+                            <div className="pl-4 border-l-2 border-slate-200 ml-2">
+                              <div className="flex items-center gap-2 mb-2">
+                                <input type="checkbox" id="wa-official" checked={(config as any).whatsappOfficialEnabled ?? false} onChange={(e) => updateConfig({ whatsappOfficialEnabled: e.target.checked })} className="w-4 h-4 text-rose-600 rounded focus:ring-rose-500" />
+                                <label htmlFor="wa-official" className="text-xs font-bold text-slate-700">Use Official Cloud API (Costs apply)</label>
+                              </div>
+                              <p className="text-[10px] text-slate-500">If unchecked, system sends Email with a "Chat on WhatsApp" deep-link (Free).</p>
+                            </div>
+                          )}
+                          <div className="flex justify-between items-center pt-4 border-t border-slate-200">
+                            <div><h5 className="font-bold text-sm text-slate-800">Telegram Staff Alerts</h5><p className="text-xs text-slate-500">Internal alerts for new bookings</p></div>
+                            <div className="relative inline-block w-10 h-5"><input type="checkbox" className="peer absolute w-full h-full opacity-0 cursor-pointer" checked={(config as any).telegramEnabled ?? false} onChange={(e) => updateConfig({ telegramEnabled: e.target.checked })} /><span className={`block w-full h-full rounded-full transition ${(config as any).telegramEnabled ? 'bg-sky-500' : 'bg-slate-300'}`}></span><span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).telegramEnabled ? 'translate-x-5' : ''}`}></span></div>
+                          </div>
+                          {(config as any).telegramEnabled && (
+                            <input type="text" placeholder="Admin Chat ID" value={(config as any).telegramAdminChatId || ''} onChange={(e) => updateConfig({ telegramAdminChatId: e.target.value })} className="w-full text-xs px-3 py-2 border rounded-lg" />
+                          )}
                         </div>
                       </div>
 
