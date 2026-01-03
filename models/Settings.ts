@@ -16,7 +16,12 @@ const SettingsSchema = new Schema<ISettings & Document>(
     announcement: {
       type: String,
       default: ''
-    }
+    },
+    smsEnabled: { type: Boolean, default: true },
+    emailEnabled: { type: Boolean, default: true },
+    serviceRadius: { type: Number, default: 10 },
+    locationFencingEnabled: { type: Boolean, default: false },
+    blockSundays: { type: Boolean, default: true }
   },
   { timestamps: true }
 );

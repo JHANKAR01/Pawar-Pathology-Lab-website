@@ -38,6 +38,10 @@ const BookingSchema = new Schema<IBooking & Document>(
     },
     paymentMode: { type: String, enum: ['online', 'cash'], default: 'cash' },
     paymentStatus: { type: String, enum: Object.values(PaymentStatus), default: PaymentStatus.UNPAID },
+    couponCode: { type: String, trim: true },
+    discountAmount: { type: Number, default: 0 },
+    distanceFromLab: { type: Number },
+    reportFileId: { type: String },
     reportFileUrl: { type: String },
     reportStatus: {
       type: String,

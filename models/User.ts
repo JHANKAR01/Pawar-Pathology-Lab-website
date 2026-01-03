@@ -16,7 +16,9 @@ const UserSchema = new Schema({
   },
   role: { type: String, enum: ['admin', 'partner', 'patient'], default: 'patient' },
   operationalRole: { type: String, default: 'none' },
-  address: String
+  address: String,
+  isVerified: { type: Boolean, default: false },
+  needsProfileCompletion: { type: Boolean, default: false }
 }, { timestamps: true });
 
 export default models.User || model('User', UserSchema);
