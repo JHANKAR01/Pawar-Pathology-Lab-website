@@ -8,12 +8,12 @@ import { authOptions } from '../auth/[...nextauth]/route';
 // GET /api/bookings - Fetch all bookings (Admin/Partner view) or user's own bookings (Patient/User)
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
-  if (!session) {
+  if (!session || !session.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const role = session.user.role;
-  const authenticatedUserId = session.user._id;
+  const role = session.user.role?.toLowerCase();
+  const authenticatedUserId = session.user.id;
 
   await dbConnect();
   try {
@@ -61,14 +61,14 @@ export async function POST(request: Request) {
   await dbConnect();
   try {
     const body = await request.json();
-    
+
     // Calculate balance amount
     const totalAmount = body.totalAmount || 0;
     const amountTaken = body.amountTaken || 0;
     body.balanceAmount = totalAmount - amountTaken;
 
     const booking = await Booking.create(body);
-    
+
     return NextResponse.json(booking, { status: 201 });
   } catch (error) {
     console.error(error);

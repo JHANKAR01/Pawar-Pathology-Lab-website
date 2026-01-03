@@ -11,10 +11,26 @@ const sendNotification = async (type: 'SMS' | 'EMAIL', to: string, message: stri
   // In a real implementation, you would integrate Twilio, SendGrid, etc.
 };
 
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../auth/[...nextauth]/route';
+
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  // Allowing modifications by authenticated users, assuming logic below handles specifics or broadly allowing for now as per migration plan "Securing API".
+  // Ideally check role here.
+  const role = session.user.role?.toLowerCase();
+  if (role !== 'admin' && role !== 'partner') {
+    // NOTE: If patients need to update their own bookings, we add that check here.
+    // For now, locking to admin/partner as per "Master Migration Plan" implied context of dashboards.
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   await dbConnect();
   const { id } = params;
 
@@ -40,18 +56,18 @@ export async function PATCH(
       try {
         // Extract test titles from booking
         const testTitles = booking.tests.map((t: any) => t.title || t.testTitle || 'Unknown Test');
-        
+
         const driveResponse = await uploadReportToDrive(
-            buffer, 
-            file.type,
-            booking.patientName,
-            testTitles,
-            id
+          buffer,
+          file.type,
+          booking.patientName,
+          testTitles,
+          id
         );
         reportUrl = driveResponse.webViewLink || '';
       } catch (driveError) {
         console.error("Drive Upload Failed:", driveError);
-        reportUrl = 'https://mock-drive-link.com/upload-error'; 
+        reportUrl = 'https://mock-drive-link.com/upload-error';
       }
 
       const updatedBooking = await Booking.findByIdAndUpdate(
@@ -64,7 +80,7 @@ export async function PATCH(
 
     } else {
       const body = await request.json();
-      
+
       const oldBooking = await Booking.findById(id);
       if (!oldBooking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
@@ -73,13 +89,13 @@ export async function PATCH(
         { $set: body },
         { new: true }
       );
-      
+
       if (!updatedBooking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
       // Logic for Notifications on Verification
       if (updatedBooking.status === 'completed' && oldBooking.status !== 'completed') {
         const message = `Pawar Lab: Hello ${updatedBooking.patientName}, your report for ${updatedBooking.tests[0].title} has been verified. You can download it now from your patient portal.`;
-        
+
         if (updatedBooking.email) {
           await sendNotification('EMAIL', updatedBooking.email, message);
         }

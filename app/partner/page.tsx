@@ -19,17 +19,17 @@ export default function PartnerPage() {
 
   // Filter tasks based on status and search query
   const filteredTasks = tasks.filter(task => {
-    const matchesStatus = statusFilter === 'active' 
-      ? !['report_uploaded', 'completed'].includes(task.status) 
+    const matchesStatus = statusFilter === 'active'
+      ? !['report_uploaded', 'completed'].includes(task.status)
       : ['report_uploaded', 'completed'].includes(task.status);
-    
+
     const matchesSearch = task.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          task._id.toLowerCase().includes(searchQuery.toLowerCase());
-    
+      task._id.toLowerCase().includes(searchQuery.toLowerCase());
+
     return matchesStatus && matchesSearch;
   });
-  
-  
+
+
   // Walk-in Form State
   const [newPatient, setNewPatient] = useState({
     name: '',
@@ -50,10 +50,11 @@ export default function PartnerPage() {
       return;
     }
 
-    if (session?.user?.role === 'partner') {
+    const role = session?.user?.role?.toLowerCase();
+    if (role === 'partner') {
       setIsVerified(true);
       fetchBookings();
-    } else if (session?.user?.role === 'admin') {
+    } else if (role === 'admin') {
       router.push('/admin');
     } else {
       router.push('/login');
@@ -226,7 +227,7 @@ export default function PartnerPage() {
           </div>
         </div>
         <div className="flex gap-4">
-          <button 
+          <button
             onClick={() => setIsRegisterOpen(true)}
             className="flex items-center gap-2 bg-clinical-rose text-white px-6 py-3 rounded-xl text-sm font-black uppercase tracking-widest shadow-rose-lg hover:bg-clinical-rose-dark transition-all"
           >
@@ -254,21 +255,19 @@ export default function PartnerPage() {
             />
             <button
               onClick={() => setStatusFilter('active')}
-              className={`px-5 py-3 rounded-xl text-sm font-bold transition-all ${
-                statusFilter === 'active' 
-                  ? 'bg-clinical-rose text-white shadow-rose-lg' 
+              className={`px-5 py-3 rounded-xl text-sm font-bold transition-all ${statusFilter === 'active'
+                  ? 'bg-clinical-rose text-white shadow-rose-lg'
                   : 'bg-white text-slate-600 border-2 border-slate-200 hover:border-clinical-rose'
-              }`}
+                }`}
             >
               Active
             </button>
             <button
               onClick={() => setStatusFilter('completed')}
-              className={`px-5 py-3 rounded-xl text-sm font-bold transition-all ${
-                statusFilter === 'completed' 
-                  ? 'bg-clinical-rose text-white shadow-rose-lg' 
+              className={`px-5 py-3 rounded-xl text-sm font-bold transition-all ${statusFilter === 'completed'
+                  ? 'bg-clinical-rose text-white shadow-rose-lg'
                   : 'bg-white text-slate-600 border-2 border-slate-200 hover:border-clinical-rose'
-              }`}
+                }`}
             >
               Completed
             </button>
@@ -289,16 +288,15 @@ export default function PartnerPage() {
               <div key={task._id} className="card-premium p-10 flex flex-col md:flex-row justify-between gap-8 items-center">
                 <div className="flex-1 w-full">
                   <div className="flex items-center gap-3 mb-4">
-                    <span className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest border-2 ${
-                      task.status === 'sample_collected' 
-                        ? 'bg-warning/10 text-warning border-warning/20' 
+                    <span className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest border-2 ${task.status === 'sample_collected'
+                        ? 'bg-warning/10 text-warning border-warning/20'
                         : 'bg-blue-500/10 text-blue-600 border-blue-500/20'
-                    }`}>
+                      }`}>
                       {task.status.replace('_', ' ')}
                     </span>
                     <span className="text-xs text-slate-500 font-bold tracking-widest uppercase">NODE: {task._id.slice(-6)}</span>
                   </div>
-                  
+
                   <h3 className="text-3xl font-black text-slate-900 mb-3">{task.patientName}</h3>
                   <div className="flex gap-2 mb-6 flex-wrap">
                     {task.tests?.map((t: any) => (
@@ -312,9 +310,9 @@ export default function PartnerPage() {
                       {task.address || "Flagship Center Lab Visit"}
                     </div>
                     {task.balanceAmount > 0 && (
-                       <div className="flex items-center gap-2 text-clinical-rose text-sm font-black uppercase tracking-widest bg-clinical-rose-light p-4 rounded-xl inline-flex ml-3 border-2 border-clinical-rose/20">
-                          <DollarSign size={16} /> Balance: ₹{task.balanceAmount}
-                       </div>
+                      <div className="flex items-center gap-2 text-clinical-rose text-sm font-black uppercase tracking-widest bg-clinical-rose-light p-4 rounded-xl inline-flex ml-3 border-2 border-clinical-rose/20">
+                        <DollarSign size={16} /> Balance: ₹{task.balanceAmount}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -323,7 +321,7 @@ export default function PartnerPage() {
                   {task.status === 'assigned' && (
                     <>
                       {task.coordinates && (
-                        <a 
+                        <a
                           href={`http://www.google.com/maps/search/?api=1&query=${task.coordinates.lat},${task.coordinates.lng}`}
                           target="_blank"
                           className="flex items-center gap-3 px-6 py-4 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl font-bold text-sm shadow-soft hover:bg-clinical-rose-light hover:border-clinical-rose transition-all"
@@ -331,17 +329,17 @@ export default function PartnerPage() {
                           <Navigation className="w-5 h-5 text-clinical-rose" /> Navigate
                         </a>
                       )}
-                      <button 
+                      <button
                         onClick={() => handleUpdateStatus(task._id, 'reached')}
                         className="flex items-center gap-3 px-8 py-4 bg-clinical-rose text-white rounded-2xl font-bold text-sm shadow-rose-lg hover:bg-clinical-rose-dark transition-all"
                       >
-                         Reached Site
+                        Reached Site
                       </button>
                     </>
                   )}
 
                   {task.status === 'reached' && (
-                    <button 
+                    <button
                       onClick={() => handleCollectSample(task._id)}
                       className="flex items-center gap-3 px-10 py-4 bg-success text-white rounded-2xl font-bold text-sm shadow-lg hover:bg-success/90 transition-all"
                     >
@@ -351,14 +349,14 @@ export default function PartnerPage() {
 
                   {task.status === 'sample_collected' && (
                     <>
-                      <input 
-                        type="file" 
-                        id={`file-${task._id}`} 
-                        className="hidden" 
+                      <input
+                        type="file"
+                        id={`file-${task._id}`}
+                        className="hidden"
                         accept=".pdf"
                         onChange={(e) => handleFileUpload(e, task._id)}
                       />
-                      <button 
+                      <button
                         onClick={() => document.getElementById(`file-${task._id}`)?.click()}
                         className="flex items-center gap-3 px-8 py-4 bg-clinical-rose text-white rounded-2xl font-bold text-sm shadow-rose-lg hover:bg-clinical-rose-dark transition-all"
                       >
@@ -378,45 +376,45 @@ export default function PartnerPage() {
           <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border border-slate-200">
             <div className="bg-gradient-to-r from-clinical-rose to-clinical-rose-dark p-10 text-white flex justify-between items-center">
               <div>
-                 <h3 className="text-2xl font-black uppercase tracking-tight">Direct Entry</h3>
-                 <p className="text-rose-100 font-medium">Walk-in or Immediate acquisition</p>
+                <h3 className="text-2xl font-black uppercase tracking-tight">Direct Entry</h3>
+                <p className="text-rose-100 font-medium">Walk-in or Immediate acquisition</p>
               </div>
               <button onClick={() => setIsRegisterOpen(false)} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><X size={24} /></button>
             </div>
             <form onSubmit={handleWalkInRegistration} className="p-10 space-y-6 max-h-[70vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-6">
-                 <div>
-                    <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Name</label>
-                    <input required className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-bold text-slate-900 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all" value={newPatient.name} onChange={e => setNewPatient({...newPatient, name: e.target.value})} />
-                 </div>
-                 <div>
-                    <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Phone</label>
-                    <input required className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-bold text-slate-900 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all" value={newPatient.phone} maxLength={10} onChange={e => setNewPatient({...newPatient, phone: e.target.value})} />
-                 </div>
+                <div>
+                  <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Name</label>
+                  <input required className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-bold text-slate-900 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all" value={newPatient.name} onChange={e => setNewPatient({ ...newPatient, name: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Phone</label>
+                  <input required className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-bold text-slate-900 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all" value={newPatient.phone} maxLength={10} onChange={e => setNewPatient({ ...newPatient, phone: e.target.value })} />
+                </div>
               </div>
-              
+
               <div>
-                 <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Email Address (Optional)</label>
-                 <input className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-bold text-slate-900 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all placeholder:text-slate-400" placeholder="For reporting" value={newPatient.email} onChange={e => setNewPatient({...newPatient, email: e.target.value})} />
+                <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Email Address (Optional)</label>
+                <input className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-bold text-slate-900 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all placeholder:text-slate-400" placeholder="For reporting" value={newPatient.email} onChange={e => setNewPatient({ ...newPatient, email: e.target.value })} />
               </div>
 
               <div>
                 <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Investigation Panel</label>
-                <input className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-bold text-slate-900 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all" value={newPatient.testTitle} onChange={e => setNewPatient({...newPatient, testTitle: e.target.value})} />
+                <input className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-bold text-slate-900 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all" value={newPatient.testTitle} onChange={e => setNewPatient({ ...newPatient, testTitle: e.target.value })} />
               </div>
               <div className="grid grid-cols-2 gap-6 p-6 bg-slate-50 rounded-3xl border-2 border-slate-200">
-                 <div>
-                    <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Total Bill</label>
-                    <input type="number" className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-black text-xl text-slate-900 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all" value={newPatient.totalAmount} onChange={e => setNewPatient({...newPatient, totalAmount: Number(e.target.value)})} />
-                 </div>
-                 <div>
-                    <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Amount Taken</label>
-                    <input type="number" className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-black text-xl text-success focus:border-success focus:ring-2 focus:ring-success/20 transition-all" value={newPatient.amountTaken} onChange={e => setNewPatient({...newPatient, amountTaken: Number(e.target.value)})} />
-                 </div>
+                <div>
+                  <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Total Bill</label>
+                  <input type="number" className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-black text-xl text-slate-900 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all" value={newPatient.totalAmount} onChange={e => setNewPatient({ ...newPatient, totalAmount: Number(e.target.value) })} />
+                </div>
+                <div>
+                  <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Amount Taken</label>
+                  <input type="number" className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl outline-none font-black text-xl text-success focus:border-success focus:ring-2 focus:ring-success/20 transition-all" value={newPatient.amountTaken} onChange={e => setNewPatient({ ...newPatient, amountTaken: Number(e.target.value) })} />
+                </div>
               </div>
               <div className="flex justify-between items-center font-black uppercase text-sm p-5 border-2 border-slate-200 rounded-2xl bg-slate-50">
-                 <span className="text-slate-600">Balance Calculated:</span>
-                 <span className="text-clinical-rose text-xl">₹{newPatient.totalAmount - newPatient.amountTaken}</span>
+                <span className="text-slate-600">Balance Calculated:</span>
+                <span className="text-clinical-rose text-xl">₹{newPatient.totalAmount - newPatient.amountTaken}</span>
               </div>
               <button className="w-full bg-clinical-rose text-white py-6 rounded-2xl font-black uppercase tracking-widest shadow-rose-lg hover:bg-clinical-rose-dark transition-all">Confirm & Log Specimen</button>
             </form>

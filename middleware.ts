@@ -8,13 +8,14 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl;
+        const role = token?.role?.toLowerCase();
 
         if (pathname.startsWith('/admin')) {
-          return token?.role === 'admin';
+          return role === 'admin';
         }
 
         if (pathname.startsWith('/partner')) {
-          return token?.role === 'partner' || token?.role === 'admin';
+          return role === 'partner' || role === 'admin';
         }
 
         return true;
@@ -24,5 +25,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ['/admin/:path*', '/partner/:path*'],
+  matcher: ['/admin', '/admin/:path*', '/partner', '/partner/:path*'],
 };

@@ -9,16 +9,26 @@ export async function GET() {
   return NextResponse.json(settings);
 }
 
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
+
 export async function POST(request: Request) {
+  const session = await getServerSession(authOptions);
+  const role = session?.user?.role?.toLowerCase();
+
+  if (!session || role !== 'admin') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   await dbConnect();
   const body = await request.json();
-  
+
   // Update the singleton document
-  const settings = await Settings.findOneAndUpdate({}, body, { 
-    new: true, 
+  const settings = await Settings.findOneAndUpdate({}, body, {
+    new: true,
     upsert: true, // Create if doesn't exist
-    setDefaultsOnInsert: true 
+    setDefaultsOnInsert: true
   });
-  
+
   return NextResponse.json(settings);
 }

@@ -2,12 +2,15 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import User from '@/models/User';
-import { verifyAdmin } from '@/lib/auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 export async function GET(request: Request) {
-  const authResult = await verifyAdmin(request);
-  if (authResult.response) {
-    return authResult.response;
+  const session = await getServerSession(authOptions);
+  const role = session?.user?.role?.toLowerCase();
+
+  if (!session || role !== 'admin') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   await dbConnect();

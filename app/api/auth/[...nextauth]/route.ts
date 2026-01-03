@@ -1,69 +1,36 @@
-import NextAuth, { NextAuthOptions, DefaultSession } from 'next-auth';
-import { JWT } from 'next-auth/jwt';
-import GoogleProvider from 'next-auth/providers/google';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import dbConnect from '@/lib/dbConnect';
-import User from '@/models/User';
-
-// Module Augmentation to include all necessary fields
-declare module "next-auth" {
-  interface Session {
-    accessToken?: string;
-    userId?: string;
-    role?: string;
-    phone?: string;
-    address?: string;
-    needsProfileCompletion?: boolean;
-    user: {
-      role?: string;
-      _id?: string;
-      phone?: string;
-      address?: string;
-    } & DefaultSession["user"];
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT {
-    role?: string;
-    userId?: string;
-    phone?: string;
-    address?: string;
-    accessToken?: string;
-    name?: string;
-    needsProfileCompletion?: boolean;
-  }
-}
+import NextAuth, { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import dbConnect from "@/lib/dbConnect";
+import User from "@/models/User";
+import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
     CredentialsProvider({
-      name: 'Credentials',
+      name: "Credentials",
       credentials: {
-        username: { label: "Username", type: "text" },
-        password: { label: "Password", type: "password" }
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.username || !credentials?.password) return null;
-        
-        await dbConnect();
-        const user = await User.findOne({ 
-          $or: [{ username: credentials.username }, { email: credentials.username }] 
-        });
-
-        if (!user) {
-          throw new Error('Invalid credentials');
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Missing email or password");
         }
 
-        // NOTE: This is insecure. In a real app, you should hash passwords and use bcrypt.compare()
-        const isPasswordValid = user.password === credentials.password;
+        await dbConnect();
 
-        if (!isPasswordValid) {
-          throw new Error('Invalid credentials');
+        const email = credentials.email.toLowerCase().trim();
+        const user = await User.findOne({ email });
+
+        if (!user) {
+          throw new Error("User not found");
+        }
+
+        // Compare passwords using bcrypt
+        const isValid = await bcrypt.compare(credentials.password, user.password);
+
+        if (!isValid) {
+          throw new Error("Invalid password");
         }
 
         return {
@@ -71,76 +38,57 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           role: user.role,
+          phone: user.phone,
+          address: user.address,
+          needsProfileCompletion: !user.phone || !user.address,
         };
-      }
-    })
+      },
+    }),
   ],
   callbacks: {
-    async signIn({ user, account }) {
-      if (account?.provider === 'google') {
-        await dbConnect();
-        let dbUser = await User.findOne({ email: user.email });
-        if (!dbUser) {
-          await User.create({
-            username: user.email?.split('@')[0] || `user_${Date.now()}`,
-            email: user.email!,
-            name: user.name || 'User',
-            password: '', 
-            role: 'patient',
-            phone: '', 
-            address: '', 
-          });
-        }
-      }
-      return true;
-    },
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role;
-        token.userId = user.id;
+        token.id = user.id;
+        token.role = user.role.toLowerCase();
+        token.phone = user.phone;
+        token.address = user.address;
+        token.needsProfileCompletion = user.needsProfileCompletion;
       }
 
+      // Sync with DB on subsequent requests to keep phone/address updated
       if (token.email) {
         await dbConnect();
-        const dbUser = await User.findOne({ email: token.email }).lean();
-        
+        const dbUser = await User.findOne({ email: token.email });
         if (dbUser) {
-          token.name = dbUser.name;
-          token.role = dbUser.role;
-          token.userId = dbUser._id.toString();
+          token.role = dbUser.role.toLowerCase();
           token.phone = dbUser.phone;
           token.address = dbUser.address;
           token.needsProfileCompletion = !dbUser.phone || !dbUser.address;
         }
       }
+
       return token;
     },
     async session({ session, token }) {
-      if (token && session.user) {
-        session.user.name = token.name;
+      if (session.user) {
+        session.user.id = token.id;
         session.user.role = token.role;
-        session.user._id = token.userId;
         session.user.phone = token.phone;
         session.user.address = token.address;
-        
-        session.userId = token.userId;
-        session.role = token.role;
-        session.phone = token.phone;
-        session.address = token.address;
-        session.needsProfileCompletion = token.needsProfileCompletion;
+        session.user.needsProfileCompletion = token.needsProfileCompletion;
       }
       return session;
     },
   },
   pages: {
-    signIn: '/login',
-    error: '/login',
+    signIn: "/login",
   },
   session: {
-    strategy: 'jwt',
+    strategy: "jwt",
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
 
 const handler = NextAuth(authOptions);
+
 export { handler as GET, handler as POST };

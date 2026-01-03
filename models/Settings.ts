@@ -4,18 +4,18 @@ import { ISettings } from '@/types';
 
 const SettingsSchema = new Schema<ISettings & Document>(
   {
-    requireVerification: { 
-      type: Boolean, 
+    requireVerification: {
+      type: Boolean,
       default: true,
-      required: true 
+      required: true
     },
-    maintenanceMode: { 
-      type: Boolean, 
-      default: false 
+    maintenanceMode: {
+      type: Boolean,
+      default: false
     },
-    announcement: { 
-      type: String, 
-      default: '' 
+    announcement: {
+      type: String,
+      default: ''
     }
   },
   { timestamps: true }
@@ -25,7 +25,7 @@ const SettingsSchema = new Schema<ISettings & Document>(
  * Helper method to ensure a default settings document exists.
  * Can be called during app initialization.
  */
-SettingsSchema.statics.getSingleton = async function() {
+SettingsSchema.statics.getSingleton = async function () {
   const settings = await this.findOne();
   if (settings) {
     return settings;
@@ -34,6 +34,10 @@ SettingsSchema.statics.getSingleton = async function() {
   return await this.create({ requireVerification: true });
 };
 
-const Settings = models.Settings || model<ISettings & Document>('Settings', SettingsSchema);
+interface SettingsModel extends mongoose.Model<ISettings & Document> {
+  getSingleton(): Promise<ISettings & Document>;
+}
+
+const Settings = (models.Settings as SettingsModel) || model<ISettings & Document, SettingsModel>('Settings', SettingsSchema);
 
 export default Settings;
