@@ -160,6 +160,7 @@ export async function sendSmartNotification(
         }
 
         // E. Send Telegram (Staff Alerts)
+        // E. Send Telegram (Staff Alerts)
         if (settings.telegramEnabled && settings.telegramAdminChatId && process.env.TELEGRAM_BOT_TOKEN) {
             const telegramUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`;
             const text = `🚨 *New Alert* 🚨\nType: ${type}\n${waMessage}`; // Reuse WA message text for brevity
@@ -172,7 +173,16 @@ export async function sendSmartNotification(
                     text: text,
                     parse_mode: 'Markdown'
                 })
-            }).catch(err => console.error('[Notification] Telegram failed:', err));
+            })
+                .then(() => console.log(`[Notification] Telegram alert sent to ID: ${settings.telegramAdminChatId}`)) // ADDED SUCCESS LOG
+                .catch(err => console.error('[Notification] Telegram failed:', err));
+        } else {
+            // ADDED DEBUG LOG TO SEE WHY IT WAS SKIPPED
+            console.log('[Notification] Telegram skipped. Settings:', {
+                enabled: settings.telegramEnabled,
+                hasId: !!settings.telegramAdminChatId,
+                hasToken: !!process.env.TELEGRAM_BOT_TOKEN
+            });
         }
 
     } catch (error) {
