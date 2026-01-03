@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { BookingStatus, IBooking } from '@/types';
 import {
   FlaskConical, LogOut, CheckCircle, Loader2,
@@ -19,49 +20,21 @@ export default function ReportsPage() {
   const [isVerified, setIsVerified] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>('newest');
 
+  const { data: session, status } = useSession();
+
   useEffect(() => {
-    const checkUserStatus = async () => {
-      const token = localStorage.getItem('pawar_lab_auth_token');
+    if (status === 'loading') return;
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, router]);
 
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-
-      try {
-        const res = await fetch('/api/auth/verify', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!res.ok) {
-          router.push('/login');
-          return;
-        }
-
-        const data = await res.json();
-
-        // Check the role from the server response (server-verified, not localStorage)
-        if (data.role === 'patient' || data.role === 'user') {
-          setCurrentUser({
-            _id: data.userId,
-            name: data.name,
-            role: data.role
-          });
-          setIsVerified(true);
-        } else if (data.role === 'admin') {
-          router.push('/admin');
-        } else if (data.role === 'partner') {
-          router.push('/partner');
-        } else {
-          router.push('/login');
-        }
-      } catch (err) {
-        console.error('User verification error:', err);
-        router.push('/login');
-      }
-    };
-    checkUserStatus();
-  }, [router]);
+  useEffect(() => {
+    if (status === 'authenticated') {
+      setCurrentUser(session.user);
+      setIsVerified(true);
+    }
+  }, [status, session]);
 
   useEffect(() => {
     if (isVerified && currentUser?._id) {

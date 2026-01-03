@@ -392,7 +392,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row font-sans p-4 lg:p-8 gap-8 bg-slate-50">
       <aside className="w-full lg:w-80 lg:sticky lg:top-8 lg:h-[calc(100vh-4rem)] bg-white rounded-3xl p-8 flex flex-col relative z-20 shadow-large border border-slate-200">
-        <div className="flex items-center gap-4 mb-16 border-b-2 border-slate-200 pb-10">
+        <div className="flex items-center gap-4 mb-10 border-b-2 border-slate-200 pb-10">
           <div className="w-14 h-14 bg-clinical-rose rounded-2xl flex items-center justify-center shadow-rose">
             <ShieldCheck className="text-white w-7 h-7" />
           </div>
@@ -402,29 +402,32 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <nav className="flex-1 space-y-3">
-          {[
-            { id: 'Intelligence', icon: LayoutDashboard },
-            { id: 'Bookings', icon: FlaskConical },
-            { id: 'Specimens', icon: FlaskConical },
-            { id: 'Partners', icon: HeartHandshake },
-            { id: 'Coupons', icon: Ticket },
-            { id: 'Config', icon: SettingsIcon }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all ${activeTab === tab.id
-                ? 'bg-clinical-rose text-white shadow-rose-lg'
-                : 'text-slate-600 hover:text-clinical-rose hover:bg-clinical-rose-light'
-                }`}
-            >
-              <tab.icon className="w-5 h-5" />
-              {tab.id}
-            </button>
-          ))}
-        </nav>
-        <div className="mt-10 pt-10 border-t-2 border-slate-200">
+        <div className="flex-1 overflow-y-auto">
+          <nav className="space-y-3">
+            {[
+              { id: 'Intelligence', icon: LayoutDashboard },
+              { id: 'Bookings', icon: FlaskConical },
+              { id: 'Specimens', icon: FlaskConical },
+              { id: 'Partners', icon: HeartHandshake },
+              { id: 'Coupons', icon: Ticket },
+              { id: 'Config', icon: SettingsIcon }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all ${activeTab === tab.id
+                  ? 'bg-clinical-rose text-white shadow-rose-lg'
+                  : 'text-slate-600 hover:text-clinical-rose hover:bg-clinical-rose-light'
+                  }`}
+              >
+                <tab.icon className="w-5 h-5" />
+                {tab.id}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        <div className="mt-6 pt-6 border-t-2 border-slate-200">
           <button onClick={() => router.push('/')} className="w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all text-slate-600 hover:text-clinical-rose hover:bg-clinical-rose-light">
             <Home className="w-5 h-5" /> Homepage
           </button>
