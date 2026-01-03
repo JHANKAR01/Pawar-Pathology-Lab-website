@@ -24,41 +24,19 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) => {
 
     try {
       const result = await signIn('credentials', {
-        email,
-        password,
+        email: email.toLowerCase().trim(),
+        password: password,
         redirect: false,
       });
 
-      if (result?.error) {
-        throw new Error(result.error || 'Login failed');
-      }
+      if (result?.error) throw new Error(result.error);
 
-      if (result?.ok) {
-        // We rely on useSession in the parent or redirection handled by the parent
-        // But the prop onLoginSuccess expects a User object.
-        // Since signIn doesn't return the user object directly (it sets the session),
-        // we might just call onLoginSuccess with a partial user or wait for session update?
-        // However, looking at the user request "Replace the manual fetch... with... signIn",
-        // and "Remove all localStorage...".
-        // The original component calls onLoginSuccess(data.user).
-        // Since we are moving to NextAuth, the parent probably should rely on session status too.
-        // But to keep the prop contract working for now, we can try to fetch the session or just let the parent handle the redirect if it listens to session.
-        // But wait, the user instructions say "Change the input state... Replace... Remove localStorage".
-        // It doesn't say "Change onLoginSuccess".
-        // If I assume onLoginSuccess triggers a state change in the parent to show the dashboard.
-        // But with NextAuth, `useSession` will update.
-        // I will assume onLoginSuccess is still needed for some local state transition if any.
-        // But I don't have the user object here easily without fetching session.
-        // I'll reload the page or let the redirect happen if I was redirecting.
-        // But redirect: false was requested.
-        // I will pass a dummy user or try to refetch session if possible.
-        // Actually, simpler: The parent likely just needs to know login succeeded.
-        // I will construct a basic user object from the form data or just fetch session next.
-        // For now, I'll pass a placeholder since the session will take over.
-        onLoginSuccess({ email, role: 'unknown' } as any);
-      }
+      // REMOVE ALL localStorage.setItem calls
+      // Force redirect to home/dashboard which will then redirect based on role via client/middleware
+      // Actually manually checking params or just going root is safer as per request.
+      window.location.href = '/';
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Login failed');
     } finally {
       setIsLoading(false);
     }

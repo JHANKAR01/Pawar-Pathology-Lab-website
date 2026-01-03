@@ -60,7 +60,7 @@ export const authOptions: NextAuthOptions = {
         await dbConnect();
         const dbUser = await User.findOne({ email: token.email });
         if (dbUser) {
-          token.role = dbUser.role.toLowerCase();
+          token.role = dbUser.role?.toLowerCase();
           token.phone = dbUser.phone;
           token.address = dbUser.address;
           token.needsProfileCompletion = !dbUser.phone || !dbUser.address;
