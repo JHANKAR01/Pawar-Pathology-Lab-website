@@ -33,8 +33,29 @@ export default function LoginPage() {
       // On successful sign-in, NextAuth handles the session.
       // Refresh the page to make sure the session is updated everywhere.
       router.refresh();
-      // Then push to a default location; middleware will handle role-based redirects.
-      router.push('/');
+
+      // Check for session to determine redirection
+      const { getSession } = await import('next-auth/react');
+      const session = await getSession();
+
+      if (session?.user) {
+        if (session.user.needsProfileCompletion) {
+          router.push('/complete-profile');
+          return;
+        }
+
+        const role = session.user.role?.toLowerCase();
+        if (role === 'admin') {
+          router.push('/admin');
+        } else if (role === 'partner') {
+          router.push('/partner');
+        } else {
+          router.push('/');
+        }
+      } else {
+        // Fallback if session fetch fails but login was OK (rare)
+        router.push('/');
+      }
 
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
