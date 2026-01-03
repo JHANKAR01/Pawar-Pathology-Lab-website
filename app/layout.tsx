@@ -22,6 +22,7 @@ export const metadata: Metadata = {
     default: 'Pawar Pathology Lab | Precision Diagnostics in Betul',
     template: '%s | Pawar Pathology Lab'
   },
+  metadataBase: new URL('https://pawarlab.com'),
   description: 'Enterprise-grade clinical diagnostic platform in Betul. Precision analysis since 1998.',
   keywords: ['Pathology Lab Betul', 'Blood Test Betul', 'Diagnostic Center', 'Pawar Lab', 'Medical Lab Betul', 'Thyroid Test Betul', 'Sugar Test Betul'],
   authors: [{ name: 'Pawar Pathology Lab' }],

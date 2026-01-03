@@ -2,10 +2,14 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, User, Phone, Loader2, AlertCircle, FlaskConical, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, Phone, Loader2, AlertCircle, FlaskConical, ArrowLeft, Eye, EyeOff, ShieldCheck, Timer } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function SignupPage() {
   const router = useRouter();
+  const [step, setStep] = useState(1); // 1: Details, 2: OTP
+
+  // Step 1 State
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -13,41 +17,103 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Step 2 State
+  const [otp, setOtp] = useState('');
+  const [cooldown, setCooldown] = useState(0);
+
+  // Common State
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Handlers
+  const handleSendOTP = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setError('');
+
+    // Pre-validation
+    if (step === 1) {
+      if (password !== confirmPassword) {
+        setError('Passwords do not match.');
+        return;
+      }
+      if (password.length < 6) {
+        setError('Password must be at least 6 characters.');
+        return;
+      }
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/auth/otp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setStep(2);
+        setCooldown(60); // 60s cooldown
+        startCooldown();
+        toast.success("OTP sent to your email!");
+        setError('');
+      } else {
+        setError(data.error || "Failed to send OTP.");
+        toast.error(data.error || "Failed to send OTP.");
+      }
+    } catch (e) {
+      setError("An unpredictable error occurred.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyAndSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setSuccess('');
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+    if (otp.length !== 6) {
+      setError("Please enter a valid 6-digit OTP.");
       return;
     }
 
     setIsLoading(true);
-
     try {
-      const response = await fetch('/api/auth/signup', {
+      const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, password }),
+        body: JSON.stringify({ name, email, phone, password, otp })
       });
 
-      if (response.ok) {
-        setSuccess('Registration successful! Redirecting to login...');
-        setTimeout(() => router.push('/login'), 2000);
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success("Account created successfully!");
+        router.push('/login');
       } else {
-        const data = await response.json();
-        setError(data.error || 'Signup failed. Please try again.');
+        const msg = data.error || "Signup failed.";
+        setError(msg);
+        toast.error(msg);
       }
-    } catch (err) {
-      setError('An unexpected error occurred. Please try again later.');
+    } catch (e) {
+      setError("Network error occurred.");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const startCooldown = () => {
+    const timer = setInterval(() => {
+      setCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   };
 
   return (
@@ -78,59 +144,96 @@ export default function SignupPage() {
 
         <div className="lg:w-1/2 p-12 md:p-16 flex flex-col justify-center bg-white">
           <div className="mb-12">
-            <h2 className="text-3xl font-black text-slate-900 mb-2">Create Account</h2>
-            <p className="text-slate-600 text-base font-medium">Enter your details to register.</p>
+            <h2 className="text-3xl font-black text-slate-900 mb-2">
+              {step === 1 ? 'Create Account' : 'Verify Email'}
+            </h2>
+            <p className="text-slate-600 text-base font-medium">
+              {step === 1 ? 'Enter your details to register.' : `Enter the OTP sent to ${email}`}
+            </p>
           </div>
 
-          {(error || success) && (
-            <div className={`p-4 rounded-xl mb-6 flex items-center gap-3 border-2 ${error ? 'bg-clinical-rose/10 border-clinical-rose text-clinical-rose' : 'bg-success/10 border-success text-success'}`}>
+          {(error) && (
+            <div className={`p-4 rounded-xl mb-6 flex items-center gap-3 border-2 bg-clinical-rose/10 border-clinical-rose text-clinical-rose`}>
               <AlertCircle size={20} />
-              <span className="font-bold">{error || success}</span>
+              <span className="font-bold">{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name */}
-            <div className="relative">
-              <User className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <input type="text" placeholder="Full Name" value={name} onChange={e => setName(e.target.value)} required className="w-full pl-16 pr-6 py-5 bg-white border-2 border-slate-200 rounded-2xl outline-none text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all placeholder:text-slate-400" />
-            </div>
-            {/* Email */}
-            <div className="relative">
-              <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <input type="email" placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} required className="w-full pl-16 pr-6 py-5 bg-white border-2 border-slate-200 rounded-2xl outline-none text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all placeholder:text-slate-400" />
-            </div>
-            {/* Phone */}
-            <div className="relative">
-              <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <input type="tel" placeholder="Phone Number" value={phone} onChange={e => setPhone(e.target.value)} className="w-full pl-16 pr-6 py-5 bg-white border-2 border-slate-200 rounded-2xl outline-none text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all placeholder:text-slate-400" />
-            </div>
-            {/* Password */}
-            <div className="relative">
-              <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <input type={showPassword ? 'text' : 'password'} placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required className="w-full pl-16 pr-16 py-5 bg-white border-2 border-slate-200 rounded-2xl outline-none text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all placeholder:text-slate-400" />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-6 top-1/2 -translate-y-1/2 text-clinical-rose hover:text-clinical-rose-dark transition-colors">
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-            {/* Confirm Password */}
-            <div className="relative">
-              <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <input type={showConfirmPassword ? 'text' : 'password'} placeholder="Confirm Password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required className="w-full pl-16 pr-16 py-5 bg-white border-2 border-slate-200 rounded-2xl outline-none text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all placeholder:text-slate-400" />
-              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-6 top-1/2 -translate-y-1/2 text-clinical-rose hover:text-clinical-rose-dark transition-colors">
-                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
+          {step === 1 ? (
+            <form onSubmit={handleSendOTP} className="space-y-6">
+              {/* Step 1 Fields */}
+              <div className="relative">
+                <User className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input type="text" placeholder="Full Name" value={name} onChange={e => setName(e.target.value)} required className="w-full pl-16 pr-6 py-5 bg-white border-2 border-slate-200 rounded-2xl outline-none text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all placeholder:text-slate-400" />
+              </div>
+              <div className="relative">
+                <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input type="email" placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} required className="w-full pl-16 pr-6 py-5 bg-white border-2 border-slate-200 rounded-2xl outline-none text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all placeholder:text-slate-400" />
+              </div>
+              <div className="relative">
+                <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input type="tel" placeholder="Phone Number" value={phone} onChange={e => setPhone(e.target.value)} className="w-full pl-16 pr-6 py-5 bg-white border-2 border-slate-200 rounded-2xl outline-none text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all placeholder:text-slate-400" />
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input type={showPassword ? 'text' : 'password'} placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required className="w-full pl-16 pr-16 py-5 bg-white border-2 border-slate-200 rounded-2xl outline-none text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all placeholder:text-slate-400" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-6 top-1/2 -translate-y-1/2 text-clinical-rose hover:text-clinical-rose-dark transition-colors">
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input type={showConfirmPassword ? 'text' : 'password'} placeholder="Confirm Password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required className="w-full pl-16 pr-16 py-5 bg-white border-2 border-slate-200 rounded-2xl outline-none text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all placeholder:text-slate-400" />
+                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-6 top-1/2 -translate-y-1/2 text-clinical-rose hover:text-clinical-rose-dark transition-colors">
+                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
 
-            <div className="pt-4 space-y-4">
-              <button type="submit" className="w-full bg-clinical-rose text-white py-5 rounded-2xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-3 hover:bg-clinical-rose-dark transition-all shadow-rose-lg disabled:opacity-50" disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin" /> : "Create Account"}
-              </button>
-              <button type="button" onClick={() => router.push('/login')} className="w-full bg-transparent border-2 border-slate-300 text-slate-700 py-5 rounded-2xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-3 hover:bg-slate-50 hover:border-clinical-rose hover:text-clinical-rose transition-all">
-                Already have an account? Sign In
-              </button>
-            </div>
-          </form>
+              <div className="pt-4 space-y-4">
+                <button type="submit" className="w-full bg-clinical-rose text-white py-5 rounded-2xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-3 hover:bg-clinical-rose-dark transition-all shadow-rose-lg disabled:opacity-50" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="animate-spin" /> : "Send OTP"}
+                </button>
+                <button type="button" onClick={() => router.push('/login')} className="w-full bg-transparent border-2 border-slate-300 text-slate-700 py-5 rounded-2xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-3 hover:bg-slate-50 hover:border-clinical-rose hover:text-clinical-rose transition-all">
+                  Already have an account? Sign In
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyAndSignup} className="space-y-6">
+              {/* Step 2 Inputs */}
+              <div className="relative">
+                <ShieldCheck className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Enter 6-digit OTP"
+                  value={otp}
+                  onChange={e => {
+                    // Allow only numbers and max 6 digits
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    setOtp(val);
+                  }}
+                  required
+                  className="w-full pl-16 pr-6 py-5 bg-white border-2 border-slate-200 rounded-2xl outline-none text-slate-900 font-bold text-2xl tracking-[0.5em] text-center focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all placeholder:text-slate-300 placeholder:tracking-normal"
+                />
+              </div>
+
+              <div className="flex justify-between items-center text-sm font-bold">
+                <button type="button" onClick={() => setStep(1)} className="text-slate-500 hover:text-slate-700">change email</button>
+                {cooldown > 0 ? (
+                  <span className="text-slate-400 flex items-center gap-1"><Timer size={14} /> Resend in {cooldown}s</span>
+                ) : (
+                  <button type="button" onClick={() => handleSendOTP()} className="text-clinical-rose hover:underline" disabled={isLoading}>Resend OTP</button>
+                )}
+              </div>
+
+              <div className="pt-4">
+                <button type="submit" className="w-full bg-emerald-500 text-white py-5 rounded-2xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-3 hover:bg-emerald-600 transition-all shadow-lg disabled:opacity-50" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="animate-spin" /> : "Verify & Complete Registration"}
+                </button>
+              </div>
+            </form>
+          )}
+
         </div>
       </div>
     </div>

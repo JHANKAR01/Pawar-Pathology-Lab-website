@@ -1,6 +1,6 @@
 import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { Canvas, useFrame, ThreeElements } from '@react-three/fiber';
-import { Environment, Stars, PresentationControls } from '@react-three/drei';
+import { Stars, PresentationControls } from '@react-three/drei';
 import { motion } from 'framer-motion';
 import * as THREE from 'three';
 
@@ -25,9 +25,9 @@ const FloatingSyringe = ({ position, speed, rotationSpeed }: { position: [number
       {/* Syringe barrel (cylinder) - scaled up */}
       <mesh>
         <cylinderGeometry args={[0.12, 0.12, 1.2, 24]} />
-        <meshStandardMaterial 
-          color="#E11D48" 
-          roughness={0.2} 
+        <meshStandardMaterial
+          color="#E11D48"
+          roughness={0.2}
           metalness={0.8}
           emissive="#E11D48"
           emissiveIntensity={0.4}
@@ -36,9 +36,9 @@ const FloatingSyringe = ({ position, speed, rotationSpeed }: { position: [number
       {/* Syringe plunger */}
       <mesh position={[0, 0.5, 0]}>
         <cylinderGeometry args={[0.1, 0.1, 0.3, 16]} />
-        <meshStandardMaterial 
-          color="#ffffff" 
-          roughness={0.1} 
+        <meshStandardMaterial
+          color="#ffffff"
+          roughness={0.1}
           metalness={0.9}
           emissive="#ffffff"
           emissiveIntensity={0.2}
@@ -47,9 +47,9 @@ const FloatingSyringe = ({ position, speed, rotationSpeed }: { position: [number
       {/* Needle tip */}
       <mesh position={[0, -0.7, 0]}>
         <coneGeometry args={[0.03, 0.2, 12]} />
-        <meshStandardMaterial 
-          color="#C0C0C0" 
-          roughness={0.05} 
+        <meshStandardMaterial
+          color="#C0C0C0"
+          roughness={0.05}
           metalness={0.95}
           emissive="#E0E0E0"
           emissiveIntensity={0.3}
@@ -58,7 +58,7 @@ const FloatingSyringe = ({ position, speed, rotationSpeed }: { position: [number
       {/* Glow effect */}
       <mesh position={[0, 0, 0]} scale={[1.2, 1.2, 1.2]}>
         <cylinderGeometry args={[0.12, 0.12, 1.2, 24]} />
-        <meshStandardMaterial 
+        <meshStandardMaterial
           color="#E11D48"
           transparent
           opacity={0.2}
@@ -91,7 +91,7 @@ const FloatingFlask = ({ position, speed, rotationSpeed }: { position: [number, 
       {/* Flask body (rounded bottom flask) - scaled up */}
       <mesh>
         <sphereGeometry args={[0.35, 24, 24, 0, Math.PI * 2, 0, Math.PI]} />
-        <meshPhysicalMaterial 
+        <meshPhysicalMaterial
           color="#ffffff"
           transparent
           opacity={0.25}
@@ -107,7 +107,7 @@ const FloatingFlask = ({ position, speed, rotationSpeed }: { position: [number, 
       {/* Flask neck */}
       <mesh position={[0, 0.35, 0]}>
         <cylinderGeometry args={[0.12, 0.35, 0.35, 20]} />
-        <meshPhysicalMaterial 
+        <meshPhysicalMaterial
           color="#ffffff"
           transparent
           opacity={0.3}
@@ -121,7 +121,7 @@ const FloatingFlask = ({ position, speed, rotationSpeed }: { position: [number, 
       {/* Liquid inside - more visible */}
       <mesh position={[0, -0.15, 0]}>
         <sphereGeometry args={[0.28, 20, 20, 0, Math.PI * 2, 0, Math.PI]} />
-        <meshStandardMaterial 
+        <meshStandardMaterial
           color="#E11D48"
           transparent
           opacity={0.5}
@@ -132,7 +132,7 @@ const FloatingFlask = ({ position, speed, rotationSpeed }: { position: [number, 
       {/* Glow effect */}
       <mesh position={[0, 0, 0]} scale={[1.15, 1.15, 1.15]}>
         <sphereGeometry args={[0.35, 24, 24, 0, Math.PI * 2, 0, Math.PI]} />
-        <meshStandardMaterial 
+        <meshStandardMaterial
           color="#E11D48"
           transparent
           opacity={0.15}
@@ -146,7 +146,7 @@ const FloatingFlask = ({ position, speed, rotationSpeed }: { position: [number, 
 
 const LaboratoryObjects = ({ isMobile }: { isMobile: boolean }) => {
   const count = isMobile ? 6 : 12;
-  
+
   const objects = useMemo(() => {
     return Array.from({ length: count }, (_, i) => {
       const isSyringe = i % 2 === 0;
@@ -169,7 +169,7 @@ const LaboratoryObjects = ({ isMobile }: { isMobile: boolean }) => {
       {objects.map((obj, i) => {
         if (obj.type === 'syringe') {
           return (
-            <FloatingSyringe 
+            <FloatingSyringe
               key={`syringe-${i}`}
               position={obj.position}
               speed={obj.speed}
@@ -178,7 +178,7 @@ const LaboratoryObjects = ({ isMobile }: { isMobile: boolean }) => {
           );
         } else {
           return (
-            <FloatingFlask 
+            <FloatingFlask
               key={`flask-${i}`}
               position={obj.position}
               speed={obj.speed}
@@ -207,7 +207,7 @@ const Hero3D = () => {
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/40 pointer-events-none" />
 
       <div className="absolute inset-0 z-20 flex flex-col items-center justify-start text-center px-6 pointer-events-none pt-28 md:pt-48">
-        <motion.span 
+        <motion.span
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -215,7 +215,7 @@ const Hero3D = () => {
         >
           NABL Accredited Excellence • Betul
         </motion.span>
-        <motion.h1 
+        <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -226,7 +226,7 @@ const Hero3D = () => {
             DIAGNOSTICS
           </span>
         </motion.h1>
-        <motion.p 
+        <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
@@ -234,21 +234,21 @@ const Hero3D = () => {
         >
           Pioneering molecular intelligence and high-throughput pathology for advanced clinical insight across Madhya Pradesh.
         </motion.p>
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
           className="flex flex-col sm:flex-row gap-5 pointer-events-auto"
         >
-          <button 
+          <button
             onClick={() => document.getElementById('directory')?.scrollIntoView({ behavior: 'smooth' })}
             className="group relative bg-clinical-rose text-white px-16 py-6 rounded-2xl font-black text-sm md:text-base uppercase tracking-widest overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-rose-lg hover:shadow-rose-lg"
           >
             <span className="relative z-10">Schedule Analysis</span>
             <div className="absolute inset-0 bg-gradient-to-r from-clinical-rose-dark to-clinical-rose opacity-0 group-hover:opacity-100 transition-opacity" />
           </button>
-          <button 
+          <button
             onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}
             className="group px-16 py-6 rounded-2xl font-black text-sm md:text-base uppercase tracking-widest text-clinical-rose border-2 border-clinical-rose bg-white hover:bg-clinical-rose-light transition-all shadow-soft hover:shadow-medium"
           >
@@ -257,7 +257,7 @@ const Hero3D = () => {
         </motion.div>
 
         {/* Hero Stats Cards */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.8 }}
@@ -279,10 +279,10 @@ const Hero3D = () => {
       </div>
 
       <div className="absolute inset-0 z-10">
-        <Canvas 
-          camera={{ position: [0, 0, 15], fov: isMobile ? 60 : 45 }} 
+        <Canvas
+          camera={{ position: [0, 0, 15], fov: isMobile ? 60 : 45 }}
           gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
-          dpr={[1, 2]} 
+          dpr={[1, 2]}
         >
           <PresentationControls global rotation={[0, 0, 0]} polar={[-0.1, 0.1]} azimuth={[-0.1, 0.1]}>
             <group>
@@ -295,7 +295,9 @@ const Hero3D = () => {
           <directionalLight position={[-10, 10, -10]} intensity={1} color="#E11D48" />
           <spotLight position={[15, 25, 15]} intensity={3} color="#E11D48" angle={0.3} penumbra={0.5} />
           <pointLight position={[0, 10, 0]} intensity={1.5} color="#ffffff" />
-          <Environment preset="sunset" />
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[10, 10, 5]} intensity={1} />
+          {/* <Environment preset="sunset" /> removed to prevent fetch errors */}
         </Canvas>
       </div>
     </div>

@@ -4,10 +4,10 @@ import Settings from '@/models/Settings';
 import dbConnect from './dbConnect';
 
 // Notification Types
-export type NotificationType = 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'REPORT_READY' | 'COUPON_APPLIED' | 'STAFF_NEW_BOOKING';
+export type NotificationType = 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'REPORT_READY' | 'COUPON_APPLIED' | 'STAFF_NEW_BOOKING' | 'OTP_VERIFICATION';
 
 interface NotificationData {
-    customerName: string;
+    customerName?: string;
     customerPhone?: string;
     customerEmail?: string;
     bookingId?: string;
@@ -16,24 +16,64 @@ interface NotificationData {
     reportLink?: string;
     scheduledDate?: Date | string;
     collectionType?: string;
+    otpCode?: string;
 }
 
+// Global Footer for all emails
+const LAB_FOOTER = `
+  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; text-align: center;">
+    <p style="margin: 0; font-weight: bold; color: #334155;">Pawar Pathology Lab</p>
+    <p style="margin: 5px 0;">Link Road, Civil Lines, Betul, Madhya Pradesh - 460001</p>
+    <p style="margin: 5px 0;">Contact: <a href="tel:+919755553339" style="color: #64748b; text-decoration: none;">+91 9755553339</a> | Email: <a href="mailto:support@pawarlab.com" style="color: #64748b; text-decoration: none;">support@pawarlab.com</a></p>
+  </div>
+`;
+
 // 1. Setup Gmail OAuth2 Transporter
-const createTransporter = async () => {
+// accountType: 'REPORTS' (Default) or 'OTP'
+const createTransporter = async (accountType: 'REPORTS' | 'OTP' = 'REPORTS') => {
+
+    let clientId, clientSecret, refreshToken, userEmail;
+
+    if (accountType === 'OTP') {
+        clientId = process.env.OTP_GOOGLE_CLIENT_ID;
+        clientSecret = process.env.OTP_GOOGLE_CLIENT_SECRET;
+        refreshToken = process.env.OTP_GOOGLE_REFRESH_TOKEN;
+        userEmail = "SecurityPawarLab@gmail.com";
+
+        // Fallback for development if OTP vars aren't set yet, use Reports (Warning: Not for prod)
+        if (!clientId) {
+            console.warn("OTP_GOOGLE_CLIENT_ID not found, falling back to REPORTS credentials for testing.");
+            clientId = process.env.REPORTS_GOOGLE_CLIENT_ID;
+            clientSecret = process.env.REPORTS_GOOGLE_CLIENT_SECRET;
+            refreshToken = process.env.REPORTS_GOOGLE_REFRESH_TOKEN;
+            userEmail = "ReportsPawarPathLabBetul@gmail.com";
+        }
+
+    } else {
+        clientId = process.env.REPORTS_GOOGLE_CLIENT_ID;
+        clientSecret = process.env.REPORTS_GOOGLE_CLIENT_SECRET;
+        refreshToken = process.env.REPORTS_GOOGLE_REFRESH_TOKEN;
+        userEmail = "ReportsPawarPathLabBetul@gmail.com";
+    }
+
+    if (!clientId || !clientSecret || !refreshToken) {
+        throw new Error(`Missing OAuth2 credentials for ${accountType} account.`);
+    }
+
     const oauth2Client = new google.auth.OAuth2(
-        process.env.REPORTS_GOOGLE_CLIENT_ID,
-        process.env.REPORTS_GOOGLE_CLIENT_SECRET,
+        clientId,
+        clientSecret,
         "https://developers.google.com/oauthplayground"
     );
 
     oauth2Client.setCredentials({
-        refresh_token: process.env.REPORTS_GOOGLE_REFRESH_TOKEN
+        refresh_token: refreshToken
     });
 
     const accessToken = await new Promise((resolve, reject) => {
         oauth2Client.getAccessToken((err, token) => {
             if (err) {
-                reject("Failed to create access token");
+                reject("Failed to create access token for " + accountType);
             }
             resolve(token);
         });
@@ -43,10 +83,10 @@ const createTransporter = async () => {
         service: "gmail",
         auth: {
             type: "OAuth2",
-            user: "ReportsPawarPathLabBetul@gmail.com",
-            clientId: process.env.REPORTS_GOOGLE_CLIENT_ID,
-            clientSecret: process.env.REPORTS_GOOGLE_CLIENT_SECRET,
-            refreshToken: process.env.REPORTS_GOOGLE_REFRESH_TOKEN,
+            user: userEmail,
+            clientId: clientId,
+            clientSecret: clientSecret,
+            refreshToken: refreshToken,
             accessToken: accessToken as string,
         },
     });
@@ -72,12 +112,14 @@ export async function sendSmartNotification(
         // A. Check Settings
         await dbConnect();
         const settings = await Settings.getSingleton();
-        if (!settings) return; // Should not happen
 
-        const { customerName, customerEmail, customerPhone, bookingId, testNames, totalAmount, reportLink, scheduledDate, collectionType } = data;
+        // OTP verification sends regardless of global settings, others check settings
+        if (type !== 'OTP_VERIFICATION' && !settings) return;
+
+        const { customerName, customerEmail, customerPhone, bookingId, testNames, totalAmount, reportLink, scheduledDate, collectionType, otpCode } = data;
         const testsString = testNames?.join(', ') || 'Tests';
 
-        // Format Date and Time if available
+        // Format Date and Time
         let formattedDate = 'N/A';
         let formattedTime = 'N/A';
         if (scheduledDate) {
@@ -86,7 +128,6 @@ export async function sendSmartNotification(
                 formattedDate = dateObj.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 formattedTime = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
             } else {
-                // Fallback if it's already a formatted string but ideally it shouldn't hit here if we pass Date objects
                 formattedDate = String(scheduledDate);
             }
         }
@@ -98,8 +139,28 @@ export async function sendSmartNotification(
         let subject = '';
         let emailHtml = '';
         let waMessage = '';
+        let accountType: 'REPORTS' | 'OTP' = 'REPORTS';
 
         switch (type) {
+            case 'OTP_VERIFICATION':
+                accountType = 'OTP';
+                subject = `${otpCode} is your verification code - Pawar Pathology Lab`;
+                waMessage = '';
+                emailHtml = `
+                    <div style="font-family: sans-serif; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px; max-width: 500px; margin: 0 auto; background-color: #ffffff;">
+                        <h2 style="color: #1e293b; text-align: center; margin-bottom: 20px;">Verify Your Email</h2>
+                        <p style="color: #475569; text-align: center; font-size: 16px;">Use the code below to securely sign up for Pawar Pathology Lab.</p>
+                        
+                        <div style="background-color: #f1f5f9; padding: 20px; border-radius: 12px; margin: 30px 0; text-align: center;">
+                            <span style="font-family: monospace; font-size: 32px; font-weight: 900; letter-spacing: 4px; color: #e11d48;">${otpCode}</span>
+                        </div>
+                        
+                        <p style="color: #94a3b8; text-align: center; font-size: 14px;">This code expires in 5 minutes. If you didn't request this, please ignore this email.</p>
+                        ${LAB_FOOTER}
+                    </div>
+                `;
+                break;
+
             case 'STAFF_NEW_BOOKING':
                 // Alert only, no patient email
                 subject = '';
@@ -131,7 +192,7 @@ export async function sendSmartNotification(
                    Chat with us on WhatsApp
                 </a>
             </div>
-            <p style="font-size: 12px; color: #64748b; margin-top: 20px; text-align: center;">Pawar Pathology Lab | Betul, MP</p>
+            ${LAB_FOOTER}
           </div>
         `;
                 break;
@@ -159,6 +220,7 @@ export async function sendSmartNotification(
                    Chat on WhatsApp
                 </a>
             </div>
+            ${LAB_FOOTER}
           </div>
         `;
                 break;
@@ -170,39 +232,41 @@ export async function sendSmartNotification(
           <div style="font-family: sans-serif; padding: 20px;">
              <h2>Booking Cancelled</h2>
              <p>Your booking #${bookingId} was cancelled.</p>
+             ${LAB_FOOTER}
           </div>
         `;
                 break;
         }
 
         // C. Send Email (If enabled and content exists)
-        if (settings.emailEnabled && customerEmail && subject && emailHtml && process.env.REPORTS_GOOGLE_CLIENT_ID) {
+        // Ensure OTP always sends regardless of marketing toggle
+        const shouldSendEmail = (type === 'OTP_VERIFICATION') || (settings?.emailEnabled && customerEmail);
+
+        if (shouldSendEmail && customerEmail && subject && emailHtml) {
             try {
-                const transporter = await createTransporter();
+                const transporter = await createTransporter(accountType);
                 await transporter.sendMail({
-                    from: '"Pawar Pathology Lab" <ReportsPawarPathLabBetul@gmail.com>',
+                    from: accountType === 'OTP'
+                        ? '"Pawar Lab Security" <SecurityPawarLab@gmail.com>'
+                        : '"Pawar Pathology Lab" <ReportsPawarPathLabBetul@gmail.com>',
                     to: customerEmail,
                     subject: subject,
                     html: emailHtml,
                 });
-                console.log(`[Notification] Email sent to ${customerEmail}`);
+                console.log(`[Notification] ${accountType} Email sent to ${customerEmail}`);
             } catch (err) {
-                console.error('[Notification] Email failed:', err);
+                console.error(`[Notification] ${accountType} Email failed:`, err);
             }
         }
 
-        // D. Send WhatsApp (Official API)
-        if (settings.whatsappEnabled && settings.whatsappOfficialEnabled && customerPhone && process.env.WHATSAPP_TOKEN && type !== 'STAFF_NEW_BOOKING') {
-            // Placeholder for Cloud API - assumes standard template structure
-            // In a real scenario, we'd POST to graph.facebook.com
-            // Note: STAFF_NEW_BOOKING is strictly internal, so we skip patient WA
+        // D. Send WhatsApp (Official API) - Skip for OTP
+        if (settings?.whatsappEnabled && settings?.whatsappOfficialEnabled && customerPhone && process.env.WHATSAPP_TOKEN && type !== 'STAFF_NEW_BOOKING' && type !== 'OTP_VERIFICATION') {
             console.log(`[Notification] WhatsApp Cloud API triggered for ${customerPhone}`);
         }
 
-        // E. Send Telegram (Staff Alerts)
-        if (settings.telegramEnabled && settings.telegramAdminChatId && process.env.TELEGRAM_BOT_TOKEN) {
+        // E. Send Telegram (Staff Alerts) - Skip for OTP
+        if (settings?.telegramEnabled && settings?.telegramAdminChatId && process.env.TELEGRAM_BOT_TOKEN && type !== 'OTP_VERIFICATION') {
             const telegramUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`;
-            // Use specific alert message for staff booking, else reuse the WA message or a generic one
             const text = type === 'STAFF_NEW_BOOKING' ? waMessage : `*Alert: ${type}*\n${waMessage}`;
 
             const response = await fetch(telegramUrl, {
@@ -215,21 +279,11 @@ export async function sendSmartNotification(
                 })
             });
 
-            const result = await response.json();
             if (!response.ok) {
+                const result = await response.json();
                 console.error(`[Notification] Telegram API Error: ${result.description}`);
             } else {
                 console.log(`[Notification] Telegram alert delivered to Chat ID: ${settings.telegramAdminChatId}`);
-            }
-
-        } else {
-            // Debug log mostly for development, cleaner production logs
-            if (process.env.NODE_ENV === 'development') {
-                console.log('[Notification] Telegram skipped. Settings:', {
-                    enabled: settings.telegramEnabled,
-                    hasId: !!settings.telegramAdminChatId,
-                    hasToken: !!process.env.TELEGRAM_BOT_TOKEN
-                });
             }
         }
 
