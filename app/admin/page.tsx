@@ -6,7 +6,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, HeartHandshake, Settings as SettingsIcon,
-  ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home, Loader2, Calendar, FileText, X, CheckCircle, XCircle, Ticket
+  ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home, Loader2, Calendar, FileText, X, CheckCircle, XCircle, Ticket, MapPin
 } from 'lucide-react';
 import { FlaskConical } from 'lucide-react';
 
@@ -109,6 +109,30 @@ export default function AdminPage() {
       if (res.ok) setConfig(await res.json());
       else if (res.status === 401 || res.status === 403) router.push('/login');
     } catch (err) { console.error(err); }
+  };
+
+  const updateConfig = async (newSettings: any) => {
+    // Optimistic update
+    setConfig(prev => ({ ...prev, ...newSettings }));
+
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSettings),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update settings');
+      }
+
+      const updated = await res.json();
+      setConfig(updated);
+    } catch (err) {
+      console.error("Failed to update config", err);
+      alert("Failed to update settings. Please try again.");
+      fetchConfig(); // Revert on error
+    }
   };
 
   const fetchBlackoutDates = async () => {
@@ -391,8 +415,8 @@ export default function AdminPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all ${activeTab === tab.id
-                  ? 'bg-clinical-rose text-white shadow-rose-lg'
-                  : 'text-slate-600 hover:text-clinical-rose hover:bg-clinical-rose-light'
+                ? 'bg-clinical-rose text-white shadow-rose-lg'
+                : 'text-slate-600 hover:text-clinical-rose hover:bg-clinical-rose-light'
                 }`}
             >
               <tab.icon className="w-5 h-5" />
@@ -762,30 +786,150 @@ export default function AdminPage() {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <motion.div
-                  className="card-premium p-12 max-w-2xl"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <h3 className="text-2xl font-black text-slate-900 mb-10 flex items-center gap-4">
-                    <Settings2 className="text-clinical-rose" size={28} /> Clinical Gateways
-                  </h3>
-                  <div className="space-y-8">
-                    <div className="flex items-center justify-between p-8 bg-slate-50 rounded-3xl border-2 border-slate-200">
-                      <div>
-                        <p className="text-slate-900 font-black text-lg">Pathologist Verification</p>
-                        <p className="text-sm text-slate-600 font-medium mt-1">Require manual review before patient visibility.</p>
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+                  <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl">
+                    <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
+                      <Settings2 className="text-clinical-rose" />
+                      System Configuration
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                      {/* Verification Toggle */}
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h4 className="font-bold text-slate-900">Patient Verification</h4>
+                            <p className="text-xs text-slate-500 mt-1">Require verify on signup</p>
+                          </div>
+                          <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out">
+                            <input
+                              type="checkbox"
+                              id="verification-toggle"
+                              className="peer absolute left-0 top-0 w-full h-full opacity-0 z-10 cursor-pointer"
+                              checked={config.requireVerification}
+                              onChange={(e) => updateConfig({ requireVerification: e.target.checked })}
+                            />
+                            <label
+                              htmlFor="verification-toggle"
+                              className={`block w-full h-full rounded-full transition-colors duration-300 ease-in-out ${config.requireVerification ? 'bg-clinical-rose' : 'bg-slate-300'}`}
+                            ></label>
+                            <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ease-in-out shadow-sm ${config.requireVerification ? 'translate-x-6' : '0'}`}></div>
+                          </div>
+                        </div>
                       </div>
-                      <button
-                        onClick={handleToggleConfig}
-                        className={`w-16 h-8 rounded-full transition-all relative ${config.requireVerification ? 'bg-clinical-rose' : 'bg-slate-300'}`}
-                      >
-                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all shadow-medium ${config.requireVerification ? 'left-9' : 'left-1'}`} />
-                      </button>
+
+                      {/* SMS Notifications */}
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h4 className="font-bold text-slate-900">SMS Notifications</h4>
+                            <p className="text-xs text-slate-500 mt-1">Send updates via SMS</p>
+                          </div>
+                          <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out">
+                            <input
+                              type="checkbox"
+                              id="sms-toggle"
+                              className="peer absolute left-0 top-0 w-full h-full opacity-0 z-10 cursor-pointer"
+                              checked={(config as any).smsEnabled ?? true}
+                              onChange={(e) => updateConfig({ smsEnabled: e.target.checked })}
+                            />
+                            <label
+                              htmlFor="sms-toggle"
+                              className={`block w-full h-full rounded-full transition-colors duration-300 ease-in-out ${(config as any).smsEnabled !== false ? 'bg-clinical-rose' : 'bg-slate-300'}`}
+                            ></label>
+                            <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ease-in-out shadow-sm ${(config as any).smsEnabled !== false ? 'translate-x-6' : '0'}`}></div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Email Notifications */}
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h4 className="font-bold text-slate-900">Email Notifications</h4>
+                            <p className="text-xs text-slate-500 mt-1">Send updates via Email</p>
+                          </div>
+                          <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out">
+                            <input
+                              type="checkbox"
+                              id="email-toggle"
+                              className="peer absolute left-0 top-0 w-full h-full opacity-0 z-10 cursor-pointer"
+                              checked={(config as any).emailEnabled ?? true}
+                              onChange={(e) => updateConfig({ emailEnabled: e.target.checked })}
+                            />
+                            <label
+                              htmlFor="email-toggle"
+                              className={`block w-full h-full rounded-full transition-colors duration-300 ease-in-out ${(config as any).emailEnabled !== false ? 'bg-clinical-rose' : 'bg-slate-300'}`}
+                            ></label>
+                            <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ease-in-out shadow-sm ${(config as any).emailEnabled !== false ? 'translate-x-6' : '0'}`}></div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Block Sundays */}
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h4 className="font-bold text-slate-900">Block Sundays</h4>
+                            <p className="text-xs text-slate-500 mt-1">Disable booking on Sundays</p>
+                          </div>
+                          <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out">
+                            <input
+                              type="checkbox"
+                              id="sunday-toggle"
+                              className="peer absolute left-0 top-0 w-full h-full opacity-0 z-10 cursor-pointer"
+                              checked={(config as any).blockSundays ?? true}
+                              onChange={(e) => updateConfig({ blockSundays: e.target.checked })}
+                            />
+                            <label
+                              htmlFor="sunday-toggle"
+                              className={`block w-full h-full rounded-full transition-colors duration-300 ease-in-out ${(config as any).blockSundays !== false ? 'bg-clinical-rose' : 'bg-slate-300'}`}
+                            ></label>
+                            <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ease-in-out shadow-sm ${(config as any).blockSundays !== false ? 'translate-x-6' : '0'}`}></div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Geographic Fencing */}
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 md:col-span-2">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                          <div className="flex-1">
+                            <div className="flex justify-between items-center mb-2">
+                              <h4 className="font-bold text-slate-900">Geographic Fencing</h4>
+                              <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out">
+                                <input
+                                  type="checkbox"
+                                  id="fencing-toggle"
+                                  className="peer absolute left-0 top-0 w-full h-full opacity-0 z-10 cursor-pointer"
+                                  checked={(config as any).locationFencingEnabled ?? false}
+                                  onChange={(e) => updateConfig({ locationFencingEnabled: e.target.checked })}
+                                />
+                                <label
+                                  htmlFor="fencing-toggle"
+                                  className={`block w-full h-full rounded-full transition-colors duration-300 ease-in-out ${(config as any).locationFencingEnabled ? 'bg-clinical-rose' : 'bg-slate-300'}`}
+                                ></label>
+                                <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ease-in-out shadow-sm ${(config as any).locationFencingEnabled ? 'translate-x-6' : '0'}`}></div>
+                              </div>
+                            </div>
+                            <p className="text-xs text-slate-500 mb-4">Restrict bookings to a specific radius from the lab.</p>
+
+                            <div className="flex items-center gap-3">
+                              <MapPin size={20} className="text-slate-400" />
+                              <span className="text-sm font-bold text-slate-700">Service Radius (KM)</span>
+                              <input
+                                type="number"
+                                className="w-24 px-3 py-2 bg-white border-2 border-slate-200 rounded-lg font-bold text-slate-900 outline-none focus:border-clinical-rose"
+                                value={(config as any).serviceRadius ?? 10}
+                                onChange={(e) => updateConfig({ serviceRadius: Number(e.target.value) })}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
                     </div>
                   </div>
-                </motion.div>
+                </div>
 
                 <motion.div
                   className="card-premium p-12 max-w-2xl mt-8"

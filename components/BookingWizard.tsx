@@ -163,24 +163,42 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     return date.getUTCDay() === 0;
   };
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedDate = e.target.value;
-    if (isSunday(selectedDate)) {
-      setError("Sundays are not available for bookings. Please choose another day.");
-      setFormData({...formData, date: ''});
-      return;
-    }
+  const [settings, setSettings] = useState<any>({
+    locationFencingEnabled: false,
+    serviceRadius: 10,
+    blockSundays: true
+  });
 
-    for (const block of blackoutDates) {
-      if (selectedDate >= block.startDate && selectedDate <= block.endDate) {
-        setError(`Lab closed for ${block.reason}. Please select another date.`);
-        setFormData({...formData, date: ''});
-        return;
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/settings');
+        if (res.ok) {
+          const data = await res.json();
+          setSettings(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch settings", error);
       }
-    }
+    };
+    fetchSettings();
+  }, []);
 
-    setError('');
-    setFormData({...formData, date: selectedDate});
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const d = R * c; // Distance in km
+    return d;
+  };
+
+  const deg2rad = (deg: number) => {
+    return deg * (Math.PI / 180);
   };
 
   const validateCurrentStep = () => {
@@ -190,15 +208,34 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
       if (!formData.phone || formData.phone.length !== 10) return "Please enter a valid 10-digit phone number.";
     }
     if (step === 3) {
+      if (formData.collectionType === CollectionType.HOME) {
+        if (!formData.coordinates) {
+          return "Precision location sync is required for home visits.";
+        }
+
+        // Geofencing Check
+        if (settings.locationFencingEnabled) {
+          const labLat = 21.9015;
+          const labLng = 77.8961;
+          const dist = calculateDistance(labLat, labLng, formData.coordinates.lat, formData.coordinates.lng);
+
+          if (dist > settings.serviceRadius) {
+            return `We only serve this area; you are ${dist.toFixed(1)} km away from our serviced area (${settings.serviceRadius} km).`;
+          }
+        }
+      }
+
       if (!formData.date) return "Please select a preferred date.";
-      if (isSunday(formData.date)) return "Sundays are not available for bookings. Please choose another day.";
+
+      // Dynamic Sunday Check
+      if (settings.blockSundays && isSunday(formData.date)) {
+        return "Sundays are not available for bookings. Please choose another day.";
+      }
+
       for (const block of blackoutDates) {
         if (formData.date >= block.startDate && formData.date <= block.endDate) {
           return `Lab closed for ${block.reason}. Please select another date.`;
         }
-      }
-      if (formData.collectionType === CollectionType.HOME && !formData.coordinates) {
-        return "Precision location sync is required for home visits.";
       }
     }
     return null;
@@ -220,6 +257,12 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     let finalAmountTakenForSubmit = amountTaken;
     let finalCalculatedBalance = finalTotal - finalAmountTakenForSubmit;
 
+    // Calculate distance for saving
+    let dist = 0;
+    if (formData.coordinates) {
+      dist = calculateDistance(21.9015, 77.8961, formData.coordinates.lat, formData.coordinates.lng);
+    }
+
     if (paymentMethod === 'online') {
       finalPaymentStatus = 'paid';
       finalAmountTakenForSubmit = finalTotal;
@@ -230,18 +273,40 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
       finalCalculatedBalance = finalTotal;
     }
 
-    onComplete({ 
+    onComplete({
       ...formData,
       referredBy: formData.referredBy || 'Self',
-      paymentMethod, 
+      paymentMethod,
       totalAmount: finalTotal,
       amountTaken: finalAmountTakenForSubmit,
       balanceAmount: finalCalculatedBalance,
-      paymentStatus: finalPaymentStatus
+      paymentStatus: finalPaymentStatus,
+      distanceFromLab: dist // Save calculated distance
     });
   };
 
   const inputStyles = "w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-2xl outline-none transition-all font-bold text-slate-900 focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 placeholder:text-slate-400";
+
+  // Update handleDateChange to use dynamic setting
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedDate = e.target.value;
+    if (settings.blockSundays && isSunday(selectedDate)) {
+      setError("Sundays are not available for bookings. Please choose another day.");
+      setFormData({ ...formData, date: '' });
+      return;
+    }
+
+    for (const block of blackoutDates) {
+      if (selectedDate >= block.startDate && selectedDate <= block.endDate) {
+        setError(`Lab closed for ${block.reason}. Please select another date.`);
+        setFormData({ ...formData, date: '' });
+        return;
+      }
+    }
+
+    setError('');
+    setFormData({ ...formData, date: selectedDate });
+  };
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -265,7 +330,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="mb-6 bg-[#E11D48] border-2 border-rose-600 p-5 rounded-2xl flex items-center gap-3 text-white font-black text-sm shadow-2xl shadow-rose-900/50"
             >
-              <AlertTriangle size={20} className="text-white flex-shrink-0" /> 
+              <AlertTriangle size={20} className="text-white flex-shrink-0" />
               <span className="text-white">{error}</span>
             </motion.div>
           )}
@@ -296,120 +361,119 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
           {step === 2 && (
             <div className="space-y-8 animate-in slide-in-from-right-4">
               <div className="flex items-center gap-4 p-5 bg-clinical-rose-light rounded-2xl mb-4 border-2 border-clinical-rose/20">
-                 <UserPlus className="text-clinical-rose" size={20} />
-                 <span className="text-sm font-bold text-slate-900">Booking for someone else?</span>
-                 <input 
-                    type="checkbox" 
-                    className="ml-auto w-5 h-5 accent-clinical-rose"
-                    checked={!isBookingForSelf}
-                    onChange={() => setIsBookingForSelf(!isBookingForSelf)}
-                 />
+                <UserPlus className="text-clinical-rose" size={20} />
+                <span className="text-sm font-bold text-slate-900">Booking for someone else?</span>
+                <input
+                  type="checkbox"
+                  className="ml-auto w-5 h-5 accent-clinical-rose"
+                  checked={!isBookingForSelf}
+                  onChange={() => setIsBookingForSelf(!isBookingForSelf)}
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-black uppercase tracking-widest text-slate-600 mb-3">Patient Name</label>
-                  <input className={inputStyles} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Full name" />
+                  <input className={inputStyles} value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Full name" />
                 </div>
                 <div>
                   <label className="block text-xs font-black uppercase tracking-widest text-slate-600 mb-3">Contact Number</label>
                   <div className="relative">
                     <span className="absolute left-6 top-1/2 -translate-y-1/2 font-bold text-slate-500">+91</span>
-                    <input className={`${inputStyles} pl-16`} value={formData.phone} maxLength={10} onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} placeholder="10 digits" />
+                    <input className={`${inputStyles} pl-16`} value={formData.phone} maxLength={10} onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })} placeholder="10 digits" />
                   </div>
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-xs font-black uppercase tracking-widest text-slate-600 mb-3">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                  <input className={`${inputStyles} pl-16`} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="For report delivery (Optional)" readOnly={isBookingForSelf} />
+                  <input className={`${inputStyles} pl-16`} value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="For report delivery (Optional)" readOnly={isBookingForSelf} />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-black uppercase tracking-widest text-slate-600 mb-3">Referred By</label>
-                <input className={inputStyles} value={formData.referredBy} onChange={e => setFormData({...formData, referredBy: e.target.value})} placeholder="e.g., Dr. Smith or Self" />
+                <input className={inputStyles} value={formData.referredBy} onChange={e => setFormData({ ...formData, referredBy: e.target.value })} placeholder="e.g., Dr. Smith or Self" />
               </div>
             </div>
           )}
 
           {step === 3 && (
             <div className="space-y-8">
-               <div className="flex gap-4">
-                 {[CollectionType.LAB_VISIT, CollectionType.HOME].map(type => (
-                   <button 
-                     key={type}
-                     onClick={() => setFormData({...formData, collectionType: type})}
-                     className={`flex-1 p-8 rounded-2xl border-2 transition-all text-left ${formData.collectionType === type ? 'border-clinical-rose bg-clinical-rose-light shadow-rose' : 'border-slate-200 bg-slate-50'}`}
-                   >
-                     <span className={`block font-black text-xl mb-2 ${formData.collectionType === type ? 'text-clinical-rose' : 'text-slate-900'}`}>{type === CollectionType.HOME ? 'Home Dispatch' : 'Lab Visit'}</span>
-                     <span className={`text-xs font-bold uppercase tracking-widest ${formData.collectionType === type ? 'text-clinical-rose-dark' : 'text-slate-600'}`}>{type === CollectionType.HOME ? 'Collection at site' : 'Visit Link Road'}</span>
-                   </button>
-                 ))}
-               </div>
+              <div className="flex gap-4">
+                {[CollectionType.LAB_VISIT, CollectionType.HOME].map(type => (
+                  <button
+                    key={type}
+                    onClick={() => setFormData({ ...formData, collectionType: type })}
+                    className={`flex-1 p-8 rounded-2xl border-2 transition-all text-left ${formData.collectionType === type ? 'border-clinical-rose bg-clinical-rose-light shadow-rose' : 'border-slate-200 bg-slate-50'}`}
+                  >
+                    <span className={`block font-black text-xl mb-2 ${formData.collectionType === type ? 'text-clinical-rose' : 'text-slate-900'}`}>{type === CollectionType.HOME ? 'Home Dispatch' : 'Lab Visit'}</span>
+                    <span className={`text-xs font-bold uppercase tracking-widest ${formData.collectionType === type ? 'text-clinical-rose-dark' : 'text-slate-600'}`}>{type === CollectionType.HOME ? 'Collection at site' : 'Visit Link Road'}</span>
+                  </button>
+                ))}
+              </div>
 
-               {formData.collectionType === CollectionType.HOME && (
-                 <div className="space-y-6">
-                    <button 
-                      type="button"
-                      onClick={captureLocation}
-                      disabled={isCapturingLocation}
-                      className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-black text-sm uppercase tracking-wider transition-all border-2 ${
-                        formData.coordinates 
-                          ? 'bg-success/10 text-success border-success' 
-                          : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+              {formData.collectionType === CollectionType.HOME && (
+                <div className="space-y-6">
+                  <button
+                    type="button"
+                    onClick={captureLocation}
+                    disabled={isCapturingLocation}
+                    className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-black text-sm uppercase tracking-wider transition-all border-2 ${formData.coordinates
+                      ? 'bg-success/10 text-success border-success'
+                      : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
                       }`}
-                    >
-                      {isCapturingLocation ? <Loader2 className="animate-spin" /> : formData.coordinates ? <CheckCircle size={20} /> : <Navigation size={20} />}
-                      {formData.coordinates ? 'Location Synced' : 'Sync Current Location'}
-                    </button>
-                    <textarea 
-                      className={`${inputStyles} h-32`}
-                      placeholder="Full Address & Landmarks..."
-                      value={formData.address}
-                      onChange={e => setFormData({...formData, address: e.target.value})}
-                    />
-                 </div>
-               )}
+                  >
+                    {isCapturingLocation ? <Loader2 className="animate-spin" /> : formData.coordinates ? <CheckCircle size={20} /> : <Navigation size={20} />}
+                    {formData.coordinates ? 'Location Synced' : 'Sync Current Location'}
+                  </button>
+                  <textarea
+                    className={`${inputStyles} h-32`}
+                    placeholder="Full Address & Landmarks..."
+                    value={formData.address}
+                    onChange={e => setFormData({ ...formData, address: e.target.value })}
+                  />
+                </div>
+              )}
 
-               <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-widest text-slate-600 mb-3">Date</label>
-                    <input type="date" className={inputStyles} value={formData.date} onChange={handleDateChange} min={getTodayDate()} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-widest text-slate-600 mb-3">Time Slot</label>
-                    <select className={inputStyles} value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})}>
-                      <option value="">Select Time Slot</option>
-                      <option>08:00 AM - 10:00 AM</option>
-                      <option>10:00 AM - 12:00 PM</option>
-                      <option>12:00 PM - 04:00 PM</option>
-                    </select>
-                  </div>
-               </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-600 mb-3">Date</label>
+                  <input type="date" className={inputStyles} value={formData.date} onChange={handleDateChange} min={getTodayDate()} />
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-600 mb-3">Time Slot</label>
+                  <select className={inputStyles} value={formData.time} onChange={e => setFormData({ ...formData, time: e.target.value })}>
+                    <option value="">Select Time Slot</option>
+                    <option>08:00 AM - 10:00 AM</option>
+                    <option>10:00 AM - 12:00 PM</option>
+                    <option>12:00 PM - 04:00 PM</option>
+                  </select>
+                </div>
+              </div>
             </div>
           )}
 
           {step === 4 && (
             <div className="space-y-8 text-center">
               <div className="bg-gradient-to-br from-clinical-rose-light to-white p-10 rounded-3xl border-2 border-clinical-rose/20">
-                 <p className="text-slate-600 uppercase font-black tracking-widest text-xs mb-2">Final Amount</p>
-                 <p className="text-6xl font-black tracking-tighter text-clinical-rose">₹{finalTotal}</p>
-                 {discount > 0 && <p className="text-sm font-bold text-success mt-2 uppercase">Promo Applied (-₹{discount})</p>}
+                <p className="text-slate-600 uppercase font-black tracking-widest text-xs mb-2">Final Amount</p>
+                <p className="text-6xl font-black tracking-tighter text-clinical-rose">₹{finalTotal}</p>
+                {discount > 0 && <p className="text-sm font-bold text-success mt-2 uppercase">Promo Applied (-₹{discount})</p>}
               </div>
 
               <div className="flex gap-4 p-5 bg-slate-50 rounded-2xl border-2 border-slate-200">
                 <Ticket className="text-clinical-rose" size={20} />
-                <input 
-                  placeholder="Coupon Code" 
+                <input
+                  placeholder="Coupon Code"
                   className="bg-transparent border-0 outline-none font-bold text-slate-900 flex-1 uppercase placeholder:text-slate-400"
                   value={promoCode}
                   onChange={e => setPromoCode(e.target.value)}
                 />
-                <button 
-                  onClick={applyPromo} 
+                <button
+                  onClick={applyPromo}
                   disabled={isValidatingCoupon}
                   className="text-clinical-rose font-black text-sm uppercase hover:text-clinical-rose-dark disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
@@ -426,36 +490,36 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
 
               {currentUser?.role !== 'patient' && (
                 <div className="p-6 bg-slate-50 rounded-2xl text-left space-y-4 border-2 border-slate-200">
-                   <div>
-                      <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Amount Paid Now (Cash/Partial)</label>
-                      <div className="relative">
-                          <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                          <input 
-                              type="number" 
-                              className={`${inputStyles} pl-12`}
-                              value={amountTaken}
-                              onChange={(e) => setAmountTaken(Number(e.target.value))}
-                              max={finalTotal}
-                              disabled={paymentMethod === 'cash'}
-                          />
-                      </div>
-                   </div>
-                   <div className="flex justify-between items-center pt-3 border-t-2 border-slate-200">
-                      <span className="font-bold text-sm text-slate-600">Balance Due:</span>
-                      <span className="font-black text-clinical-rose text-xl">₹{balanceAmount}</span>
-                   </div>
+                  <div>
+                    <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Amount Paid Now (Cash/Partial)</label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                      <input
+                        type="number"
+                        className={`${inputStyles} pl-12`}
+                        value={amountTaken}
+                        onChange={(e) => setAmountTaken(Number(e.target.value))}
+                        max={finalTotal}
+                        disabled={paymentMethod === 'cash'}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center pt-3 border-t-2 border-slate-200">
+                    <span className="font-bold text-sm text-slate-600">Balance Due:</span>
+                    <span className="font-black text-clinical-rose text-xl">₹{balanceAmount}</span>
+                  </div>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-6">
-                 <button onClick={() => setPaymentMethod('online')} className={`p-6 rounded-2xl border-2 transition-all text-left ${paymentMethod === 'online' ? 'border-clinical-rose bg-clinical-rose-light shadow-rose' : 'border-slate-200 bg-white'}`}>
-                    <p className={`font-black uppercase text-sm mb-1 ${paymentMethod === 'online' ? 'text-clinical-rose' : 'text-slate-900'}`}>Online</p>
-                    <p className={`text-xs font-bold uppercase ${paymentMethod === 'online' ? 'text-clinical-rose-dark' : 'text-slate-600'}`}>UPI / Card</p>
-                 </button>
-                 <button onClick={() => setPaymentMethod('cash')} className={`p-6 rounded-2xl border-2 transition-all text-left ${paymentMethod === 'cash' ? 'border-clinical-rose bg-clinical-rose-light shadow-rose' : 'border-slate-200 bg-white'}`}>
-                    <p className={`font-black uppercase text-sm mb-1 ${paymentMethod === 'cash' ? 'text-clinical-rose' : 'text-slate-900'}`}>Cash</p>
-                    <p className={`text-xs font-bold uppercase ${paymentMethod === 'cash' ? 'text-clinical-rose-dark' : 'text-slate-600'}`}>Pay at Lab</p>
-                 </button>
+                <button onClick={() => setPaymentMethod('online')} className={`p-6 rounded-2xl border-2 transition-all text-left ${paymentMethod === 'online' ? 'border-clinical-rose bg-clinical-rose-light shadow-rose' : 'border-slate-200 bg-white'}`}>
+                  <p className={`font-black uppercase text-sm mb-1 ${paymentMethod === 'online' ? 'text-clinical-rose' : 'text-slate-900'}`}>Online</p>
+                  <p className={`text-xs font-bold uppercase ${paymentMethod === 'online' ? 'text-clinical-rose-dark' : 'text-slate-600'}`}>UPI / Card</p>
+                </button>
+                <button onClick={() => setPaymentMethod('cash')} className={`p-6 rounded-2xl border-2 transition-all text-left ${paymentMethod === 'cash' ? 'border-clinical-rose bg-clinical-rose-light shadow-rose' : 'border-slate-200 bg-white'}`}>
+                  <p className={`font-black uppercase text-sm mb-1 ${paymentMethod === 'cash' ? 'text-clinical-rose' : 'text-slate-900'}`}>Cash</p>
+                  <p className={`text-xs font-bold uppercase ${paymentMethod === 'cash' ? 'text-clinical-rose-dark' : 'text-slate-600'}`}>Pay at Lab</p>
+                </button>
               </div>
             </div>
           )}
