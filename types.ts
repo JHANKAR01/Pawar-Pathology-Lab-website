@@ -69,13 +69,13 @@ export interface IBooking {
   contactNumber?: string;
   email?: string;
   bookedByEmail?: string;
-  userId: string;
+  userId: any; // Flexible for ObjectId
   tests: IBookingTest[];
   totalAmount: number;
   amountTaken: number;
   balanceAmount: number;
   collectionType: CollectionType;
-  scheduledDate: string;
+  scheduledDate: any; // Flexible for Date objects
   status: BookingStatus;
   paymentStatus: PaymentStatus;
   paymentMode: 'online' | 'cash';
@@ -92,6 +92,11 @@ export interface IBooking {
   pathologistNotes?: string;
   createdAt: string;
   updatedAt: string;
+  // Missing fields from schema
+  couponCode?: string;
+  discountAmount?: number;
+  distanceFromLab?: number;
+  reportFileId?: string;
 }
 
 export interface ISettings {

@@ -1,13 +1,13 @@
 import mongoose, { Schema, Document, models, model } from 'mongoose';
 import { BookingStatus, CollectionType, PaymentStatus, ReportStatus, IBooking, IBookingTest } from '@/types';
 
-const BookingSchema = new Schema<IBooking & Document>(
+const BookingSchema = new Schema(
   {
     patientName: { type: String, required: true, trim: true, index: true },
     contactNumber: { type: String, trim: true },
     email: { type: String, trim: true, lowercase: true },
     bookedByEmail: { type: String, trim: true, lowercase: true, index: true },
-    userId: { type: String, ref: 'User' },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     tests: [{
       _id: false,
       id: String,
@@ -29,7 +29,7 @@ const BookingSchema = new Schema<IBooking & Document>(
       lat: { type: Number },
       lng: { type: Number }
     },
-    scheduledDate: { type: String, required: true },
+    scheduledDate: { type: Date, required: true },
     status: {
       type: String,
       enum: Object.values(BookingStatus),
@@ -56,5 +56,5 @@ const BookingSchema = new Schema<IBooking & Document>(
   { timestamps: true }
 );
 
-const Booking = models.Booking || model<IBooking & Document>('Booking', BookingSchema);
+const Booking = models.Booking || model('Booking', BookingSchema);
 export default Booking;
