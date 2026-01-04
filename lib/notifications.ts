@@ -184,6 +184,11 @@ export async function sendSmartNotification(
                 subject = `Booking Confirmed #${bookingId} - Pawar Pathology Lab`;
                 waMessage = `Hello ${customerName}, your booking #${bookingId} for ${testsString} is confirmed. Total: ₹${totalAmount}.`;
                 telegramMessage = `✅ *Booking Confirmed* ✅\nHi ${customerName}, your booking #${bookingId} is confirmed.\nTests: ${testsString}\nTotal: ₹${totalAmount}`;
+
+                // Telegram Deep Link for One-Click Sync
+                const telegramBotUsername = process.env.TELEGRAM_BOT_USERNAME || 'PawarPathLabBot';
+                const telegramSyncLink = `https://t.me/${telegramBotUsername}?start=${bookingId}`;
+
                 emailHtml = `
           <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #e11d48; text-align: center;">Booking Confirmed!</h2>
@@ -196,6 +201,14 @@ export async function sendSmartNotification(
                  <p style="margin: 5px 0;"><strong>📍 Visit Type:</strong> ${visitTypeDisplay}</p>
                 <p style="margin: 5px 0;"><strong>🔬 Tests:</strong> ${testsString}</p>
                 <p style="margin: 5px 0;"><strong>💰 Total Due:</strong> ₹${totalAmount}</p>
+            </div>
+
+            <div style="margin-top: 25px; padding: 20px; border: 2px dashed #0088cc; border-radius: 12px; text-align: center; background-color: #f0f9ff;">
+                <p style="margin: 0 0 15px 0; font-weight: bold; color: #0088cc; font-size: 16px;">📱 Get Reports Automatically on Telegram</p>
+                <a href="${telegramSyncLink}" style="background-color: #0088cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 14px;">
+                   🚀 Connect Telegram Bot
+                </a>
+                <p style="margin-top: 10px; font-size: 11px; color: #64748b;">No typing required! Just click and press 'Start'</p>
             </div>
 
             <br/>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Booking from '@/models/Booking';
+import User from '@/models/User';
 import { BookingStatus } from '@/types';
 import { uploadReportToDrive } from '@/lib/googleDrive';
 import { Buffer } from 'buffer';
@@ -107,6 +108,11 @@ export async function PATCH(
 
       if (!updatedBooking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
+      // Fetch user Telegram ID for notifications
+      const userEmailForNotification = updatedBooking.email || updatedBooking.bookedByEmail;
+      const userForNotification = userEmailForNotification ? await User.findOne({ email: userEmailForNotification.toLowerCase() }) : null;
+      const userTelegramChatId = userForNotification?.telegramChatId || '';
+
       // Logic for Notifications on Approval (Manual by Admin/Partner)
       if (updatedBooking.status === 'accepted' && oldBooking.status !== 'accepted') {
         const contactEmail = updatedBooking.bookedByEmail !== 'guest' ? updatedBooking.bookedByEmail : updatedBooking.email;
@@ -118,7 +124,8 @@ export async function PATCH(
           testNames: updatedBooking.tests.map((t: any) => t.title),
           totalAmount: updatedBooking.totalAmount,
           scheduledDate: updatedBooking.scheduledDate,
-          collectionType: updatedBooking.collectionType
+          collectionType: updatedBooking.collectionType,
+          userTelegramChatId // Pass user's Telegram ID
         });
       }
 
@@ -129,7 +136,23 @@ export async function PATCH(
           customerName: updatedBooking.patientName,
           customerEmail: contactEmail,
           customerPhone: updatedBooking.contactNumber,
-          bookingId: updatedBooking._id.toString()
+          bookingId: updatedBooking._id.toString(),
+          userTelegramChatId // Pass user's Telegram ID
+        });
+      }
+
+      // Logic for Partner Assignment
+      if (updatedBooking.status === 'assigned' && updatedBooking.assignedPartnerName && oldBooking.status !== 'assigned') {
+        const partner = await User.findOne({ name: updatedBooking.assignedPartnerName, role: 'partner' });
+        const partnerTelegramChatId = partner?.telegramChatId || '';
+
+        sendSmartNotification('PARTNER_ASSIGNMENT', {
+          customerName: updatedBooking.patientName,
+          bookingId: updatedBooking._id.toString(),
+          testNames: updatedBooking.tests.map((t: any) => t.title),
+          scheduledDate: updatedBooking.scheduledDate,
+          collectionType: updatedBooking.collectionType,
+          partnerTelegramChatId
         });
       }
 
@@ -142,7 +165,8 @@ export async function PATCH(
           customerPhone: updatedBooking.contactNumber,
           bookingId: updatedBooking._id.toString(),
           testNames: updatedBooking.tests.map((t: any) => t.title),
-          reportLink: updatedBooking.reportFileUrl || '#'
+          reportLink: updatedBooking.reportFileUrl || '#',
+          userTelegramChatId // Pass user's Telegram ID
         });
       }
 
