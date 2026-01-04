@@ -61,20 +61,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      {
-        userId: user._id.toString(),
-        role: user.role,
-        name: user.name,
-        email: user.email,
-      },
-      process.env.JWT_SECRET!,
-      { expiresIn: '7d' }
-    );
-
     return NextResponse.json({
-      token,
+      message: 'Profile completed successfully',
       user: {
         _id: user._id.toString(),
         name: user.name,
@@ -82,6 +70,7 @@ export async function POST(request: Request) {
         role: user.role,
         phone: user.phone,
         address: user.address,
+        needsProfileCompletion: false
       },
     });
   } catch (error) {

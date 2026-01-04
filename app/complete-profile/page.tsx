@@ -15,13 +15,10 @@ export default function CompleteProfilePage() {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      const token = localStorage.getItem('pawar_lab_auth_token');
-      if (!token) {
-        router.push('/login');
-      }
+      router.replace('/login');
     }
     if (status === 'authenticated' && !(session as any)?.needsProfileCompletion) {
-      router.push('/');
+      router.replace('/');
     }
   }, [session, status, router]);
 
