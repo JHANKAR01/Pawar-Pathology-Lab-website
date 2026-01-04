@@ -245,9 +245,69 @@ export default function AdminPage() {
     }
   };
 
+  // Partner Re-assignment Logic
+  const [partnerReassignModal, setPartnerReassignModal] = useState<{
+    isOpen: boolean;
+    bookingId: string;
+    newPartnerId: string;
+    currentPartnerName: string;
+    newPartnerName: string;
+  }>({ isOpen: false, bookingId: '', newPartnerId: '', currentPartnerName: '', newPartnerName: '' });
+
+  const handleOpenPartnerReassign = (booking: BookingType, newPartnerId: string) => {
+    const newPartner = partners.find(p => p._id === newPartnerId);
+    setPartnerReassignModal({
+      isOpen: true,
+      bookingId: booking._id,
+      newPartnerId,
+      currentPartnerName: booking.assignedPartnerName || 'Unassigned',
+      newPartnerName: newPartner?.name || 'Unknown'
+    });
+  };
+
+  const handleConfirmPartnerReassign = async () => {
+    const { bookingId, newPartnerId } = partnerReassignModal;
+
+    // Find partner name for optmistic update
+    const newPartner = partners.find(p => p._id === newPartnerId);
+
+    // Optimistic Update
+    const originalBookings = [...bookings];
+    setBookings(prev => prev.map(booking =>
+      booking._id === bookingId ? { ...booking, status: 'assigned', assignedPartnerName: newPartner?.name } : booking
+    ));
+
+    setPartnerReassignModal(prev => ({ ...prev, isOpen: false })); // Close immediately
+
+    try {
+      await handleUpdateStatus(bookingId, 'assigned', { assignedPartnerId: newPartnerId, assignedPartnerName: newPartner?.name });
+      toast.success('Partner re-assigned successfully');
+    } catch (error) {
+      setBookings(originalBookings); // Revert
+      toast.error('Failed to re-assign partner');
+    }
+  };
+
+  // Coupon Usage Logic
+  const [couponUsageModal, setCouponUsageModal] = useState<{
+    isOpen: boolean;
+    couponCode: string;
+    matches: BookingType[];
+  }>({ isOpen: false, couponCode: '', matches: [] });
+
+  const handleCheckUsage = (code: string) => {
+    // Client-side filtering for now as per plan
+    const matches = bookings.filter(b => b.couponCode === code);
+    setCouponUsageModal({
+      isOpen: true,
+      couponCode: code,
+      matches
+    });
+  };
+
   const handleRejectReport = async () => {
     if (!selectedBookingForReview || !rejectNotes.trim()) {
-      alert('Please provide rejection notes');
+      toast.error('Please provide rejection notes');
       return;
     }
     setIsProcessingReview(true);
@@ -268,9 +328,59 @@ export default function AdminPage() {
       setSelectedBookingForReview(null);
       setRejectNotes('');
       fetchData();
+      toast.success('Report rejected successfully');
     } catch (err) {
       console.error(err);
-      alert('Failed to reject report');
+      toast.error('Failed to reject report');
+    } finally {
+      setIsProcessingReview(false);
+    }
+  };
+
+  // Rejection Workflow Logic
+  const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
+  const [selectedBookingForRejection, setSelectedBookingForRejection] = useState<BookingType | null>(null);
+
+  const handleOpenRejection = (booking: BookingType) => {
+    setSelectedBookingForRejection(booking);
+    setRejectNotes('');
+    setRejectionModalOpen(true);
+  };
+
+  const handleConfirmRejection = async () => {
+    if (!selectedBookingForRejection || !rejectNotes.trim()) {
+      toast.error('Please provide a reason for rejection');
+      return;
+    }
+
+    // Optimistic Update
+    const originalBookings = [...bookings];
+    setBookings(prev => prev.map(b => b._id === selectedBookingForRejection._id ? { ...b, status: 'rejected' } : b));
+
+    setIsProcessingReview(true);
+    try {
+      const res = await fetch(`/api/bookings/${selectedBookingForRejection._id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'rejected',
+          pathologistNotes: rejectNotes
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to reject booking');
+
+      setRejectionModalOpen(false);
+      setSelectedBookingForRejection(null);
+      setRejectNotes('');
+      toast.success('Booking rejected and user notified');
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to reject booking');
+      setBookings(originalBookings); // Revert
     } finally {
       setIsProcessingReview(false);
     }
@@ -566,9 +676,24 @@ export default function AdminPage() {
                         </div>
                       </div>
                       {b.status === 'pending' && (
-                        <button onClick={() => handleUpdateStatus(b._id, 'accepted')} className="mt-4 self-start bg-success/10 text-success px-6 py-3 rounded-xl font-bold text-xs hover:bg-success/20 transition-all border-2 border-success/20">
-                          Approve Booking
-                        </button>
+                        <div className="flex gap-2 mt-4 self-start">
+                          <button onClick={() => handleUpdateStatus(b._id, 'accepted')} className="bg-success/10 text-success px-6 py-3 rounded-xl font-bold text-xs hover:bg-success/20 transition-all border-2 border-success/20">
+                            Approve Booking
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedBookingForReview(b); // Reusing this for simplicity, or I can add a specific state if needed. Let's stick to reusing or adding new.
+                              // Actually, reusing might be confusing because the other modal expects a report.
+                              // Let's use a new state: selectedBookingForRejection
+                              // But I can't add state in this replace block easily. 
+                              // I will assume I will add `selectedBookingForRejection` state later.
+                              handleOpenRejection(b);
+                            }}
+                            className="bg-clinical-rose/10 text-clinical-rose px-4 py-3 rounded-xl font-bold text-xs hover:bg-clinical-rose/20 transition-all border-2 border-clinical-rose/20"
+                          >
+                            <XCircle size={18} />
+                          </button>
+                        </div>
                       )}
                       {b.status === 'report_uploaded' && b.reportFileUrl && (
                         <button
@@ -594,42 +719,68 @@ export default function AdminPage() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="card-premium p-8 overflow-x-auto"
+                className="grid grid-cols-1 lg:grid-cols-2 gap-6"
               >
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b-2 border-slate-200">
-                      <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-600">Patient</th>
-                      <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-600">Tests</th>
-                      <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-600">Status</th>
-                      <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-600">Assign Partner</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bookings.filter(b => b.status === 'accepted' || b.status === 'assigned').map(b => (
-                      <tr key={b._id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                        <td className="p-4 font-bold text-slate-900">{b.patientName}</td>
-                        <td className="p-4 text-slate-600 text-sm">{b.tests.map(t => t.title).join(', ')}</td>
-                        <td className="p-4">
-                          <span className={getStatusBadge(b.status)}>{b.status}</span>
-                          {b.assignedPartnerName && <p className="text-xs text-blue-600 mt-2 font-bold">{b.assignedPartnerName}</p>}
-                        </td>
-                        <td className="p-4">
-                          <select
-                            onChange={(e) => handleUpdateStatus(b._id, 'assigned', { assignedPartnerName: e.target.value })}
-                            className="bg-white border-2 border-slate-200 rounded-lg px-4 py-2 text-slate-900 font-bold w-full focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all"
-                            defaultValue={b.assignedPartnerName || ""}
-                          >
-                            <option value="" disabled>Select a partner</option>
-                            {partners.map(p => (
-                              <option key={p._id} value={p.name}>{p.name}</option>
-                            ))}
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                {bookings.filter(b => b.status === 'accepted' || b.status === 'assigned' || b.status === 'sample_collected').length === 0 ? (
+                  <div className="col-span-full flex flex-col items-center justify-center p-12 text-slate-400">
+                    <FlaskConical size={48} className="mb-4 opacity-50" />
+                    <p className="font-bold">No active specimens to manage</p>
+                  </div>
+                ) : (
+                  bookings.filter(b => b.status === 'accepted' || b.status === 'assigned' || b.status === 'sample_collected').map(b => (
+                    <motion.div
+                      key={b._id}
+                      className="card-premium p-6 flex flex-col gap-4 border-2 border-slate-100 hover:border-slate-300 transition-all"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="text-lg font-black text-slate-900 line-clamp-1">{b.patientName}</h4>
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">{b.collectionType || 'Lab Visit'}</p>
+                        </div>
+                        <span className={getStatusBadge(b.status)}>{b.status}</span>
+                      </div>
+
+                      <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                        <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">Tests Requested</p>
+                        <div className="flex flex-wrap gap-2">
+                          {b.tests.map((t, idx) => (
+                            <span key={idx} className="bg-white px-2 py-1 rounded-md border border-slate-200 text-xs font-bold text-slate-700 shadow-sm">
+                              {t.title}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Logistics Section */}
+                      {b.distanceFromLab && b.collectionType === 'home' && (
+                        <div className="flex items-center gap-3 bg-blue-50 text-blue-700 px-4 py-3 rounded-xl border border-blue-100">
+                          <MapPin size={18} />
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-widest">Logistics Distance</p>
+                            <p className="font-bold">{b.distanceFromLab.toFixed(1)} KM via Road</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Partner Assignment */}
+                      <div className="mt-auto pt-4 border-t border-slate-100">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Assigned Partner</label>
+                        <select
+                          onChange={(e) => handleOpenPartnerReassign(b, e.target.value)}
+                          className={`w-full bg-white border-2 rounded-xl px-4 py-3 font-bold outline-none transition-all ${b.assignedPartnerName ? 'border-clinical-rose/30 text-clinical-rose' : 'border-slate-200 text-slate-900'} focus:border-clinical-rose focus:ring-4 focus:ring-clinical-rose/10`}
+                          value={partners.find(p => p.name === b.assignedPartnerName)?._id || ""}
+                        >
+                          <option value="" disabled>Select Logistics Partner</option>
+                          {partners.map(p => (
+                            <option key={p._id} value={p._id}>{p.name} ({p.operationalRole})</option>
+                          ))}
+                        </select>
+                      </div>
+                    </motion.div>
+                  ))
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -789,12 +940,22 @@ export default function AdminPage() {
                               {coupon.usageLimit && ` • Used: ${coupon.usedCount}/${coupon.usageLimit}`}
                             </p>
                           </div>
-                          <button
-                            onClick={() => handleDeleteCoupon(coupon._id)}
-                            className="p-2 hover:bg-clinical-rose-light rounded-lg transition-colors ml-4"
-                          >
-                            <Trash2 className="text-slate-500 hover:text-clinical-rose" size={20} />
-                          </button>
+                          <div className="flex items-center gap-2 ml-4">
+                            <button
+                              onClick={() => handleCheckUsage(coupon.code)}
+                              className="p-2 hover:bg-clinical-rose-light rounded-lg transition-colors"
+                              title="Check Usage"
+                            >
+                              <UserCheck className="text-slate-500 hover:text-clinical-rose" size={20} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCoupon(coupon._id)}
+                              className="p-2 hover:bg-clinical-rose-light rounded-lg transition-colors"
+                              title="Delete Coupon"
+                            >
+                              <Trash2 className="text-slate-500 hover:text-clinical-rose" size={20} />
+                            </button>
+                          </div>
                         </div>
                       ))
                     ) : (
@@ -1186,7 +1347,181 @@ export default function AdminPage() {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
+        {/* Partner Re-assignment Confirmation Modal */}
+        <AnimatePresence>
+          {partnerReassignModal.isOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+              onClick={() => setPartnerReassignModal(prev => ({ ...prev, isOpen: false }))}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-center mb-6 text-amber-500">
+                  <HeartHandshake size={48} />
+                </div>
+                <h3 className="text-xl font-black text-slate-900 text-center mb-2">Confirm Re-assignment</h3>
+                <p className="text-center text-slate-500 mb-8 font-medium">
+                  Are you sure you want to re-assign this specimen from <br />
+                  <span className="font-bold text-slate-900">{partnerReassignModal.currentPartnerName}</span> to <span className="font-bold text-clinical-rose">{partnerReassignModal.newPartnerName}</span>?
+                </p>
+
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setPartnerReassignModal(prev => ({ ...prev, isOpen: false }))}
+                    className="flex-1 bg-slate-100 text-slate-600 px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-slate-200 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmPartnerReassign}
+                    className="flex-1 bg-clinical-rose text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-clinical-rose-dark transition-all"
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Rejection Modal for Pending Bookings */}
+        <AnimatePresence>
+          {rejectionModalOpen && selectedBookingForRejection && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+              onClick={() => !isProcessingReview && setRejectionModalOpen(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                    <XCircle className="text-clinical-rose" size={28} />
+                    Reject Booking
+                  </h2>
+                  <button onClick={() => setRejectionModalOpen(false)} disabled={isProcessingReview} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                    <X size={24} className="text-slate-400 hover:text-slate-600" />
+                  </button>
+                </div>
+
+                <div className="mb-6">
+                  <p className="text-slate-600 font-bold mb-2">Patient: <span className="text-slate-900">{selectedBookingForRejection.patientName}</span></p>
+                  <p className="text-slate-500 text-sm">Please specify the reason for rejection. This will be sent to the user.</p>
+                </div>
+
+                <textarea
+                  value={rejectNotes}
+                  onChange={(e) => setRejectNotes(e.target.value)}
+                  placeholder="Reason (e.g., Use precise location, Service unavailable in area...)"
+                  className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all resize-none mb-6 h-32"
+                  disabled={isProcessingReview}
+                />
+
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setRejectionModalOpen(false)}
+                    disabled={isProcessingReview}
+                    className="flex-1 bg-slate-100 text-slate-600 px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-slate-200 transition-all disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmRejection}
+                    disabled={isProcessingReview || !rejectNotes.trim()}
+                    className="flex-1 bg-clinical-rose text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-clinical-rose-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isProcessingReview ? <Loader2 className="animate-spin" /> : <XCircle size={18} />}
+                    Confirm Reject
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {/* Coupon Usage Insights Modal */}
+        <AnimatePresence>
+          {couponUsageModal.isOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+              onClick={() => setCouponUsageModal(prev => ({ ...prev, isOpen: false }))}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between p-6 border-b-2 border-slate-200">
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+                      <Ticket className="text-clinical-rose" />
+                      Coupon Usage: {couponUsageModal.couponCode}
+                    </h2>
+                    <p className="text-sm text-slate-500 font-bold mt-1">
+                      Used {couponUsageModal.matches.length} times
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setCouponUsageModal(prev => ({ ...prev, isOpen: false }))}
+                    className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                  >
+                    <X size={24} className="text-slate-400 hover:text-slate-600" />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-6">
+                  {couponUsageModal.matches.length === 0 ? (
+                    <div className="text-center py-12 text-slate-400">
+                      <p>No usages found for this coupon.</p>
+                    </div>
+                  ) : (
+                    <table className="w-full text-left">
+                      <thead className="bg-slate-50 sticky top-0">
+                        <tr>
+                          <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 rounded-l-lg">Date</th>
+                          <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500">Patient</th>
+                          <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 text-right rounded-r-lg">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {couponUsageModal.matches.map(match => (
+                          <tr key={match._id} className="hover:bg-slate-50 transition-colors">
+                            <td className="p-3 font-bold text-slate-600 text-sm">
+                              {new Date(match.createdAt || '').toLocaleDateString('en-GB', {
+                                day: '2-digit', month: 'short', year: 'numeric'
+                              })}
+                            </td>
+                            <td className="p-3 font-bold text-slate-900">{match.patientName}</td>
+                            <td className="p-3 font-bold text-slate-900 text-right">₹{match.totalAmount}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
     </div>
   );
 }

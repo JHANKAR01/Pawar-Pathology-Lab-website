@@ -122,6 +122,17 @@ export async function PATCH(
         });
       }
 
+      // Logic for Notifications on Rejection (Admin rejects booking)
+      if (updatedBooking.status === 'rejected' && oldBooking.status !== 'rejected') {
+        const contactEmail = updatedBooking.bookedByEmail !== 'guest' ? updatedBooking.bookedByEmail : updatedBooking.email;
+        sendSmartNotification('BOOKING_CANCELLED', { // Reusing CANCELLED template or could make a REJECTED one
+          customerName: updatedBooking.patientName,
+          customerEmail: contactEmail,
+          customerPhone: updatedBooking.contactNumber,
+          bookingId: updatedBooking._id.toString()
+        });
+      }
+
       // Logic for Notifications on Verification
       if (updatedBooking.status === 'completed' && oldBooking.status !== 'completed') {
         const contactEmail = updatedBooking.bookedByEmail !== 'guest' ? updatedBooking.bookedByEmail : updatedBooking.email;
