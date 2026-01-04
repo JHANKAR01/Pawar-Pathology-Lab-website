@@ -8,7 +8,6 @@ declare module "next-auth" {
             role: string;
             phone?: string;
             address?: string;
-            needsProfileCompletion?: boolean;
         } & DefaultSession["user"];
     }
 
@@ -16,7 +15,6 @@ declare module "next-auth" {
         role: string;
         phone?: string;
         address?: string;
-        needsProfileCompletion?: boolean;
     }
 }
 
@@ -26,6 +24,5 @@ declare module "next-auth/jwt" {
         role: string;
         phone?: string;
         address?: string;
-        needsProfileCompletion?: boolean;
     }
 }

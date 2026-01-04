@@ -9,25 +9,7 @@ export async function middleware(req: NextRequest) {
   const token = await getToken({ req });
   const isAuth = !!token;
 
-  // --- Redirect Loop Prevention Logic ---
-
-  // Case A: User is authenticated but profile is incomplete
-  if (isAuth && (token as any)?.needsProfileCompletion) {
-    // If they are NOT on /complete-profile, send them there
-    if (pathname !== '/complete-profile' && pathname !== '/api/auth/signout') {
-      return NextResponse.redirect(new URL('/complete-profile', req.url));
-    }
-    // If they ARE on /complete-profile, do nothing (allow access)
-    return NextResponse.next();
-  }
-
-  // Case B: User is authenticated and profile IS complete
-  if (isAuth && !(token as any)?.needsProfileCompletion) {
-    // If they try to go to /complete-profile, send them home
-    if (pathname === '/complete-profile') {
-      return NextResponse.redirect(new URL('/', req.url));
-    }
-  }
+  // 3. Protected Routes (Role-Based Access)
 
   // 3. Protected Routes (Role-Based Access)
   if (pathname.startsWith('/admin')) {

@@ -13,6 +13,7 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -33,6 +34,10 @@ export default function SignupPage() {
 
     // Pre-validation
     if (step === 1) {
+      if (!name || !email || !phone || !address || !password) {
+        setError('Please fill in all fields.');
+        return;
+      }
       if (password !== confirmPassword) {
         setError('Passwords do not match.');
         return;
@@ -42,7 +47,7 @@ export default function SignupPage() {
         return;
       }
     }
-
+    // ... existing OTP logic
     setIsLoading(true);
     try {
       const res = await fetch('/api/auth/otp/send', {
@@ -50,12 +55,11 @@ export default function SignupPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, name })
       });
-
+      // ... result handling
       const data = await res.json();
-
       if (res.ok) {
         setStep(2);
-        setCooldown(60); // 60s cooldown
+        setCooldown(60);
         startCooldown();
         toast.success("OTP sent to your email!");
         setError('');
@@ -84,11 +88,10 @@ export default function SignupPage() {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, password, otp })
+        body: JSON.stringify({ name, email, phone, address, password, otp }) // Added address
       });
-
+      // ... result handling
       const data = await res.json();
-
       if (res.ok) {
         toast.success("Account created successfully!");
         router.push('/login');
@@ -118,13 +121,14 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-slate-50 to-clinical-rose-light/30 flex items-center justify-center p-6 relative overflow-hidden font-sans">
+      {/* Background elements stay same */}
       <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none">
         <div className="absolute top-1/4 -left-20 w-96 h-96 bg-clinical-rose rounded-full blur-[150px]" />
         <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-clinical-rose/50 rounded-full blur-[150px]" />
       </div>
 
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col lg:flex-row relative z-10 animate-in fade-in zoom-in duration-500">
-
+        {/* Left Panel stays same */}
         <div className="lg:w-1/2 bg-gradient-to-br from-clinical-rose to-clinical-rose-dark p-12 flex flex-col justify-center gap-16 relative overflow-hidden">
           <div className="relative z-10 text-center">
             <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center mb-8 shadow-2xl mx-auto">
@@ -173,6 +177,17 @@ export default function SignupPage() {
               <div className="relative">
                 <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                 <input type="tel" placeholder="Phone Number" value={phone} onChange={e => setPhone(e.target.value)} className="w-full pl-16 pr-6 py-5 bg-white border-2 border-slate-200 rounded-2xl outline-none text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all placeholder:text-slate-400" />
+              </div>
+              <div className="relative">
+                <User className="absolute left-6 top-6 text-slate-400 w-5 h-5" />
+                <textarea
+                  placeholder="Address"
+                  value={address}
+                  onChange={e => setAddress(e.target.value)}
+                  required
+                  rows={2}
+                  className="w-full pl-16 pr-6 py-5 bg-white border-2 border-slate-200 rounded-2xl outline-none text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 transition-all placeholder:text-slate-400 resize-none"
+                />
               </div>
               <div className="relative">
                 <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />

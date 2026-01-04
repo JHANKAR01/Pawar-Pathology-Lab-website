@@ -15,7 +15,7 @@ async function handler(request: Request) {
   await dbConnect();
   try {
     const body = await request.json();
-    const { name, email, phone, password, role, operationalRole, otp } = body;
+    const { name, email, phone, password, role, operationalRole, otp, address } = body;
 
     const sanitizedEmail = email.toLowerCase().trim();
 
@@ -67,10 +67,12 @@ async function handler(request: Request) {
       name,
       email: sanitizedEmail,
       phone,
+      address, // Added address
       password: hashedPassword,
       role: role || 'patient',
       operationalRole: operationalRole || 'none',
-      isVerified: true // OTP confirmed identity
+      isVerified: true, // OTP confirmed identity
+      needsProfileCompletion: false // No separate profile completion step needed
     });
 
     // 4. Cleanup OTP
