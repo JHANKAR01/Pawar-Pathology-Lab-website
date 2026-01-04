@@ -32,7 +32,12 @@ const SettingsSchema = new Schema<ISettings & Document>(
     whatsappEnabled: { type: Boolean, default: true },
     whatsappOfficialEnabled: { type: Boolean, default: false }, // Default false (link only)
     telegramEnabled: { type: Boolean, default: false },
-    telegramAdminChatId: { type: String, default: '' }
+    telegramAdminChatId: { type: String, default: '' },
+
+    // Role-based Telegram Toggles
+    telegramEnabledAdmin: { type: Boolean, default: false },
+    telegramEnabledPartner: { type: Boolean, default: false },
+    telegramEnabledUser: { type: Boolean, default: false }
   },
   { timestamps: true }
 );

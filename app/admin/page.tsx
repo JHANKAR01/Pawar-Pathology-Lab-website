@@ -35,6 +35,8 @@ interface Partner {
   _id: string;
   name: string;
   operationalRole: string;
+  telegramChatId?: string;
+  phone?: string;
 }
 
 interface BlackoutDateType {
@@ -62,6 +64,11 @@ export default function AdminPage() {
   const [coupons, setCoupons] = useState<any[]>([]);
   const [newCoupon, setNewCoupon] = useState({ code: '', discountType: 'percentage' as 'percentage' | 'fixed', value: 0, expiryDate: '', usageLimit: '' });
 
+  // Phase 4: Drive Provisioning
+  const [provisioningStatus, setProvisioningStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [nextMonthAlert, setNextMonthAlert] = useState(false);
+  const [provisionResult, setProvisionResult] = useState('');
+
   const { data: session, status } = useSession();
 
   useEffect(() => {
@@ -83,7 +90,9 @@ export default function AdminPage() {
       fetchPartners();
       fetchConfig();
       fetchBlackoutDates();
+      fetchBlackoutDates();
       fetchCoupons();
+      checkNextMonthProvisioning(); // New Check
     }
   }, [session, status, router]);
 
@@ -494,10 +503,93 @@ export default function AdminPage() {
     { label: 'Revenue (Today)', value: `₹${bookings.filter((b: any) => new Date(b.createdAt).toDateString() === new Date().toDateString()).reduce((acc: number, curr: any) => acc + (curr.totalAmount || 0), 0)}`, icon: HeartHandshake, color: 'bg-emerald-500' },
   ];
 
-  const handleLogout = () => {
-    toast.success("Logged out successfully");
-    signOut({ callbackUrl: '/login' });
+  const handleLogout = async () => {
+    // Phase 4: Secure Hard Logout
+    // Clear any local storage if used
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // Attempt to clear cookies via document (client-side attempt)
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+
+    await signOut({ callbackUrl: '/login' });
   };
+
+  // Phase 4: Drive Provisioning Function
+  const checkNextMonthProvisioning = () => {
+    const now = new Date();
+    // Check if it's past the 15th
+    if (now.getDate() >= 15) {
+      // Logic to check if next month is provisioned would theoretically require an API call
+      // to check DB presence, but for now we just show the alert proactively if late in month.
+      // A more robust way is to ask the new API "is next month ready?".
+      // For simplicity as per prompt "check if current date is 15th or later"
+      // We will assume it might not be ready and show alert (or we could fetch check).
+      // Let's just set alert true for visibility if > 15th.
+      setNextMonthAlert(true);
+    }
+  };
+
+  const handleProvisionFolders = async () => {
+    if (!confirm("This will generate 30+ folders in Google Drive and cache IDs in the database to optimize API limits. Proceed?")) return;
+
+    setProvisioningStatus('loading');
+    try {
+      const now = new Date();
+      // Provision NEXT month if > 15th, else CURRENT month?
+      // Prompt says "Provision Folders for [Next Month]".
+      // Let's calculate next month.
+      let targetYear = now.getFullYear();
+      let targetMonthIdx = now.getMonth() + 1; // Next Month
+      if (targetMonthIdx > 11) {
+        targetMonthIdx = 0;
+        targetYear++;
+      }
+
+      const nextMonthDate = new Date(targetYear, targetMonthIdx, 1);
+      const monthName = nextMonthDate.toLocaleString('default', { month: 'long' });
+      const daysInMonth = new Date(targetYear, targetMonthIdx + 1, 0).getDate();
+
+      const res = await fetch('/api/admin/provision-drive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ year: targetYear, monthName, daysInMonth })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setProvisioningStatus('success');
+        setProvisionResult(data.message);
+        toast.success(data.message);
+        setNextMonthAlert(false); // Clear alert
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (e: any) {
+      setProvisioningStatus('error');
+      setProvisionResult(e.message);
+      toast.error("Provisioning failed: " + e.message);
+    }
+  };
+
+  const handleUpdatePartnerTelegram = async (partnerId: string, chatId: string) => {
+    try {
+      const res = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ _id: partnerId, telegramChatId: chatId })
+      });
+      if (res.ok) {
+        toast.success("Partner Telegram ID updated");
+        fetchPartners(); // refresh
+      } else {
+        toast.error("Failed to update ID");
+      }
+    } catch (e) { toast.error("Update failed"); }
+  };
+
   const getStatusBadge = (status: string) => {
     const base = 'px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest';
     switch (status) {
@@ -832,9 +924,41 @@ export default function AdminPage() {
                   <h3 className="text-2xl font-black text-slate-900 mb-8">Active Partners</h3>
                   <div className="space-y-4">
                     {partners.map(p => (
-                      <div key={p._id} className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border-2 border-slate-200">
-                        <p className="font-bold text-slate-900 text-lg">{p.name}</p>
-                        <p className="text-sm text-slate-600 font-bold uppercase">{p.operationalRole}</p>
+                      <div key={p._id} className="p-6 bg-slate-50 rounded-2xl border-2 border-slate-200 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-bold text-slate-900 text-lg">{p.name}</p>
+                            <p className="text-sm text-slate-600 font-bold uppercase">{p.operationalRole}</p>
+                          </div>
+                        </div>
+
+                        {/* Telegram ID Input */}
+                        <div className="pt-3 border-t border-slate-200">
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                            Telegram Chat ID
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Enter Chat ID"
+                              defaultValue={p.telegramChatId || ''}
+                              id={`telegram-${p._id}`}
+                              className="flex-1 bg-white border-2 border-slate-200 rounded-xl px-4 py-2 text-sm font-mono focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                            />
+                            <button
+                              onClick={() => {
+                                const input = document.getElementById(`telegram-${p._id}`) as HTMLInputElement;
+                                if (input) handleUpdatePartnerTelegram(p._id, input.value);
+                              }}
+                              className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-blue-700 transition-all"
+                            >
+                              Save
+                            </button>
+                          </div>
+                          <p className="text-[10px] text-slate-500 mt-1">
+                            Open <a href="https://t.me/PawarPathLabBot" target="_blank" className="text-blue-500 hover:underline">@PawarPathLabBot</a> & type /id
+                          </p>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1132,8 +1256,51 @@ export default function AdminPage() {
                             <div className="relative inline-block w-10 h-5"><input type="checkbox" className="peer absolute w-full h-full opacity-0 cursor-pointer" checked={(config as any).telegramEnabled ?? false} onChange={(e) => updateConfig({ telegramEnabled: e.target.checked })} /><span className={`block w-full h-full rounded-full transition ${(config as any).telegramEnabled ? 'bg-sky-500' : 'bg-slate-300'}`}></span><span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).telegramEnabled ? 'translate-x-5' : ''}`}></span></div>
                           </div>
                           {(config as any).telegramEnabled && (
-                            <input type="text" placeholder="Admin Chat ID" value={(config as any).telegramAdminChatId || ''} onChange={(e) => updateConfig({ telegramAdminChatId: e.target.value })} className="w-full text-xs px-3 py-2 border rounded-lg" />
+                            <div className="space-y-4 pt-2">
+                              <input type="text" placeholder="Admin Chat ID" value={(config as any).telegramAdminChatId || ''} onChange={(e) => updateConfig({ telegramAdminChatId: e.target.value })} className="w-full text-xs px-3 py-2 border rounded-lg" />
+
+                              <div className="grid grid-cols-3 gap-2 text-xs">
+                                <label className="flex items-center gap-1 cursor-pointer">
+                                  <input type="checkbox" checked={(config as any).telegramEnabledAdmin ?? false} onChange={(e) => updateConfig({ telegramEnabledAdmin: e.target.checked })} />
+                                  <span>Admin Alerts</span>
+                                </label>
+                                <label className="flex items-center gap-1 cursor-pointer">
+                                  <input type="checkbox" checked={(config as any).telegramEnabledPartner ?? false} onChange={(e) => updateConfig({ telegramEnabledPartner: e.target.checked })} />
+                                  <span>Partner Alerts</span>
+                                </label>
+                                <label className="flex items-center gap-1 cursor-pointer">
+                                  <input type="checkbox" checked={(config as any).telegramEnabledUser ?? false} onChange={(e) => updateConfig({ telegramEnabledUser: e.target.checked })} />
+                                  <span>User Alerts</span>
+                                </label>
+                              </div>
+                              <a href="https://t.me/PawarPathLabBot" target="_blank" className="text-[10px] text-blue-500 hover:underline block text-center">Open @PawarPathLabBot & type /id to get ID</a>
+                            </div>
                           )}
+                        </div>
+                      </div>
+
+
+                      {/* Google Drive Provisioning (Phase 4) */}
+                      <div className={`p-6 rounded-2xl border ${nextMonthAlert ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'} md:col-span-1`}>
+                        <div className="flex items-start gap-4">
+                          <div className={`p-3 rounded-xl ${nextMonthAlert ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                            <SettingsIcon size={24} />
+                          </div>
+                          <div>
+                            <h4 className={`font-bold ${nextMonthAlert ? 'text-red-700' : 'text-slate-900'}`}>Drive Infrastructure</h4>
+                            <p className={`text-xs mt-1 ${nextMonthAlert ? 'text-red-500 font-bold' : 'text-slate-500'}`}>
+                              {nextMonthAlert ? 'Action Required: Provision folders for next month!' : 'Optimize API usage with cached folders.'}
+                            </p>
+
+                            <button
+                              onClick={handleProvisionFolders}
+                              disabled={provisioningStatus === 'loading'}
+                              className={`mt-4 w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${nextMonthAlert ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                            >
+                              {provisioningStatus === 'loading' ? <Loader2 className="animate-spin" /> : 'Provision Next Month'}
+                            </button>
+                            {provisioningStatus === 'success' && <p className="text-xs text-green-600 font-bold mt-2 text-center">✓ {provisionResult}</p>}
+                          </div>
                         </div>
                       </div>
 

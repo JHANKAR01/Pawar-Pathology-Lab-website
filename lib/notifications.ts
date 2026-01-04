@@ -4,7 +4,7 @@ import Settings from '@/models/Settings';
 import dbConnect from './dbConnect';
 
 // Notification Types
-export type NotificationType = 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'REPORT_READY' | 'COUPON_APPLIED' | 'STAFF_NEW_BOOKING' | 'OTP_VERIFICATION';
+export type NotificationType = 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'REPORT_READY' | 'COUPON_APPLIED' | 'STAFF_NEW_BOOKING' | 'OTP_VERIFICATION' | 'PARTNER_ASSIGNMENT';
 
 interface NotificationData {
     customerName?: string;
@@ -17,6 +17,8 @@ interface NotificationData {
     scheduledDate?: Date | string;
     collectionType?: string;
     otpCode?: string;
+    partnerTelegramChatId?: string;
+    userTelegramChatId?: string;
 }
 
 // Global Footer for all emails
@@ -116,7 +118,7 @@ export async function sendSmartNotification(
         // OTP verification sends regardless of global settings, others check settings
         if (type !== 'OTP_VERIFICATION' && !settings) return;
 
-        const { customerName, customerEmail, customerPhone, bookingId, testNames, totalAmount, reportLink, scheduledDate, collectionType, otpCode } = data;
+        const { customerName, customerEmail, customerPhone, bookingId, testNames, totalAmount, reportLink, scheduledDate, collectionType, otpCode, partnerTelegramChatId, userTelegramChatId } = data;
         const testsString = testNames?.join(', ') || 'Tests';
 
         // Format Date and Time
@@ -139,6 +141,7 @@ export async function sendSmartNotification(
         let subject = '';
         let emailHtml = '';
         let waMessage = '';
+        let telegramMessage = '';
         let accountType: 'REPORTS' | 'OTP' = 'REPORTS';
 
         switch (type) {
@@ -166,11 +169,21 @@ export async function sendSmartNotification(
                 subject = '';
                 emailHtml = '';
                 waMessage = `🚨 *New Booking Request* 🚨\nPatient: ${customerName}\nTests: ${testsString}\nID: ${bookingId}\n_Action Required: Review in Admin Panel._`;
+                telegramMessage = waMessage;
+                break;
+
+            case 'PARTNER_ASSIGNMENT':
+                // New Type for Partners
+                subject = '';
+                emailHtml = '';
+                waMessage = '';
+                telegramMessage = `🤝 *New Assignment* 🤝\nBooking #${bookingId}\nPatient: ${customerName}\nTests: ${testsString}\nDate: ${formattedDate} @ ${formattedTime}\nType: ${visitTypeDisplay}\n\nPlease check your dashboard.`;
                 break;
 
             case 'BOOKING_CONFIRMED':
                 subject = `Booking Confirmed #${bookingId} - Pawar Pathology Lab`;
                 waMessage = `Hello ${customerName}, your booking #${bookingId} for ${testsString} is confirmed. Total: ₹${totalAmount}.`;
+                telegramMessage = `✅ *Booking Confirmed* ✅\nHi ${customerName}, your booking #${bookingId} is confirmed.\nTests: ${testsString}\nTotal: ₹${totalAmount}`;
                 emailHtml = `
           <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #e11d48; text-align: center;">Booking Confirmed!</h2>
@@ -200,6 +213,7 @@ export async function sendSmartNotification(
             case 'REPORT_READY':
                 subject = `Report Ready #${bookingId} - Pawar Pathology Lab`;
                 waMessage = `Great news ${customerName}! Your report for booking #${bookingId} is ready. Download here: ${reportLink}`;
+                telegramMessage = `📄 *Report Ready* 📄\nHi ${customerName}, your report for #${bookingId} is ready.\nDownload: ${reportLink}`;
                 emailHtml = `
           <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #059669; text-align: center;">Your Report is Ready!</h2>
@@ -228,6 +242,7 @@ export async function sendSmartNotification(
             case 'BOOKING_CANCELLED':
                 subject = `Booking Cancelled #${bookingId}`;
                 waMessage = `Your booking #${bookingId} has been cancelled as requested.`;
+                telegramMessage = `❌ *Booking Cancelled* ❌\nBooking #${bookingId} has been cancelled.`;
                 emailHtml = `
           <div style="font-family: sans-serif; padding: 20px;">
              <h2>Booking Cancelled</h2>
@@ -260,30 +275,44 @@ export async function sendSmartNotification(
         }
 
         // D. Send WhatsApp (Official API) - Skip for OTP
-        if (settings?.whatsappEnabled && settings?.whatsappOfficialEnabled && customerPhone && process.env.WHATSAPP_TOKEN && type !== 'STAFF_NEW_BOOKING' && type !== 'OTP_VERIFICATION') {
+        if (settings?.whatsappEnabled && settings?.whatsappOfficialEnabled && customerPhone && process.env.WHATSAPP_TOKEN && type !== 'STAFF_NEW_BOOKING' && type !== 'OTP_VERIFICATION' && type !== 'PARTNER_ASSIGNMENT') {
             console.log(`[Notification] WhatsApp Cloud API triggered for ${customerPhone}`);
+            // TODO: Implement actual WA Cloud API call here when credentials available
         }
 
-        // E. Send Telegram (Staff Alerts) - Skip for OTP
-        if (settings?.telegramEnabled && settings?.telegramAdminChatId && process.env.TELEGRAM_BOT_TOKEN && type !== 'OTP_VERIFICATION') {
-            const telegramUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`;
-            const text = type === 'STAFF_NEW_BOOKING' ? waMessage : `*Alert: ${type}*\n${waMessage}`;
+        // E. Send Telegram (Role Based)
+        if (settings?.telegramEnabled && process.env.TELEGRAM_BOT_TOKEN && type !== 'OTP_VERIFICATION') {
+            const sendTelegram = async (chatId: string, txt: string) => {
+                try {
+                    const telegramUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`;
+                    const response = await fetch(telegramUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chat_id: chatId, text: txt, parse_mode: 'Markdown' })
+                    });
+                    if (!response.ok) {
+                        const r = await response.json();
+                        console.error(`[Telegram] Error: ${r.description}`);
+                    }
+                } catch (e) {
+                    console.error('[Telegram] Fetch Error:', e);
+                }
+            };
 
-            const response = await fetch(telegramUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: settings.telegramAdminChatId,
-                    text: text,
-                    parse_mode: 'Markdown'
-                })
-            });
+            // 1. Admin Alerts
+            if (settings.telegramEnabledAdmin && settings.telegramAdminChatId && (type === 'STAFF_NEW_BOOKING' || type === 'BOOKING_CANCELLED')) {
+                // Admin gets new bookings and cancellations alerts
+                await sendTelegram(settings.telegramAdminChatId, telegramMessage);
+            }
 
-            if (!response.ok) {
-                const result = await response.json();
-                console.error(`[Notification] Telegram API Error: ${result.description}`);
-            } else {
-                console.log(`[Notification] Telegram alert delivered to Chat ID: ${settings.telegramAdminChatId}`);
+            // 2. Partner Alerts (Direct)
+            if (settings.telegramEnabledPartner && type === 'PARTNER_ASSIGNMENT' && partnerTelegramChatId) {
+                await sendTelegram(partnerTelegramChatId, telegramMessage);
+            }
+
+            // 3. User Alerts (Direct)
+            if (settings.telegramEnabledUser && (type === 'BOOKING_CONFIRMED' || type === 'REPORT_READY') && userTelegramChatId) {
+                await sendTelegram(userTelegramChatId, telegramMessage);
             }
         }
 
@@ -291,3 +320,4 @@ export async function sendSmartNotification(
         console.error('[Notification] Smart Hub Error:', error);
     }
 }
+

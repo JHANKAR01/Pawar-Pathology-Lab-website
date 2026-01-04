@@ -61,7 +61,7 @@ export default function SignupPage() {
     }
 
     if (!requireVerification) {
-      handleVerifyAndSignup(e, true);
+      if (e) handleVerifyAndSignup(e, true);
       return;
     }
 

@@ -78,9 +78,6 @@ async function handler(request: Request) {
       needsProfileCompletion: false // No separate profile completion step needed
     });
 
-    // 4. Cleanup OTP
-    await OTP.deleteOne({ _id: otpRecord._id });
-
     return NextResponse.json({ message: 'Registration successful' }, { status: 201 });
   } catch (error: any) {
     console.error("Signup Error:", error);

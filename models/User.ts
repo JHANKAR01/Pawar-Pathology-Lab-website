@@ -17,6 +17,7 @@ const UserSchema = new Schema({
   role: { type: String, enum: ['admin', 'partner', 'patient'], default: 'patient' },
   operationalRole: { type: String, default: 'none' },
   address: String,
+  telegramChatId: { type: String, default: '' }, // Added for Telegram Notifications
   isVerified: { type: Boolean, default: false },
   needsProfileCompletion: { type: Boolean, default: false }
 }, { timestamps: true });

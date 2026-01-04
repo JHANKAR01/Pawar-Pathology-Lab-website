@@ -108,9 +108,14 @@ export interface ISettings {
   smsEnabled: boolean;
   emailEnabled: boolean;
   whatsappEnabled: boolean;
-  whatsappOfficialEnabled: boolean;
-  telegramEnabled: boolean;
+  whatsappOfficialEnabled?: boolean;
+  telegramEnabled?: boolean;
   telegramAdminChatId?: string;
+
+  // Role-based Telegram Toggles
+  telegramEnabledAdmin?: boolean;
+  telegramEnabledPartner?: boolean;
+  telegramEnabledUser?: boolean;
   serviceRadius: number;
   locationFencingEnabled: boolean;
   distanceType: 'road' | 'displacement';
