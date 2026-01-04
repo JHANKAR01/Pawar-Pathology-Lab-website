@@ -132,10 +132,17 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
   };
 
   const captureLocation = () => {
+    // Security check for Geolocation API requirements
+    if (window.location.hostname !== 'localhost' && window.location.protocol !== 'https:') {
+      alert("Browser Security Warning: Geolocation requires HTTPS or localhost. Please use a secure connection.");
+      return;
+    }
+
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser.");
       return;
     }
+
     setIsCapturingLocation(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -144,9 +151,14 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
       },
       (err) => {
         setIsCapturingLocation(false);
-        alert("Location access denied.");
+        console.error("Geo Error:", err);
+        let msg = "Location access denied.";
+        if (err.code === 1) msg = "User denied location permission. Please enable it in browser settings.";
+        if (err.code === 2) msg = "Location unavailable. Check GPS/Network.";
+        if (err.code === 3) msg = "Location request timed out.";
+        alert(msg);
       },
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
@@ -476,6 +488,15 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                     {isCapturingLocation ? <Loader2 className="animate-spin" /> : formData.coordinates ? <CheckCircle size={20} /> : <Navigation size={20} />}
                     {formData.coordinates ? 'Location Synced' : 'Sync Current Location'}
                   </button>
+                  {process.env.NODE_ENV === 'development' && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, coordinates: { lat: 21.9000, lng: 77.9000 } }))} // Close to lab
+                      className="text-xs text-slate-400 hover:text-clinical-rose underline text-center w-full block"
+                    >
+                      [DEV] Use Mock Location (Betul)
+                    </button>
+                  )}
                   <textarea
                     className={`${inputStyles} h-32`}
                     placeholder="Full Address & Landmarks..."
