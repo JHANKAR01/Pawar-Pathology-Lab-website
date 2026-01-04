@@ -8,10 +8,10 @@ interface RateLimitResult {
 }
 
 const ROLE_LIMITS: Record<string, number> = {
-    guest: 120,
-    patient: 350,
-    partner: 1250,
-    admin: 3350,
+    guest: 80,    // Shared Wi-Fi support (~7 users * ~11 req/min)
+    patient: 150, // Standard user usage
+    partner: 500, // Bulk booking allowance
+    admin: 1000,  // Management tasks
 };
 
 export async function checkRateLimit(identifier: string, role: string = 'guest'): Promise<RateLimitResult> {
