@@ -5,7 +5,7 @@ import User from '@/models/User';
 import OTP from '@/models/OTP';
 
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../[...nextauth]/route';
+import { authOptions } from '@/lib/next-auth-options';
 
 import bcrypt from 'bcryptjs';
 

@@ -49,7 +49,7 @@ export const metadata: Metadata = {
 };
 
 import { getServerSession } from 'next-auth';
-import { authOptions } from './api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/next-auth-options';
 import dbConnect from '@/lib/dbConnect';
 import Settings from '@/models/Settings';
 import { redirect } from 'next/navigation';

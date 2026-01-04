@@ -8,7 +8,7 @@ import { Buffer } from 'buffer';
 import { sendSmartNotification } from '@/lib/notifications';
 
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/next-auth-options';
 
 export async function PATCH(
   request: Request,

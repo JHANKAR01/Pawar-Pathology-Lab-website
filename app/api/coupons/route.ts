@@ -4,7 +4,7 @@ import Coupon from '@/models/Coupon';
 import { verifyAdmin } from '@/lib/auth';
 
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/next-auth-options';
 
 // GET /api/coupons - Fetch all coupons (Admin only)
 export async function GET(request: Request) {

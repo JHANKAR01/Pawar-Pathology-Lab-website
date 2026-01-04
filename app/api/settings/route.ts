@@ -10,7 +10,7 @@ export async function GET() {
 }
 
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/next-auth-options';
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);

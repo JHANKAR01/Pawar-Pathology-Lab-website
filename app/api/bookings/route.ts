@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Booking from '@/models/Booking';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/next-auth-options';
 
 // GET /api/bookings - Fetch all bookings (Admin/Partner view) or user's own bookings (Patient/User)
 export async function GET(request: Request) {

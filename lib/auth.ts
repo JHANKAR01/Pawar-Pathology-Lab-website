@@ -5,6 +5,7 @@ interface DecodedToken {
   userId: string;
   role: string;
   name: string;
+  email?: string;
 }
 
 export async function verifyAdmin(request: Request): Promise<{ isAdmin: boolean, response?: NextResponse }> {
