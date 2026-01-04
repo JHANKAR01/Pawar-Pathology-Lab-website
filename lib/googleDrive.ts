@@ -153,36 +153,24 @@ export async function uploadReportToDrive(
       targetFolderId = await getOrCreateFolder(day, monthId);
     }
 
-    // C. Patient Name Sanitization & Standardized Filename
-    // Name: [PatientName]_[Combined_Tests]_[YYYY-MM-DD]_[HH-mm].pdf
-    const safeName = patientName.replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/\s+/g, '_');
-    const safeTests = testTitles.join('+').replace(/[^a-zA-Z0-9\+]/g, '').slice(0, 50); // truncated
-    const timeStr = `${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`;
-    const dateStr = `${year}-${String(now.getMonth() + 1).padStart(2, '0')}-${day}`;
+    // C. Forensic-Grade Filename: YYYY-MM-DD_HH-mm-ss_Name_TestName_RefBy.pdf
+    const sanitize = (str: string) => str.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
 
-    // Note: User asked for [PatientName]_[Combined_Tests]_[YYYY-MM-DD]_[HH-mm].pdf
-    // But we also need unique ID or booking ID to prevent collisions? 
-    // The prompt naming convention "PatientName_CombinedTests_YYYY-MM-DD_HH-mm.pdf" 
-    // is specific. I will append bookingId suffix just in case to be safe if multiple identical uploads happen same minute? 
-    // Prompt said: "[PatientName]_[Combined_Tests]_[YYYY-MM-DD]_[HH-mm].pdf" EXACTLY.
-    // I shall strictly follow the prompt, but collision risk exists.
-    // Wait, prompt in Phase 4 says: "Every uploaded file must be named using this exact flow: [PatientName]_[Combined_Tests]_[YYYY-MM-DD]_[HH-mm].pdf"
-    // I will follow STRICT flow.
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const dayStr = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
 
-    const automatedFileName = `${safeName}_${safeTests}_${dateStr}_${timeStr}.pdf`;
+    const dateStamp = `${year}-${month}-${dayStr}`;
+    const timeStamp = `${hours}-${minutes}-${seconds}`;
+    const safeName = sanitize(patientName);
+    const safeTests = sanitize(testTitles.join('_')).slice(0, 50);
+    const safeRefBy = sanitize(referredBy);
 
-    // 1. Create Patient Sub-folder? 
-    // Prompt PHASE 4 says: "Modify the function to first check MongoDB for the current date's folderId. If it exists, upload the file directly to that ID."
-    // It DOES NOT explicitly say "create a patient subfolder" anymore in step 2.
-    // However, the *original* logic created a patient subfolder.
-    // "Direct Upload: Modify the function to first check MongoDB for the current date's folderId. If it exists, upload the file directly to that ID."
-    // "Deep Nesting: Year > Month > Day > Patient Name" was in the previous code comments.
-    // If I upload DIRECTLY to the Day folder (targetFolderId), it flatly lists all PDFs.
-    // The previous code had: "Patient Name Sanitization... patientFolderId = await getOrCreateFolder(sanitizedPatientName, dayFolderId);"
-    // Re-reading Phase 4 Spec: "Basic Provisioning Logic: ... creates a parent folder (YYYY-MMM) and sub-folders for every day... Save these generated IDs... upload the file directly to [the date's] ID."
-    // It implies uploading directly to the Day folder is the goal to save 'Search' calls (creating patient folder requires a Search/Create call every single time!).
-    // So to save API limits (90%+), we MUST skip creating per-patient folders.
-    // So I will upload FILE directly to `targetFolderId` (Day Folder).
+    // Format: YYYY-MM-DD_HH-mm-ss_Name_TestName_RefBy.pdf
+    const automatedFileName = `${dateStamp}_${timeStamp}_${safeName}_${safeTests}_${safeRefBy}.pdf`;
 
     const fileMetadata = {
       name: automatedFileName,

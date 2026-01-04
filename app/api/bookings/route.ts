@@ -65,6 +65,7 @@ import { sendSmartNotification } from '@/lib/notifications';
 import { withRateLimit } from '@/lib/withRateLimit';
 import Settings from '@/models/Settings';
 import { getDisplacement, getRoadDistance } from '@/lib/geospatial';
+import { sanitizeInput } from '@/lib/sanitize';
 
 // POST /api/bookings - Create a new booking (Patient Wizard)
 async function handler(request: Request) {
@@ -147,9 +148,15 @@ async function handler(request: Request) {
       }
     }
 
+    // Sanitize User Inputs (XSS Protection)
+    const sanitizedPatientName = sanitizeInput(body.patientName || '');
+    const sanitizedAddress = sanitizeInput(body.address || '');
+
     // 4. Create Booking
     const finalBookingData = {
       ...body,
+      patientName: sanitizedPatientName,
+      address: sanitizedAddress,
       scheduledDate: body.scheduledDate || body.date,
       totalAmount: serverTotal,
       discountAmount,
