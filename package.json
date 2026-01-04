@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
     "db:seed": "node --loader ts-node/esm lib/seedDatabase.ts"
   },
   "dependencies": {
