@@ -25,5 +25,6 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ['/admin', '/admin/:path*', '/partner', '/partner/:path*'],
+  // Keep it limited to these specific paths
+  matcher: ['/admin/:path*', '/partner/:path*'],
 };

@@ -50,7 +50,7 @@ export default function CompleteProfilePage() {
       }
 
       // Force a hard reload to the home page to refresh session
-      window.location.assign('/');
+      window.location.href = '/';
     } catch (err: any) {
       setError(err.message || 'Failed to complete profile');
       setIsLoading(false);
