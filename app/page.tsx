@@ -34,7 +34,7 @@ export default function Home() {
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
   useEffect(() => {
-    if (status === 'authenticated' && session?.needsProfileCompletion === true) {
+    if (status === 'authenticated' && session?.user?.needsProfileCompletion === true) {
       router.push('/complete-profile');
     }
   }, [session, status, router]);
