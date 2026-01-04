@@ -113,5 +113,6 @@ export interface ISettings {
   telegramAdminChatId?: string;
   serviceRadius: number;
   locationFencingEnabled: boolean;
+  distanceType: 'road' | 'displacement';
   blockSundays: boolean;
 }

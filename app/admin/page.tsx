@@ -25,6 +25,7 @@ interface BookingType {
   reportFileUrl?: string;
   reportStatus?: string;
   pathologistNotes?: string;
+  distanceFromLab?: number;
 }
 
 interface Partner {
@@ -548,6 +549,12 @@ export default function AdminPage() {
                         <span className={getStatusBadge(b.status)}>{b.status}</span>
                       </div>
                       <p className="text-slate-600 text-sm font-bold">{b.tests.map(t => t.title).join(' + ')}</p>
+                      {b.distanceFromLab && (
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                          <MapPin size={14} />
+                          <span>{b.distanceFromLab.toFixed(1)} km away</span>
+                        </div>
+                      )}
                       <div className="flex gap-8 text-slate-900 border-t-2 border-slate-200 pt-4 mt-2">
                         <div>
                           <p className="text-slate-500 text-xs uppercase font-bold tracking-widest">Total</p>
@@ -988,6 +995,29 @@ export default function AdminPage() {
                                 value={(config as any).serviceRadius ?? 10}
                                 onChange={(e) => updateConfig({ serviceRadius: Number(e.target.value) })}
                               />
+                            </div>
+
+                            <div className="mt-6 pt-4 border-t border-slate-200">
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <h5 className="font-bold text-slate-900 text-sm">Distance Calculation Logic</h5>
+                                  <p className="text-xs text-slate-500">Choose between straight line or road network</p>
+                                </div>
+                                <div className="flex items-center bg-slate-100 p-1 rounded-lg">
+                                  <button
+                                    onClick={() => updateConfig({ distanceType: 'displacement' })}
+                                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${(config as any).distanceType === 'displacement' || !(config as any).distanceType ? 'bg-white shadow-sm text-clinical-rose' : 'text-slate-500 hover:text-slate-700'}`}
+                                  >
+                                    Displacement
+                                  </button>
+                                  <button
+                                    onClick={() => updateConfig({ distanceType: 'road' })}
+                                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${(config as any).distanceType === 'road' ? 'bg-white shadow-sm text-clinical-rose' : 'text-slate-500 hover:text-slate-700'}`}
+                                  >
+                                    Road (OSRM)
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>

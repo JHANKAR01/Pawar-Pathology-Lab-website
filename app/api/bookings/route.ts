@@ -63,6 +63,8 @@ import { sendSmartNotification } from '@/lib/notifications';
 
 // POST /api/bookings - Create a new booking (Patient Wizard)
 import { withRateLimit } from '@/lib/withRateLimit';
+import Settings from '@/models/Settings';
+import { getDisplacement, getRoadDistance } from '@/lib/geospatial';
 
 // POST /api/bookings - Create a new booking (Patient Wizard)
 async function handler(request: Request) {
@@ -120,22 +122,40 @@ async function handler(request: Request) {
     // 3. Final Verification
     const serverTotal = Math.max(0, serverSubtotal - discountAmount);
 
-    // Allow a small epsilon for floating point issues? Usually exact match is best for currency.
-    // Frontend sends 'totalAmount'.
-    if (Math.abs(serverTotal - body.totalAmount) > 1) { // 1 rupee tolerance
+    if (Math.abs(serverTotal - body.totalAmount) > 1) {
       console.error(`Price Mismatch! Server: ${serverTotal}, Client: ${body.totalAmount}`);
       return NextResponse.json({ error: 'Price integrity check failed.' }, { status: 400 });
+    }
+
+    // --- Geofencing & Logistics Logic ---
+    let distanceFromLab = 0;
+    const settings = await Settings.getSingleton();
+
+    if (body.collectionType === 'home' && body.coordinates) {
+      // Server-side distance calculation for trust
+      if (settings.distanceType === 'road') {
+        distanceFromLab = await getRoadDistance(body.coordinates.lat, body.coordinates.lng);
+      } else {
+        distanceFromLab = getDisplacement(body.coordinates.lat, body.coordinates.lng);
+      }
+
+      // Enforce Geofencing
+      if (settings.locationFencingEnabled && distanceFromLab > settings.serviceRadius) {
+        return NextResponse.json({
+          error: `Location is ${distanceFromLab.toFixed(1)}km away. We only serve within ${settings.serviceRadius}km via ${settings.distanceType === 'road' ? 'road' : 'direct line'}.`
+        }, { status: 400 });
+      }
     }
 
     // 4. Create Booking
     const finalBookingData = {
       ...body,
-      scheduledDate: body.scheduledDate || body.date, // Handle both 'scheduledDate' (from page.tsx) and 'date'
+      scheduledDate: body.scheduledDate || body.date,
       totalAmount: serverTotal,
       discountAmount,
       couponCode: couponCode ? couponCode.toUpperCase().trim() : undefined,
       balanceAmount: (serverTotal - (body.amountTaken || 0)),
-      // Ensure paymentStatus is correct based on paymentMode/amounts (frontend handles logic but let's trust it for now unless critical)
+      distanceFromLab // Save calculated distance
     };
 
     const newBooking = await Booking.create(finalBookingData);

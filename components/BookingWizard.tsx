@@ -201,6 +201,51 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     return deg * (Math.PI / 180);
   };
 
+  const [calculatedDistance, setCalculatedDistance] = useState<number | null>(null);
+  const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
+
+  // Re-calculate distance whenever coordinates or settings change
+  useEffect(() => {
+    const calc = async () => {
+      if (!formData.coordinates || !settings.locationFencingEnabled) {
+        setCalculatedDistance(null);
+        return;
+      }
+
+      const { lat, lng } = formData.coordinates;
+      const labLat = 21.9015;
+      const labLng = 77.8961;
+
+      if (settings.distanceType === 'road') {
+        setIsCalculatingDistance(true);
+        try {
+          // Use OSRM public API
+          const url = `https://router.project-osrm.org/route/v1/driving/${lng},${lat};${labLng},${labLat}?overview=false`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.routes && data.routes.length > 0) {
+              setCalculatedDistance(data.routes[0].distance / 1000); // meters to km
+            } else {
+              setCalculatedDistance(calculateDistance(labLat, labLng, lat, lng));
+            }
+          } else {
+            setCalculatedDistance(calculateDistance(labLat, labLng, lat, lng));
+          }
+        } catch (e) {
+          setCalculatedDistance(calculateDistance(labLat, labLng, lat, lng));
+        } finally {
+          setIsCalculatingDistance(false);
+        }
+      } else {
+        // Displacement
+        setCalculatedDistance(calculateDistance(labLat, labLng, lat, lng));
+      }
+    };
+
+    calc();
+  }, [formData.coordinates, settings.locationFencingEnabled, settings.distanceType]);
+
   const validateCurrentStep = () => {
     setError('');
     if (step === 2) {
@@ -213,14 +258,14 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
           return "Precision location sync is required for home visits.";
         }
 
-        // Geofencing Check
-        if (settings.locationFencingEnabled) {
-          const labLat = 21.9015;
-          const labLng = 77.8961;
-          const dist = calculateDistance(labLat, labLng, formData.coordinates.lat, formData.coordinates.lng);
+        if (isCalculatingDistance) {
+          return "Calculating distance... please wait.";
+        }
 
-          if (dist > settings.serviceRadius) {
-            return `We only serve this area; you are ${dist.toFixed(1)} km away from our serviced area (${settings.serviceRadius} km).`;
+        // Geofencing Check
+        if (settings.locationFencingEnabled && calculatedDistance !== null) {
+          if (calculatedDistance > settings.serviceRadius) {
+            return `Location is ${calculatedDistance.toFixed(1)}km away via ${settings.distanceType || 'displacement'}. Our limit is ${settings.serviceRadius}km.`;
           }
         }
       }

@@ -21,6 +21,7 @@ const SettingsSchema = new Schema<ISettings & Document>(
     emailEnabled: { type: Boolean, default: true },
     serviceRadius: { type: Number, default: 10 },
     locationFencingEnabled: { type: Boolean, default: false },
+    distanceType: { type: String, enum: ['road', 'displacement'], default: 'displacement' }, // Added distanceType
     blockSundays: { type: Boolean, default: true },
 
     // Detailed Maintenance
