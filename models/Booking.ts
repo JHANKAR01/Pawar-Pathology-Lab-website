@@ -7,7 +7,7 @@ const BookingSchema = new Schema<IBooking & Document>(
     contactNumber: { type: String, trim: true },
     email: { type: String, trim: true, lowercase: true },
     bookedByEmail: { type: String, trim: true, lowercase: true, index: true },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    userId: { type: String, ref: 'User' },
     tests: [{
       _id: false,
       id: String,
