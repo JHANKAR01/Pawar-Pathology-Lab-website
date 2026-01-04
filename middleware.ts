@@ -1,38 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import { checkRateLimit } from '@/lib/rateLimit';
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // 1. Rate Limiting for API Routes
-  if (pathname.startsWith('/api/')) {
-    const token = await getToken({ req });
-    let identifier = req.ip || 'anonymous';
-    let role = 'guest';
-
-    if (token) {
-      identifier = token.id as string || (token as any).sub!;
-      role = (token as any).role || 'patient';
-    }
-
-    const rateLimit = await checkRateLimit(identifier, role);
-
-    if (!rateLimit.allowed) {
-      return new NextResponse(
-        JSON.stringify({
-          error: "High traffic detected from your network. For security, please wait 60 seconds or ensure you are logged in for higher access speeds."
-        }),
-        {
-          status: 429,
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
-    }
-  }
-
-  // 2. Session & redirect logic
+  // 1. Session & redirect logic
   const token = await getToken({ req });
   const isAuth = !!token;
 

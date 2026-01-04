@@ -62,7 +62,10 @@ import Test from '@/models/Test';
 import { sendSmartNotification } from '@/lib/notifications';
 
 // POST /api/bookings - Create a new booking (Patient Wizard)
-export async function POST(request: Request) {
+import { withRateLimit } from '@/lib/withRateLimit';
+
+// POST /api/bookings - Create a new booking (Patient Wizard)
+async function handler(request: Request) {
   await dbConnect();
   try {
     const body = await request.json();
@@ -161,3 +164,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to create booking' }, { status: 400 });
   }
 }
+
+export const POST = withRateLimit(handler);

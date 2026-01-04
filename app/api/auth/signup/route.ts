@@ -9,7 +9,9 @@ import { authOptions } from '@/lib/next-auth-options';
 
 import bcrypt from 'bcryptjs';
 
-export async function POST(request: Request) {
+import { withRateLimit } from '@/lib/withRateLimit';
+
+async function handler(request: Request) {
   await dbConnect();
   try {
     const body = await request.json();
@@ -85,3 +87,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Signup failed' }, { status: 500 });
   }
 }
+
+export const POST = withRateLimit(handler);

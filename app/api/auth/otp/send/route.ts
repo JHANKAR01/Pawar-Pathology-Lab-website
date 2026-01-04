@@ -3,7 +3,9 @@ import dbConnect from '@/lib/dbConnect';
 import OTP from '@/models/OTP';
 import { sendSmartNotification } from '@/lib/notifications';
 
-export async function POST(request: Request) {
+import { withRateLimit } from '@/lib/withRateLimit';
+
+async function handler(request: Request) {
     await dbConnect();
     try {
         const { email, name } = await request.json();
@@ -46,3 +48,5 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Failed to send OTP' }, { status: 500 });
     }
 }
+
+export const POST = withRateLimit(handler);

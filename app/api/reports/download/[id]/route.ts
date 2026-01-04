@@ -6,7 +6,9 @@ import dbConnect from '@/lib/dbConnect';
 import Booking from '@/models/Booking';
 import { google } from 'googleapis';
 
-export async function GET(
+import { withRateLimit } from '@/lib/withRateLimit';
+
+async function handler(
     request: Request,
     { params }: { params: { id: string } }
 ) {
@@ -85,3 +87,7 @@ export async function GET(
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
+
+// Cast handler to any because withRateLimit expects NextRequest but dynamic routes receive params as 2nd arg
+// The wrapper passes arguments through, so it works at runtime.
+export const GET = withRateLimit(handler as any);

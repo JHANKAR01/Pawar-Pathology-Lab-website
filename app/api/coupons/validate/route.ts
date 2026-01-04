@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Coupon from '@/models/Coupon';
 
-export async function POST(request: Request) {
+import { withRateLimit } from '@/lib/withRateLimit';
+
+async function handler(request: Request) {
   await dbConnect();
-  
+
   try {
     const body = await request.json();
     const { code, totalAmount } = body;
@@ -78,4 +80,6 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export const POST = withRateLimit(handler);
 
