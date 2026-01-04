@@ -1,143 +1,113 @@
-<div align="center">
-  <h1 alt="Pawar Pathology Lab Banner" width="100%" />
-  
-  # Pawar Pathology Lab
-  
-  **Next-Generation Diagnostic Lab Management Platform**
-  
-  [![Next.js](https://img.shields.io/badge/Next.js-14.0-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-  [![MongoDB](https://img.shields.io/badge/MongoDB-Leaf-green?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-  [![Shadcn UI](https://img.shields.io/badge/Shadcn_UI-Components-black?style=for-the-badge&logo=shadcnui&logoColor=white)](https://ui.shadcn.com/)
-  [![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)](LICENSE)
+# Pawar Pathology Lab - Next-Gen Diagnostic Management System
 
-</div>
+![Pawar Pathology Lab Banner](/public/banner.png) *<!-- Placeholder for actual banner if exists, or remove if not -->*
+
+## 🏥 Overview
+
+**Pawar Pathology Lab** is a state-of-the-art diagnostic center management platform designed to streamline the entire pathology workflow—from patient booking to report delivery. Built with **Next.js 14**, **TypeScript**, and **MongoDB**, this application focuses on providing a seamless, high-performance experience for patients, partners, and administrators.
+
+The system replaces traditional manual processes with a digital-first approach, featuring real-time booking, automated notifications, and secure report access, ensuring **NABH compliance** and data security throughout the patient journey.
 
 ---
 
-## 📋 Problem Statement
-Traditional pathology labs often struggle with fragmented workflows, manual reporting, and poor patient engagement. Problems include:
-- **Inefficient Booking**: Manual phone/walk-in bookings leading to queues and errors.
-- **Report Delivery Delays**: Physical collection or scattered email chains.
-- **Lack of Transparency**: Patients unsure about test status or pricing.
-- **Operational Silos**: Disconnected systems for admin, partners, and lab technicians.
+## ✨ Core Features
 
-**Pawar Pathology Lab** provides a unified, digital-first solution to streamline operations, enhance diagnostic precision, and deliver a premium patient experience.
+### 📅 Advanced Booking Wizard
+A highly intuitive, multi-step booking engine for patients.
+- **Dynamic Slot Selection**: Real-time availability checking.
+- **Smart Test Search**: Instant search with categorization.
+- **Home Collection Toggle**: Seamlessly switch between clinic visits and home sample collection.
+- **Coupon System**: Integrated discount logic with validation.
 
----
+### 📊 Role-Based Dashboards
+Tailored interfaces for different user types, secured by **Role-Based Access Control (RBAC)**.
 
-## 🚀 Key Features
-- **Smart Booking Wizard**: Interactive, multi-step booking for Home Collection or Lab Visit with real-time slot selection.
-- **Role-Based Dashboards**:
-  - **Admin**: Complete oversight of bookings, reports, and partner management.
-  - **Patient**: Track test status, download secure PDF reports, and manage profile.
-  - **Partner**: Referral management and commission tracking.
-- **Automated Notification Hub**:
-    - **WhatsApp**: Direct alerts for confirmations and report readiness.
-    - **Telegram**: Instant internal staff alerts for new bookings.
-    - **Email**: Professional HTML templates with precise appointment details.
-- **Coupon & Discount Engine**: Dynamic discount codes and promotional campaigns.
-- **Secure Report Management**: Google Drive integrated storage for secure Report PDF hosting and delivery.
+- **Admin Command Center**:
+  - Global view of all appointments (Pending, Confirmed, Completed).
+  - Revenue analytics and daily reporting.
+  - Staff and doctor management.
+  - Content management for tests and packages.
 
----
+- **Partner Portal**:
+  - Referral tracking for referring doctors and labs.
+  - Commission transparency and payout history.
+  - Quick-booking tools for partners to register patients.
 
-## 🛠️ Tech Stack
-| Category | Technologies |
-|----------|--------------|
-| **Frontend** | Next.js 14 (App Router), React 18, TailwindCSS, Framer Motion, Three.js |
-| **Backend** | Next.js API Routes, Node.js |
-| **Database** | MongoDB (Mongoose ODM) |
-| **Auth** | NextAuth.js (Credentials & Social) |
-| **Utilities** | Lucide React (Icons), Sonner (Toasts), Zod (Validation) |
-| **Integrations**| Google Drive API (Storage), Gmail API (Email), Telegram Bot API |
+- **Patient Portal**:
+  - Appointment history.
+  - Secure download of PDF reports.
+  - Profile management.
 
----
+### 🔔 Smart Notification Hub
+An omni-channel notification system ensuring no communication is missed.
+- **WhatsApp Cloud API**: Instant booking confirmations and status updates.
+- **Gmail API**: Professional email notifications with deep links.
+- **Telegram Bot API**: Real-time admin alerts for new bookings and critical system events.
 
-## 👥 Use Cases
-
-### 1. The Patient
-*Scenario*: A patient needs a Thyroid Profile test.
-- **Action**: Visits website -> Selects Test -> Chooses "Home Collection" -> Pays Online/COD.
-- **Result**: Receives instant WhatsApp/Email confirmation. Phlebotomist arrives at scheduled time. Report downloaded from dashboard next day.
-
-### 2. The Lab Administrator
-*Scenario*: A new booking comes in.
-- **Action**: Acknowledges Telegram alert -> Verifies details in Admin Panel -> Assigns phlebotomist.
-- **Result**: Smooth workflow zero manual data entry errors.
-
-### 3. The Partner Doctor
-*Scenario*: Referring a patient.
-- **Action**: Logs into Partner Portal -> Refers patient via unique code.
-- **Result**: Patient gets discount, Partner gets transparent commission tracking.
+### 🛡️ Security & Compliance
+- **Authentication**: Powered by **NextAuth.js** with custom credentials provider.
+- **Data Protection**: **BCrypt** hashing for passwords, granular API access controls.
+- **Verification**: OTP-based verification for critical actions.
+- **Audit Logs**: Comprehensive tracking of system actions for accountability.
 
 ---
 
-## ⚡ Getting Started
+## 🏗️ Technical Architecture
 
-### Prerequisites
-- Node.js v18+
-- MongoDB Instance (Local or Atlas)
-- Google Cloud Console Project (for Auth & Drive API)
+The application checks all boxes for a modern, production-grade web application:
 
-### Installation
+### Tech Stack
+- **Framework**: [Next.js 14](https://nextjs.org/) (App Router)
+- **Language**: [TypeScript](https://www.typescriptlang.org/) for type safety.
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) with **Framer Motion** for animations.
+- **Database**: [MongoDB](https://www.mongodb.com/) with **Mongoose** ORM.
+- **3D Graphics**: **Three.js** (@react-three/fiber) for immersive UI elements.
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/pawar-pathology-lab.git
-   cd pawar-pathology-lab
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Environment Setup**
-   Create a `.env` file in the root directory with the following variables:
-   ```env
-   # Database
-   MONGODB_URI=mongodb+srv://...
-
-   # Authentication
-   NEXTAUTH_SECRET=your_super_secret
-   NEXTAUTH_URL=http://localhost:3000
-
-   # Google APIs (Drive, Gmail, Auth)
-   GOOGLE_CLIENT_ID=...
-   GOOGLE_CLIENT_SECRET=...
-   REPORTS_GOOGLE_REFRESH_TOKEN=...
-   
-   # Notifications
-   TELEGRAM_BOT_TOKEN=...
-   TELEGRAM_ADMIN_CHAT_ID=...
-   WHATSAPP_TOKEN=...
-   ```
-
-4. **Run Development Server**
-   ```bash
-   npm run dev
-   ```
-
-Access the app at `http://localhost:3000`.
+### Key Architectural Decisions
+- **Server Actions**: Leveraging Next.js Server Actions for secure, direct backend mutations.
+- **Edge Compatibility**: Designed with edge-ready patterns where possible.
+- **Optimistic UI**: Immediate feedback implementation for smoother user interactions.
+- **Responsive Design**: Mobile-first architecture ensuring full functionality on all devices.
 
 ---
 
-## 📂 Project Structure
-```
-pawar-pathology-lab/
-├── app/                  # Next.js App Router
-│   ├── api/              # API Routes (Bookings, Auth, Reports)
-│   ├── dashboard/        # Admin/Partner Dashboards
-│   ├── reports/          # Patient Reports Portal
-│   └── layout.tsx        # Root Layout & Providers
-├── components/           # Reusable UI Components
-├── lib/                  # Utilities (Notifications, DB Connect)
-├── models/               # Mongoose Schemas (Booking, User, Test)
-├── public/               # Static Assets
-└── types/                # TypeScript Interfaces
-```
+## 🔄 User Workflows
+
+### 1. The Patient Journey
+1.  **Discovery**: Patient lands on the high-performance landing page.
+2.  **Selection**: Searches for specific tests or selects health packages.
+3.  **Booking**: Completes the wizard (Date/Time -> Details -> Payment Mode).
+4.  **Confirmation**: Receives instant WhatsApp/Email confirmation.
+5.  **Result**: Downloads the signed report securely from the portal upon completion.
+
+### 2. Administrator Operations
+1.  **Monitoring**: Views daily schedule via the Admin Dashboard.
+2.  **Processing**: Updates sample collection status and report generation.
+3.  **Management**: Adds new test types or updates pricing dynamically.
 
 ---
+
+## 🔌 Integrations
+
+| Service | Purpose |
+| :--- | :--- |
+| **Google Drive API** | Secure cloud storage for generated patient reports. |
+| **Gmail API** | Transactional email delivery infrastructure. |
+| **WhatsApp Cloud API** | Business-grade messaging for high engagement. |
+| **Telegram API** | Internal alerting system for operations teams. |
+
+---
+
+## 🚀 Performance & UX
+
+- **Dynamic Island Navigation**: iPhone-inspired fluid navigation menu.
+- **Skeleton Loading**: Optimized loading states (Shimmer effects) for perceived performance.
+- **SEO Optimized**: Metadata-rich pages for better search engine visibility.
+- **Maintenance Mode**: Granular system controls to toggle access for specific user groups during updates.
+
+---
+
+> **Note**: This is a production application. Source code access is restricted to authorized personnel. Environment configurations and secrets are managed via secure vaults and are not exposed in this repository.
 
 ## 📧 Contact
 **Pawar Pathology Lab**  
@@ -146,5 +116,6 @@ Betul, Madhya Pradesh
 
 ---
 <div align="center">
-  <sub>Built with ❤️ by Jhankar Jhade</sub>
+  <sub>Built with ❤️ by Jhankar Jhade 9826852135 jhadejhankar@gmail.com</sub>
 </div>
+
