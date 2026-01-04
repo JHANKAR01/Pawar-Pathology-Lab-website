@@ -29,7 +29,7 @@ const BookingSchema = new Schema<IBooking & Document>(
       lat: { type: Number },
       lng: { type: Number }
     },
-    scheduledDate: { type: Date, required: true },
+    scheduledDate: { type: String, required: true },
     status: {
       type: String,
       enum: Object.values(BookingStatus),
