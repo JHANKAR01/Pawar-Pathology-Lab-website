@@ -156,7 +156,6 @@ export async function uploadReportToDrive(
     // C. Forensic-Grade Filename: YYYY-MM-DD_HH-mm-ss_Name_TestName_RefBy.pdf
     const sanitize = (str: string) => str.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
 
-    const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const dayStr = String(now.getDate()).padStart(2, '0');
     const hours = String(now.getHours()).padStart(2, '0');
