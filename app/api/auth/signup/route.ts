@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import User from '@/models/User';
 import OTP from '@/models/OTP';
+import Settings from '@/models/Settings';
 
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/next-auth-options';
@@ -19,37 +20,39 @@ async function handler(request: Request) {
 
     const sanitizedEmail = email.toLowerCase().trim();
 
-    // 1. Validate OTP (CRITICAL)
-    if (!otp) {
-      return NextResponse.json({ error: 'OTP is required' }, { status: 400 });
-    }
+    // 0. Check Settings requirements
+    const settings = await Settings.getSingleton();
 
-    const otpRecord = await OTP.findOne({ email: sanitizedEmail, purpose: 'signup' });
+    // 1. Validate OTP (if required)
+    if (settings.requireVerification) {
+      if (!otp) {
+        return NextResponse.json({ error: 'OTP is required' }, { status: 400 });
+      }
 
-    // Failure 1: No record or mismatch
-    if (!otpRecord || otpRecord.code !== otp) {
-      return NextResponse.json({ error: 'Invalid OTP code' }, { status: 400 });
-    }
+      const otpRecord = await OTP.findOne({ email: sanitizedEmail, purpose: 'signup' });
 
-    // Failure 2: Expired 
-    // Note: MongoDB TTL (expiresAt) auto-deletes, but we double check logic for strictness
-    // or if the specialized 5 minute rule differs from DB TTL (10m in existing model).
-    // Prompt says "compare createdAt with current time" but since we upserted and set expiresAt/createdAt, 
-    // checking `createdAt` or just respecting the update time is simpler.
-    // The previous tool created record with `expiresAt = 5 mins from now`.
-    // Let's check `updatedAt` (from upsert) vs now > 5 mins.
-    const now = new Date();
-    const otpTime = new Date(otpRecord.updatedAt || otpRecord.createdAt); // Upsert updates `updatedAt`
-    const fiveMinutesInMillis = 5 * 60 * 1000;
+      // Failure 1: No record or mismatch
+      if (!otpRecord || otpRecord.code !== otp) {
+        return NextResponse.json({ error: 'Invalid OTP code' }, { status: 400 });
+      }
 
-    if (now.getTime() - otpTime.getTime() > fiveMinutesInMillis) {
-      return NextResponse.json({ error: 'OTP has expired. Please request a new one' }, { status: 400 });
+      // Failure 2: Expired 
+      const now = new Date();
+      const otpTime = new Date(otpRecord.updatedAt || otpRecord.createdAt);
+      const fiveMinutesInMillis = 5 * 60 * 1000;
+
+      if (now.getTime() - otpTime.getTime() > fiveMinutesInMillis) {
+        return NextResponse.json({ error: 'OTP has expired. Please request a new one' }, { status: 400 });
+      }
+
+      // Cleanup OTP
+      await OTP.deleteOne({ _id: otpRecord._id });
     }
 
     // 2. Check Existing User
     const existingUser = await User.findOne({ email: sanitizedEmail });
     if (existingUser) {
-      return NextResponse.json({ error: 'Email already exists' }, { status: 400 });
+      return NextResponse.json({ error: 'User already exists' }, { status: 400 });
     }
 
     // Role security check

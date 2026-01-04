@@ -633,83 +633,93 @@ export default function AdminPage() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="space-y-6"
+                className="grid grid-cols-1 lg:grid-cols-2 gap-6"
               >
-                <motion.div
-                  variants={{
-                    hidden: { opacity: 0 },
-                    show: {
-                      opacity: 1,
-                      transition: {
-                        staggerChildren: 0.1
-                      }
-                    }
-                  }}
-                  initial="hidden"
-                  animate="show"
-                >
-                  {bookings.filter(b => b.status !== 'completed').map((b, index) => (
+                {bookings.filter(b => b.status !== 'completed').length === 0 ? (
+                  <div className="col-span-full flex flex-col items-center justify-center p-12 text-slate-400">
+                    <FlaskConical size={48} className="mb-4 opacity-50" />
+                    <p className="font-bold">No active bookings to manage</p>
+                  </div>
+                ) : (
+                  bookings.filter(b => b.status !== 'completed').map((b, index) => (
                     <motion.div
                       key={b._id}
-                      variants={{
-                        hidden: { opacity: 0, y: 20 },
-                        show: { opacity: 1, y: 0 }
-                      }}
-                      className="card-premium p-8 flex flex-col gap-4"
+                      className="card-premium p-6 flex flex-col gap-4 border-2 border-slate-100 hover:border-slate-300 transition-all"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.05 }}
                     >
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-slate-900 font-black text-xl">{b.patientName}</h3>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="text-lg font-black text-slate-900 line-clamp-1">{b.patientName}</h4>
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">{b.collectionType || 'Lab Visit'}</p>
+                        </div>
                         <span className={getStatusBadge(b.status)}>{b.status}</span>
                       </div>
-                      <p className="text-slate-600 text-sm font-bold">{b.tests.map(t => t.title).join(' + ')}</p>
+
+                      <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                        <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">Tests Requested</p>
+                        <div className="flex flex-wrap gap-2">
+                          {b.tests.map((t, idx) => (
+                            <span key={idx} className="bg-white px-2 py-1 rounded-md border border-slate-200 text-xs font-bold text-slate-700 shadow-sm">
+                              {t.title}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
                       {b.distanceFromLab && (
-                        <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                          <MapPin size={14} />
-                          <span>{b.distanceFromLab.toFixed(1)} km away</span>
+                        <div className="flex items-center gap-3 bg-blue-50 text-blue-700 px-4 py-3 rounded-xl border border-blue-100">
+                          <MapPin size={18} />
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-widest">Logistics Distance</p>
+                            <p className="font-bold">{b.distanceFromLab.toFixed(1)} KM via Road</p>
+                          </div>
                         </div>
                       )}
-                      <div className="flex gap-8 text-slate-900 border-t-2 border-slate-200 pt-4 mt-2">
-                        <div>
+
+                      <div className="flex gap-4 text-slate-900 border-t border-slate-100 pt-4 mt-auto">
+                        <div className="flex-1">
                           <p className="text-slate-500 text-xs uppercase font-bold tracking-widest">Total</p>
                           <p className="font-bold text-lg">₹{b.totalAmount}</p>
                         </div>
-                        <div>
+                        <div className="flex-1">
                           <p className="text-slate-500 text-xs uppercase font-bold tracking-widest">Balance</p>
                           <p className="font-bold text-lg text-clinical-rose">₹{b.balanceAmount}</p>
                         </div>
                       </div>
-                      {b.status === 'pending' && (
-                        <div className="flex gap-2 mt-4 self-start">
-                          <button onClick={() => handleUpdateStatus(b._id, 'accepted')} className="bg-success/10 text-success px-6 py-3 rounded-xl font-bold text-xs hover:bg-success/20 transition-all border-2 border-success/20">
-                            Approve Booking
-                          </button>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap gap-3 mt-2">
+                        {b.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => handleUpdateStatus(b._id, 'accepted')}
+                              className="flex-1 bg-success/10 text-success px-4 py-3 rounded-xl font-bold text-xs hover:bg-success/20 transition-all border-2 border-success/20 flex items-center justify-center gap-2"
+                            >
+                              <CheckCircle size={16} /> Approve
+                            </button>
+                            <button
+                              onClick={() => handleOpenRejection(b)}
+                              className="flex-1 bg-clinical-rose/10 text-clinical-rose px-4 py-3 rounded-xl font-bold text-xs hover:bg-clinical-rose/20 transition-all border-2 border-clinical-rose/20 flex items-center justify-center gap-2"
+                            >
+                              <XCircle size={16} /> Reject
+                            </button>
+                          </>
+                        )}
+                        {b.status === 'report_uploaded' && b.reportFileUrl && (
                           <button
-                            onClick={() => {
-                              setSelectedBookingForReview(b); // Reusing this for simplicity, or I can add a specific state if needed. Let's stick to reusing or adding new.
-                              // Actually, reusing might be confusing because the other modal expects a report.
-                              // Let's use a new state: selectedBookingForRejection
-                              // But I can't add state in this replace block easily. 
-                              // I will assume I will add `selectedBookingForRejection` state later.
-                              handleOpenRejection(b);
-                            }}
-                            className="bg-clinical-rose/10 text-clinical-rose px-4 py-3 rounded-xl font-bold text-xs hover:bg-clinical-rose/20 transition-all border-2 border-clinical-rose/20"
+                            onClick={() => handleOpenReview(b)}
+                            className="w-full bg-clinical-rose/10 text-clinical-rose px-4 py-3 rounded-xl font-bold text-xs hover:bg-clinical-rose/20 transition-all border-2 border-clinical-rose/20 flex items-center justify-center gap-2"
                           >
-                            <XCircle size={18} />
+                            <FileText size={16} /> Review Report
                           </button>
-                        </div>
-                      )}
-                      {b.status === 'report_uploaded' && b.reportFileUrl && (
-                        <button
-                          onClick={() => handleOpenReview(b)}
-                          className="mt-4 self-start bg-clinical-rose/10 text-clinical-rose px-6 py-3 rounded-xl font-bold text-xs hover:bg-clinical-rose/20 transition-all border-2 border-clinical-rose/20 flex items-center gap-2"
-                        >
-                          <FileText className="w-4 h-4" />
-                          Review Report
-                        </button>
-                      )}
+                        )}
+                        {/* Fallback for other statuses if needed, or leave empty */}
+                      </div>
                     </motion.div>
-                  ))}
-                </motion.div>
+                  ))
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -1505,6 +1515,7 @@ export default function AdminPage() {
                       <tr>
                         <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 rounded-l-lg">Date</th>
                         <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500">Patient</th>
+                        <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500">Tests</th>
                         <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 text-right rounded-r-lg">Total</th>
                       </tr>
                     </thead>
@@ -1517,6 +1528,9 @@ export default function AdminPage() {
                             })}
                           </td>
                           <td className="p-3 font-bold text-slate-900">{match.patientName}</td>
+                          <td className="p-3 font-bold text-slate-500 text-xs">
+                            {match.tests?.map(t => t.title).join(', ') || '-'}
+                          </td>
                           <td className="p-3 font-bold text-slate-900 text-right">₹{match.totalAmount}</td>
                         </tr>
                       ))}

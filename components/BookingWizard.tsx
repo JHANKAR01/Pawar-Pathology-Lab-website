@@ -121,6 +121,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
       } else {
         setDiscount(0);
         setError(data.error || 'Invalid coupon code');
+        setPromoCode('');
       }
     } catch (err) {
       console.error('Coupon validation error:', err);

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, User, Phone, Loader2, AlertCircle, FlaskConical, ArrowLeft, Eye, EyeOff, ShieldCheck, Timer } from 'lucide-react';
 import { toast } from 'sonner';
@@ -8,6 +8,18 @@ import { toast } from 'sonner';
 export default function SignupPage() {
   const router = useRouter();
   const [step, setStep] = useState(1); // 1: Details, 2: OTP
+  const [requireVerification, setRequireVerification] = useState(true);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        setRequireVerification(data.requireVerification ?? true);
+        setSettingsLoading(false);
+      })
+      .catch(() => setSettingsLoading(false));
+  }, []);
 
   // Step 1 State
   const [name, setName] = useState('');
@@ -47,6 +59,12 @@ export default function SignupPage() {
         return;
       }
     }
+
+    if (!requireVerification) {
+      handleVerifyAndSignup(e, true);
+      return;
+    }
+
     // ... existing OTP logic
     setIsLoading(true);
     try {
@@ -74,11 +92,11 @@ export default function SignupPage() {
     }
   };
 
-  const handleVerifyAndSignup = async (e: React.FormEvent) => {
+  const handleVerifyAndSignup = async (e: React.FormEvent, skipOtpCheck = false) => {
     e.preventDefault();
     setError('');
 
-    if (otp.length !== 6) {
+    if (!skipOtpCheck && otp.length !== 6) {
       setError("Please enter a valid 6-digit OTP.");
       return;
     }
@@ -205,8 +223,8 @@ export default function SignupPage() {
               </div>
 
               <div className="pt-4 space-y-4">
-                <button type="submit" className="w-full bg-clinical-rose text-white py-5 rounded-2xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-3 hover:bg-clinical-rose-dark transition-all shadow-rose-lg disabled:opacity-50" disabled={isLoading}>
-                  {isLoading ? <Loader2 className="animate-spin" /> : "Send OTP"}
+                <button type="submit" className="w-full bg-clinical-rose text-white py-5 rounded-2xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-3 hover:bg-clinical-rose-dark transition-all shadow-rose-lg disabled:opacity-50" disabled={isLoading || settingsLoading}>
+                  {isLoading ? <Loader2 className="animate-spin" /> : (requireVerification ? "Send OTP" : "Create Account")}
                 </button>
                 <button type="button" onClick={() => router.push('/login')} className="w-full bg-transparent border-2 border-slate-300 text-slate-700 py-5 rounded-2xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-3 hover:bg-slate-50 hover:border-clinical-rose hover:text-clinical-rose transition-all">
                   Already have an account? Sign In
