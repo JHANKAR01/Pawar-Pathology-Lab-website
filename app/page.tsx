@@ -35,7 +35,7 @@ export default function Home() {
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.needsProfileCompletion === true) {
-      router.push('/complete-profile');
+      router.replace('/complete-profile');
     }
   }, [session, status, router]);
 

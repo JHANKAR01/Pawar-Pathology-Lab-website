@@ -21,7 +21,7 @@ export default function CompleteProfilePage() {
       }
     }
     if (status === 'authenticated' && !(session as any)?.needsProfileCompletion) {
-        router.push('/');
+      router.push('/');
     }
   }, [session, status, router]);
 
@@ -49,16 +49,8 @@ export default function CompleteProfilePage() {
         throw new Error(errorData.error || 'Failed to update profile');
       }
 
-      const { token, user } = await response.json();
-      
-      // Store token and user data
-      document.cookie = `pawar_lab_auth_token=${token}; path=/; max-age=86400; SameSite=Lax`;
-      localStorage.setItem('pawar_lab_auth_token', token);
-      localStorage.setItem('pawar_lab_user_role', user.role);
-      localStorage.setItem('pawar_lab_user', JSON.stringify(user));
-
-      // Hard redirect to refresh session state
-      window.location.href = '/';
+      // Force a hard reload to the home page to refresh session
+      window.location.assign('/');
     } catch (err: any) {
       setError(err.message || 'Failed to complete profile');
       setIsLoading(false);
