@@ -26,6 +26,9 @@ interface BookingType {
   reportStatus?: string;
   pathologistNotes?: string;
   distanceFromLab?: number;
+  couponCode?: string;
+  collectionType?: string;
+  createdAt?: string;
 }
 
 interface Partner {
@@ -1348,180 +1351,183 @@ export default function AdminPage() {
           </motion.div>
         )}
         {/* Partner Re-assignment Confirmation Modal */}
-        <AnimatePresence>
-          {partnerReassignModal.isOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-              onClick={() => setPartnerReassignModal(prev => ({ ...prev, isOpen: false }))}
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-center mb-6 text-amber-500">
-                  <HeartHandshake size={48} />
-                </div>
-                <h3 className="text-xl font-black text-slate-900 text-center mb-2">Confirm Re-assignment</h3>
-                <p className="text-center text-slate-500 mb-8 font-medium">
-                  Are you sure you want to re-assign this specimen from <br />
-                  <span className="font-bold text-slate-900">{partnerReassignModal.currentPartnerName}</span> to <span className="font-bold text-clinical-rose">{partnerReassignModal.newPartnerName}</span>?
-                </p>
+      </AnimatePresence>
 
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setPartnerReassignModal(prev => ({ ...prev, isOpen: false }))}
-                    className="flex-1 bg-slate-100 text-slate-600 px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-slate-200 transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleConfirmPartnerReassign}
-                    className="flex-1 bg-clinical-rose text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-clinical-rose-dark transition-all"
-                  >
-                    Confirm
-                  </button>
-                </div>
-              </motion.div>
+      {/* Partner Re-assignment Confirmation Modal */}
+      <AnimatePresence>
+        {partnerReassignModal.isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={() => setPartnerReassignModal(prev => ({ ...prev, isOpen: false }))}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-center mb-6 text-amber-500">
+                <HeartHandshake size={48} />
+              </div>
+              <h3 className="text-xl font-black text-slate-900 text-center mb-2">Confirm Re-assignment</h3>
+              <p className="text-center text-slate-500 mb-8 font-medium">
+                Are you sure you want to re-assign this specimen from <br />
+                <span className="font-bold text-slate-900">{partnerReassignModal.currentPartnerName}</span> to <span className="font-bold text-clinical-rose">{partnerReassignModal.newPartnerName}</span>?
+              </p>
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setPartnerReassignModal(prev => ({ ...prev, isOpen: false }))}
+                  className="flex-1 bg-slate-100 text-slate-600 px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmPartnerReassign}
+                  className="flex-1 bg-clinical-rose text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-clinical-rose-dark transition-all"
+                >
+                  Confirm
+                </button>
+              </div>
             </motion.div>
-          )}
-        </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        {/* Rejection Modal for Pending Bookings */}
-        <AnimatePresence>
-          {rejectionModalOpen && selectedBookingForRejection && (
+      {/* Rejection Modal for Pending Bookings */}
+      <AnimatePresence>
+        {rejectionModalOpen && selectedBookingForRejection && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={() => !isProcessingReview && setRejectionModalOpen(false)}
+          >
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-              onClick={() => !isProcessingReview && setRejectionModalOpen(false)}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8"
+              onClick={(e) => e.stopPropagation()}
             >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3">
-                    <XCircle className="text-clinical-rose" size={28} />
-                    Reject Booking
-                  </h2>
-                  <button onClick={() => setRejectionModalOpen(false)} disabled={isProcessingReview} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                    <X size={24} className="text-slate-400 hover:text-slate-600" />
-                  </button>
-                </div>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                  <XCircle className="text-clinical-rose" size={28} />
+                  Reject Booking
+                </h2>
+                <button onClick={() => setRejectionModalOpen(false)} disabled={isProcessingReview} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                  <X size={24} className="text-slate-400 hover:text-slate-600" />
+                </button>
+              </div>
 
-                <div className="mb-6">
-                  <p className="text-slate-600 font-bold mb-2">Patient: <span className="text-slate-900">{selectedBookingForRejection.patientName}</span></p>
-                  <p className="text-slate-500 text-sm">Please specify the reason for rejection. This will be sent to the user.</p>
-                </div>
+              <div className="mb-6">
+                <p className="text-slate-600 font-bold mb-2">Patient: <span className="text-slate-900">{selectedBookingForRejection.patientName}</span></p>
+                <p className="text-slate-500 text-sm">Please specify the reason for rejection. This will be sent to the user.</p>
+              </div>
 
-                <textarea
-                  value={rejectNotes}
-                  onChange={(e) => setRejectNotes(e.target.value)}
-                  placeholder="Reason (e.g., Use precise location, Service unavailable in area...)"
-                  className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all resize-none mb-6 h-32"
+              <textarea
+                value={rejectNotes}
+                onChange={(e) => setRejectNotes(e.target.value)}
+                placeholder="Reason (e.g., Use precise location, Service unavailable in area...)"
+                className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all resize-none mb-6 h-32"
+                disabled={isProcessingReview}
+              />
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setRejectionModalOpen(false)}
                   disabled={isProcessingReview}
-                />
-
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setRejectionModalOpen(false)}
-                    disabled={isProcessingReview}
-                    className="flex-1 bg-slate-100 text-slate-600 px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-slate-200 transition-all disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleConfirmRejection}
-                    disabled={isProcessingReview || !rejectNotes.trim()}
-                    className="flex-1 bg-clinical-rose text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-clinical-rose-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {isProcessingReview ? <Loader2 className="animate-spin" /> : <XCircle size={18} />}
-                    Confirm Reject
-                  </button>
-                </div>
-              </motion.div>
+                  className="flex-1 bg-slate-100 text-slate-600 px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-slate-200 transition-all disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmRejection}
+                  disabled={isProcessingReview || !rejectNotes.trim()}
+                  className="flex-1 bg-clinical-rose text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-clinical-rose-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isProcessingReview ? <Loader2 className="animate-spin" /> : <XCircle size={18} />}
+                  Confirm Reject
+                </button>
+              </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-        {/* Coupon Usage Insights Modal */}
-        <AnimatePresence>
-          {couponUsageModal.isOpen && (
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Coupon Usage Insights Modal */}
+      <AnimatePresence>
+        {couponUsageModal.isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={() => setCouponUsageModal(prev => ({ ...prev, isOpen: false }))}
+          >
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-              onClick={() => setCouponUsageModal(prev => ({ ...prev, isOpen: false }))}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
             >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between p-6 border-b-2 border-slate-200">
-                  <div>
-                    <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-                      <Ticket className="text-clinical-rose" />
-                      Coupon Usage: {couponUsageModal.couponCode}
-                    </h2>
-                    <p className="text-sm text-slate-500 font-bold mt-1">
-                      Used {couponUsageModal.matches.length} times
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setCouponUsageModal(prev => ({ ...prev, isOpen: false }))}
-                    className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-                  >
-                    <X size={24} className="text-slate-400 hover:text-slate-600" />
-                  </button>
+              <div className="flex items-center justify-between p-6 border-b-2 border-slate-200">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+                    <Ticket className="text-clinical-rose" />
+                    Coupon Usage: {couponUsageModal.couponCode}
+                  </h2>
+                  <p className="text-sm text-slate-500 font-bold mt-1">
+                    Used {couponUsageModal.matches.length} times
+                  </p>
                 </div>
+                <button
+                  onClick={() => setCouponUsageModal(prev => ({ ...prev, isOpen: false }))}
+                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                >
+                  <X size={24} className="text-slate-400 hover:text-slate-600" />
+                </button>
+              </div>
 
-                <div className="flex-1 overflow-y-auto p-6">
-                  {couponUsageModal.matches.length === 0 ? (
-                    <div className="text-center py-12 text-slate-400">
-                      <p>No usages found for this coupon.</p>
-                    </div>
-                  ) : (
-                    <table className="w-full text-left">
-                      <thead className="bg-slate-50 sticky top-0">
-                        <tr>
-                          <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 rounded-l-lg">Date</th>
-                          <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500">Patient</th>
-                          <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 text-right rounded-r-lg">Total</th>
+              <div className="flex-1 overflow-y-auto p-6">
+                {couponUsageModal.matches.length === 0 ? (
+                  <div className="text-center py-12 text-slate-400">
+                    <p>No usages found for this coupon.</p>
+                  </div>
+                ) : (
+                  <table className="w-full text-left">
+                    <thead className="bg-slate-50 sticky top-0">
+                      <tr>
+                        <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 rounded-l-lg">Date</th>
+                        <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500">Patient</th>
+                        <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 text-right rounded-r-lg">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {couponUsageModal.matches.map(match => (
+                        <tr key={match._id} className="hover:bg-slate-50 transition-colors">
+                          <td className="p-3 font-bold text-slate-600 text-sm">
+                            {new Date(match.createdAt || '').toLocaleDateString('en-GB', {
+                              day: '2-digit', month: 'short', year: 'numeric'
+                            })}
+                          </td>
+                          <td className="p-3 font-bold text-slate-900">{match.patientName}</td>
+                          <td className="p-3 font-bold text-slate-900 text-right">₹{match.totalAmount}</td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {couponUsageModal.matches.map(match => (
-                          <tr key={match._id} className="hover:bg-slate-50 transition-colors">
-                            <td className="p-3 font-bold text-slate-600 text-sm">
-                              {new Date(match.createdAt || '').toLocaleDateString('en-GB', {
-                                day: '2-digit', month: 'short', year: 'numeric'
-                              })}
-                            </td>
-                            <td className="p-3 font-bold text-slate-900">{match.patientName}</td>
-                            <td className="p-3 font-bold text-slate-900 text-right">₹{match.totalAmount}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              </motion.div>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
             </motion.div>
-          )}
-        </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
