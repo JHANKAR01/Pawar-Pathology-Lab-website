@@ -141,13 +141,11 @@ export async function uploadReportToDrive(
       const dayRecord = cachedRecord.dailyFolders.find((f: any) => f.date === day);
       if (dayRecord) {
         targetFolderId = dayRecord.folderId;
-        console.log(`[Drive] Cache Hit for ${day}-${monthName}`);
       }
     }
 
     // B. Fail-Safe / Fallback (No Cache)
     if (!targetFolderId) {
-      console.warn(`[Drive] Cache Miss for ${monthKey}-${day}. Using API fallback.`);
       const yearId = await getOrCreateFolder(year.toString(), rootFolderId);
       const monthId = await getOrCreateFolder(monthName, yearId);
       targetFolderId = await getOrCreateFolder(day, monthId);

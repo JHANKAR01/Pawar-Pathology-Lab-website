@@ -11,6 +11,7 @@ import { authOptions } from '@/lib/next-auth-options';
 import bcrypt from 'bcryptjs';
 
 import { withRateLimit } from '@/lib/withRateLimit';
+import { sanitizeInput } from '@/lib/sanitize';
 
 async function handler(request: Request) {
   await dbConnect();
@@ -18,6 +19,7 @@ async function handler(request: Request) {
     const body = await request.json();
     const { name, email, phone, password, role, operationalRole, otp, address } = body;
 
+    const sanitizedName = sanitizeInput(name || '');
     const sanitizedEmail = email.toLowerCase().trim();
 
     // 0. Check Settings requirements
@@ -67,7 +69,7 @@ async function handler(request: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await User.create({
-      name,
+      name: sanitizedName,
       email: sanitizedEmail,
       phone,
       address, // Added address

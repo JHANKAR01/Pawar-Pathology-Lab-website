@@ -53,8 +53,6 @@ export async function POST(request: Request) {
             const welcomeMessage = `Hello ${user.name || userName} ji! 🙏\n\n✅ Your account is now linked with *Pawar Pathology Lab*.\n\nYou will receive real-time updates and reports here automatically.\n\n📄 Booking #${bookingId} confirmed!`;
 
             await sendTelegramMessage(chatId, welcomeMessage);
-
-            console.log(`[Telegram Webhook] Chat ID ${chatId} linked to user ${user.email}`);
         }
 
         return NextResponse.json({ ok: true });

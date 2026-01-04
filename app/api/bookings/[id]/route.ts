@@ -7,6 +7,7 @@ import { uploadReportToDrive } from '@/lib/googleDrive';
 import { Buffer } from 'buffer';
 
 import { sendSmartNotification } from '@/lib/notifications';
+import { sanitizeInput } from '@/lib/sanitize';
 
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/next-auth-options';
@@ -100,6 +101,11 @@ export async function PATCH(
           return NextResponse.json({ error: 'Cannot cancel a booking that is already processed' }, { status: 400 });
         }
       }
+
+      // Sanitize user inputs before update (XSS Protection)
+      if (body.patientName) body.patientName = sanitizeInput(body.patientName);
+      if (body.address) body.address = sanitizeInput(body.address);
+      if (body.pathologistNotes) body.pathologistNotes = sanitizeInput(body.pathologistNotes);
 
       const updatedBooking = await Booking.findByIdAndUpdate(
         id,

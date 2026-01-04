@@ -281,15 +281,13 @@ export async function sendSmartNotification(
                     subject: subject,
                     html: emailHtml,
                 });
-                console.log(`[Notification] ${accountType} Email sent to ${customerEmail}`);
             } catch (err) {
-                console.error(`[Notification] ${accountType} Email failed:`, err);
+                console.error('[Notification] Email delivery failed');
             }
         }
 
         // D. Send WhatsApp (Official API) - Skip for OTP
         if (settings?.whatsappEnabled && settings?.whatsappOfficialEnabled && customerPhone && process.env.WHATSAPP_TOKEN && type !== 'STAFF_NEW_BOOKING' && type !== 'OTP_VERIFICATION' && type !== 'PARTNER_ASSIGNMENT') {
-            console.log(`[Notification] WhatsApp Cloud API triggered for ${customerPhone}`);
             // TODO: Implement actual WA Cloud API call here when credentials available
         }
 
