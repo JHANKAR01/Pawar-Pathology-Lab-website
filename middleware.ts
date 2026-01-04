@@ -1,44 +1,40 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-
-// Basic in-memory rate limiter
-const rateLimit = new Map();
+import { checkRateLimit } from '@/lib/rateLimit';
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // 1. Rate Limiting for Auth APIs
-  if (pathname.startsWith('/api/auth')) {
-    const ip = req.ip || 'anonymous';
-    const limit = 20; // Max requests per window
-    const windowMs = 60 * 1000; // 1 minute
+  // 1. Rate Limiting for API Routes
+  if (pathname.startsWith('/api/')) {
+    const token = await getToken({ req });
+    let identifier = req.ip || 'anonymous';
+    let role = 'guest';
 
-    const record = rateLimit.get(ip) || { count: 0, startTime: Date.now() };
-
-    if (Date.now() - record.startTime > windowMs) {
-      record.count = 0;
-      record.startTime = Date.now();
+    if (token) {
+      identifier = token.id as string || (token as any).sub!;
+      role = (token as any).role || 'patient';
     }
 
-    record.count++;
-    rateLimit.set(ip, record);
+    const rateLimit = await checkRateLimit(identifier, role);
 
-    if (record.count > limit) {
-      return new NextResponse('Too Many Requests', { status: 429 });
+    if (!rateLimit.allowed) {
+      return new NextResponse(
+        JSON.stringify({
+          error: "High traffic detected from your network. For security, please wait 60 seconds or ensure you are logged in for higher access speeds."
+        }),
+        {
+          status: 429,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
     }
   }
 
   // 2. Session & redirect logic
   const token = await getToken({ req });
   const isAuth = !!token;
-
-  // Define public paths that don't satisfy "needsProfileCompletion" checks or auth
-  const isPublicPath =
-    pathname === '/login' ||
-    pathname === '/signup' ||
-    pathname === '/maintenance' ||
-    pathname.startsWith('/api/auth'); // Let auth endpoints pass through for login/signup
 
   // --- Redirect Loop Prevention Logic ---
 
@@ -84,7 +80,6 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api/auth (handled inside, but we want to match api routes generally) -> actually we want to match everything to do global profile check
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
