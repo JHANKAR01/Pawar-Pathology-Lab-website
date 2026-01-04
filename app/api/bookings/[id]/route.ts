@@ -57,7 +57,8 @@ export async function PATCH(
           file.type,
           booking.patientName,
           testTitles,
-          id
+          id,
+          booking.referredBy || 'Self' // Pass referredBy field
         );
         reportUrl = driveResponse.webViewLink || '';
       } catch (driveError) {

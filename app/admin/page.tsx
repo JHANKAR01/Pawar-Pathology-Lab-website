@@ -1,5 +1,8 @@
 'use client';
 
+// Force dynamic rendering to ensure admin sees latest data
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';

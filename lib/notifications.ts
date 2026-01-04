@@ -205,7 +205,7 @@ export async function sendSmartNotification(
 
             <div style="margin-top: 25px; padding: 20px; border: 2px dashed #0088cc; border-radius: 12px; text-align: center; background-color: #f0f9ff;">
                 <p style="margin: 0 0 15px 0; font-weight: bold; color: #0088cc; font-size: 16px;">📱 Get Reports Automatically on Telegram</p>
-                <a href="${telegramSyncLink}" style="background-color: #0088cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 14px;">
+                <a href="${telegramSyncLink}" style="background-color: #0088cc; color: white; padding: 12px 24px; min-height: 44px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; font-size: 14px;">
                    🚀 Connect Telegram Bot
                 </a>
                 <p style="margin-top: 10px; font-size: 11px; color: #64748b;">No typing required! Just click and press 'Start'</p>

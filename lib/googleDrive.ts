@@ -110,17 +110,18 @@ export async function provisionMonthFolders(year: number, monthName: string, day
 
 
 /**
- * Uploads a report with Smart Caching Strategy.
+ * Uploads a report with Smart Caching Strategy & Forensic-Grade Naming.
  * 1. Checks MongoDB for cached daily folder ID.
  * 2. If missing, falls back to `getOrCreateFolder` (Fail-Safe).
- * 3. Uses Standardized Name: [Patient]_[Tests]_[Date]_[Time].pdf
+ * 3. Uses High-Precision Name: YYYY-MM-DD_HH-mm-ss_Name_TestName_RefBy.pdf
  */
 export async function uploadReportToDrive(
   fileBuffer: Buffer,
   mimeType: string,
   patientName: string,
   testTitles: string[],
-  bookingId: string
+  bookingId: string,
+  referredBy: string = 'Self' // Added referredBy parameter
 ) {
   try {
     const rootFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
