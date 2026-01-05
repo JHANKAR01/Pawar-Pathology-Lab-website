@@ -115,10 +115,14 @@ export async function PATCH(
 
           // Notify PREVIOUS Partner
           const oldPartner = await User.findById(oldBooking.assignedPartnerId);
+          // Fetch New Partner Name
+          const newPartner = await User.findById(body.assignedPartnerId);
+
           if (oldPartner && oldPartner.telegramChatId) {
             sendSmartNotification('PARTNER_REASSIGNMENT', {
               bookingId: oldBooking._id.toString(),
-              partnerTelegramChatId: oldPartner.telegramChatId
+              partnerTelegramChatId: oldPartner.telegramChatId,
+              newPartnerName: newPartner?.name || 'another partner'
             });
           }
         } else {
