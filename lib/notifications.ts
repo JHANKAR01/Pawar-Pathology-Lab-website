@@ -130,7 +130,7 @@ export function getNotificationProvider(): NotificationProvider {
 // NOTIFICATION TYPES AND TEMPLATES
 // ============================================================================
 
-export type NotificationType = 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'REPORT_READY' | 'COUPON_APPLIED' | 'STAFF_NEW_BOOKING' | 'OTP_VERIFICATION' | 'PARTNER_ASSIGNMENT';
+export type NotificationType = 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'REPORT_READY' | 'COUPON_APPLIED' | 'STAFF_NEW_BOOKING' | 'OTP_VERIFICATION' | 'PARTNER_ASSIGNMENT' | 'PARTNER_REASSIGNMENT';
 
 interface NotificationData {
     customerName?: string;
@@ -221,6 +221,10 @@ export async function sendSmartNotification(
 
             case 'PARTNER_ASSIGNMENT':
                 telegramMessage = `🤝 *New Assignment* 🤝\nBooking #${bookingId}\nPatient: ${customerName}\nTests: ${testsString}\nDate: ${formattedDate} @ ${formattedTime}\nType: ${visitTypeDisplay}\n\nPlease check your dashboard.`;
+                break;
+
+            case 'PARTNER_REASSIGNMENT':
+                telegramMessage = `⚠️ *Assignment Update* ⚠️\nBooking #${bookingId} has been reassigned to another partner.\nYou are no longer responsible for this collection.`;
                 break;
 
             case 'BOOKING_CONFIRMED':
@@ -321,7 +325,7 @@ export async function sendSmartNotification(
             }
 
             // Partner Alerts
-            if (settings.telegramEnabledPartner && type === 'PARTNER_ASSIGNMENT' && partnerTelegramChatId) {
+            if (settings.telegramEnabledPartner && (type === 'PARTNER_ASSIGNMENT' || type === 'PARTNER_REASSIGNMENT') && partnerTelegramChatId) {
                 try {
                     await provider.sendTelegram(partnerTelegramChatId, telegramMessage);
                 } catch (e) { /* Silent */ }

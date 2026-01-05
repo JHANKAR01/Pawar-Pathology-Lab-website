@@ -20,9 +20,7 @@ export async function PATCH(
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  // Allowing modifications by authenticated users, assuming logic below handles specifics or broadly allowing for now as per migration plan "Securing API".
-  // Ideally check role here.
-  // Role check moved down to specific operations to allow self-cancellation
+
   const role = session.user.role?.toLowerCase();
   const userId = session.user.id;
   const userEmail = session.user.email?.toLowerCase();
@@ -33,24 +31,24 @@ export async function PATCH(
   try {
     const contentType = request.headers.get('content-type') || '';
 
+    // =================================================================================
+    // 1. FILE UPLOAD (PARTNER/ADMIN UPLOADING REPORT)
+    // =================================================================================
     if (contentType.includes('multipart/form-data')) {
-      // Fix: Cast formData to any to resolve property 'get' does not exist error on standard Web FormData in some environments
       const formData: any = await request.formData();
       const file = formData.get('file') as any;
       const status = formData.get('status') as string;
 
       if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 });
 
-      // Fetch booking to get patient name for folder structure
       const booking = await Booking.findById(id);
-      if (!booking) return NextResponse.json({ error: 'Booking not found to associate report with' }, { status: 404 });
+      if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
       let reportUrl = '';
       try {
-        // Extract test titles from booking
         const testTitles = booking.tests.map((t: any) => t.title || t.testTitle || 'Unknown Test');
 
         const driveResponse = await uploadReportToDrive(
@@ -59,7 +57,7 @@ export async function PATCH(
           booking.patientName,
           testTitles,
           id,
-          booking.referredBy || 'Self' // Pass referredBy field
+          booking.referredBy || 'Self'
         );
         reportUrl = driveResponse.webViewLink || '';
       } catch (driveError) {
@@ -67,42 +65,67 @@ export async function PATCH(
         reportUrl = 'https://mock-drive-link.com/upload-error';
       }
 
+      // Logic: Report Re-upload Reset
+      // If report was REJECTED, and new file is uploaded, reset to PENDING_REVIEW
+      let finalReportStatus = booking.reportStatus;
+      if (booking.reportStatus === 'rejected') {
+        finalReportStatus = 'pending_review';
+      } else if (!finalReportStatus) {
+        finalReportStatus = 'pending_review';
+      }
+
       const updatedBooking = await Booking.findByIdAndUpdate(
         id,
-        { status: status || 'report_uploaded', reportFileUrl: reportUrl },
+        {
+          status: status || 'report_uploaded',
+          reportFileUrl: reportUrl,
+          reportStatus: finalReportStatus
+        },
         { new: true }
       );
 
       return NextResponse.json(updatedBooking);
 
     } else {
+      // =================================================================================
+      // 2. METADATA UPDATE (JSON)
+      // =================================================================================
       const body = await request.json();
 
       const oldBooking = await Booking.findById(id);
       if (!oldBooking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
-      // Access Control:
-      // Admin/Partner: Can do almost anything (logic continues below)
-      // Patient/User: Can ONLY cancel OWN PENDING bookings
-      if (role !== 'admin' && role !== 'partner') {
+      // Access Control
+      if (role !== 'admin' && role !== 'partner' && role !== 'master') {
         const isOwner = (oldBooking.userId && oldBooking.userId.toString() === userId) || (oldBooking.bookedByEmail === userEmail);
-
-        if (!isOwner) {
-          return NextResponse.json({ error: 'Forbidden: Not your booking' }, { status: 403 });
+        if (!isOwner) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        if (body.status !== 'cancelled' || Object.keys(body).length > 1) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
+        if (oldBooking.status !== 'pending') return NextResponse.json({ error: 'Cannot cancel processed booking' }, { status: 400 });
+      }
 
-        // Verify they are only trying to cancel
-        // strict check: if body has anything other than 'status'='cancelled', or if trying to change to something else
-        if (body.status !== 'cancelled' || Object.keys(body).length > 1) { // loose check on keys, maybe too strict if extra metadata sent? keep simple.
-          return NextResponse.json({ error: 'Forbidden: You can only cancel bookings' }, { status: 403 });
-        }
+      // Logic: Partner Assignment & Reassignment
+      if (body.assignedPartnerId && body.assignedPartnerId !== oldBooking.assignedPartnerId) {
+        // If it was already assigned, this is a REASSIGNMENT
+        if (oldBooking.assignedPartnerId) {
+          body.status = 'reassigned'; // Auto-set status
 
-        if (oldBooking.status !== 'pending') {
-          return NextResponse.json({ error: 'Cannot cancel a booking that is already processed' }, { status: 400 });
+          // Notify PREVIOUS Partner
+          const oldPartner = await User.findById(oldBooking.assignedPartnerId);
+          if (oldPartner && oldPartner.telegramChatId) {
+            sendSmartNotification('PARTNER_REASSIGNMENT', {
+              bookingId: oldBooking._id.toString(),
+              partnerTelegramChatId: oldPartner.telegramChatId
+            });
+          }
+        } else {
+          // First time assignment
+          body.status = 'assigned';
         }
       }
 
-      // Sanitize user inputs before update (XSS Protection)
+      // Sanitize
       if (body.patientName) body.patientName = sanitizeInput(body.patientName);
       if (body.address) body.address = sanitizeInput(body.address);
       if (body.pathologistNotes) body.pathologistNotes = sanitizeInput(body.pathologistNotes);
@@ -115,57 +138,50 @@ export async function PATCH(
 
       if (!updatedBooking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
-      // Fetch user Telegram ID for notifications
-      const userEmailForNotification = updatedBooking.email || updatedBooking.bookedByEmail;
-      const userForNotification = userEmailForNotification ? await User.findOne({ email: userEmailForNotification.toLowerCase() }) : null;
-      const userTelegramChatId = userForNotification?.telegramChatId || '';
+      // ---------------------------------------------------------------------------
+      // NOTIFICATIONS
+      // ---------------------------------------------------------------------------
 
-      // Logic for Notifications on Approval (Manual by Admin/Partner)
+      // 1. Booking Confirmed (Accepted)
       if (updatedBooking.status === 'accepted' && oldBooking.status !== 'accepted') {
         const contactEmail = updatedBooking.bookedByEmail !== 'guest' ? updatedBooking.bookedByEmail : updatedBooking.email;
+        const userForNotification = await User.findOne({ email: contactEmail });
         sendSmartNotification('BOOKING_CONFIRMED', {
           customerName: updatedBooking.patientName,
           customerEmail: contactEmail,
           customerPhone: updatedBooking.contactNumber,
-          bookingId: updatedBooking._id.toString(), // Use friendly ID
+          bookingId: updatedBooking._id.toString(),
           testNames: updatedBooking.tests.map((t: any) => t.title),
           totalAmount: updatedBooking.totalAmount,
           scheduledDate: updatedBooking.scheduledDate,
           collectionType: updatedBooking.collectionType,
-          userTelegramChatId // Pass user's Telegram ID
+          userTelegramChatId: userForNotification?.telegramChatId
         });
       }
 
-      // Logic for Notifications on Rejection (Admin rejects booking)
-      if (updatedBooking.status === 'rejected' && oldBooking.status !== 'rejected') {
-        const contactEmail = updatedBooking.bookedByEmail !== 'guest' ? updatedBooking.bookedByEmail : updatedBooking.email;
-        sendSmartNotification('BOOKING_CANCELLED', { // Reusing CANCELLED template or could make a REJECTED one
-          customerName: updatedBooking.patientName,
-          customerEmail: contactEmail,
-          customerPhone: updatedBooking.contactNumber,
-          bookingId: updatedBooking._id.toString(),
-          userTelegramChatId // Pass user's Telegram ID
-        });
+      // 2. Partner Assigned (New or Reassigned - Notify NEW partner)
+      // Check if partner changed OR status became assigned/reassigned
+      if ((updatedBooking.status === 'assigned' || updatedBooking.status === 'reassigned') &&
+        updatedBooking.assignedPartnerId &&
+        (updatedBooking.assignedPartnerId !== oldBooking.assignedPartnerId || oldBooking.status === 'pending')) {
+
+        const newPartner = await User.findById(updatedBooking.assignedPartnerId);
+        if (newPartner && newPartner.telegramChatId) {
+          sendSmartNotification('PARTNER_ASSIGNMENT', {
+            customerName: updatedBooking.patientName,
+            bookingId: updatedBooking._id.toString(),
+            testNames: updatedBooking.tests.map((t: any) => t.title),
+            scheduledDate: updatedBooking.scheduledDate,
+            collectionType: updatedBooking.collectionType,
+            partnerTelegramChatId: newPartner.telegramChatId
+          });
+        }
       }
 
-      // Logic for Partner Assignment
-      if (updatedBooking.status === 'assigned' && updatedBooking.assignedPartnerName && oldBooking.status !== 'assigned') {
-        const partner = await User.findOne({ name: updatedBooking.assignedPartnerName, role: 'partner' });
-        const partnerTelegramChatId = partner?.telegramChatId || '';
-
-        sendSmartNotification('PARTNER_ASSIGNMENT', {
-          customerName: updatedBooking.patientName,
-          bookingId: updatedBooking._id.toString(),
-          testNames: updatedBooking.tests.map((t: any) => t.title),
-          scheduledDate: updatedBooking.scheduledDate,
-          collectionType: updatedBooking.collectionType,
-          partnerTelegramChatId
-        });
-      }
-
-      // Logic for Notifications on Verification
+      // 3. Report Ready
       if (updatedBooking.status === 'completed' && oldBooking.status !== 'completed') {
         const contactEmail = updatedBooking.bookedByEmail !== 'guest' ? updatedBooking.bookedByEmail : updatedBooking.email;
+        const userForNotification = await User.findOne({ email: contactEmail });
         sendSmartNotification('REPORT_READY', {
           customerName: updatedBooking.patientName,
           customerEmail: contactEmail,
@@ -173,11 +189,11 @@ export async function PATCH(
           bookingId: updatedBooking._id.toString(),
           testNames: updatedBooking.tests.map((t: any) => t.title),
           reportLink: updatedBooking.reportFileUrl || '#',
-          userTelegramChatId // Pass user's Telegram ID
+          userTelegramChatId: userForNotification?.telegramChatId
         });
       }
 
-      // Logic for Notifications on Cancellation
+      // 4. Cancelled
       if (updatedBooking.status === 'cancelled' && oldBooking.status !== 'cancelled') {
         const contactEmail = updatedBooking.bookedByEmail !== 'guest' ? updatedBooking.bookedByEmail : updatedBooking.email;
         sendSmartNotification('BOOKING_CANCELLED', {

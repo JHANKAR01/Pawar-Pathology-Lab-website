@@ -19,6 +19,7 @@ const UserSchema = new Schema({
   address: String,
   telegramChatId: { type: String, default: '' }, // Added for Telegram Notifications
   isVerified: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: true }, // Added for Soft Delete
   needsProfileCompletion: { type: Boolean, default: false }
 }, { timestamps: true });
 

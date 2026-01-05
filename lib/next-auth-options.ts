@@ -31,6 +31,10 @@ export const authOptions: NextAuthOptions = {
                     throw new Error("User not found");
                 }
 
+                if (user.isActive === false) {
+                    throw new Error("Account is deactivated. Contact admin.");
+                }
+
                 // Compare passwords using bcrypt ONLY
                 const isValid = await bcrypt.compare(credentials.password, user.password);
 
@@ -59,6 +63,9 @@ export const authOptions: NextAuthOptions = {
                 const existingUser = await User.findOne({ email });
 
                 if (existingUser) {
+                    if (existingUser.isActive === false) {
+                        return false; // Bloack sign in
+                    }
                     // Start session for existing user
                     user.id = existingUser._id.toString();
                     user.role = existingUser.role;
@@ -117,6 +124,9 @@ export const authOptions: NextAuthOptions = {
                 await dbConnect();
                 const dbUser = await User.findOne({ email: token.email.toLowerCase() });
                 if (dbUser) {
+                    if (dbUser.isActive === false) {
+                        throw new Error("Account deactivated");
+                    }
                     token.id = dbUser._id.toString();
                     token.role = dbUser.role?.toLowerCase();
                     token.phone = dbUser.phone;

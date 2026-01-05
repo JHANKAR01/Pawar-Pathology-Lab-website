@@ -9,6 +9,7 @@ export enum BookingStatus {
   PENDING = 'pending',
   ACCEPTED = 'accepted',
   ASSIGNED = 'assigned',
+  REASSIGNED = 'reassigned', // Added for Partner Reassignment
   REACHED = 'reached',
   SAMPLE_COLLECTED = 'sample_collected',
   REPORT_UPLOADED = 'report_uploaded',

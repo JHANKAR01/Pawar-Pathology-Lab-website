@@ -11,6 +11,7 @@ import Settings from '@/models/Settings';
 import { getDisplacement, getRoadDistance } from '@/lib/geospatial';
 import { sanitizeInput } from '@/lib/sanitize';
 import { validateCoupon, incrementCouponUsage } from './couponService';
+import CouponUsage from '@/models/CouponUsage';
 
 export interface BookingInput {
     tests: Array<{ id: string; title?: string; price?: number; category?: string }>;
@@ -180,6 +181,14 @@ export async function createBookingWithTransaction(
             // Increment coupon usage within same transaction
             if (couponResult.coupon) {
                 await incrementCouponUsage(couponResult.coupon._id.toString(), session);
+
+                // Detailed Audit Log
+                await CouponUsage.create([{
+                    couponId: couponResult.coupon._id,
+                    userId: newBooking.userId || newBooking._id, // Fallback if userId is missing (guest)
+                    bookingId: newBooking._id,
+                    discountAmount: couponResult.discountAmount
+                }], { session });
             }
         });
 
