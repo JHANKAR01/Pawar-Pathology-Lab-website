@@ -41,6 +41,34 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     referredBy: 'Self'
   });
 
+  // Persistence: Load State
+  useEffect(() => {
+    const savedStep = localStorage.getItem('bw_step');
+    const savedDetails = localStorage.getItem('bw_details');
+    // We don't save selectedTests here because props control it, but if needed we could.
+
+    if (savedStep) setStep(Number(savedStep));
+    if (savedDetails) {
+      try {
+        setFormData(prev => ({ ...prev, ...JSON.parse(savedDetails) }));
+      } catch (e) { /* ignore corrupt data */ }
+    }
+  }, []);
+
+  // Persistence: Save State
+  useEffect(() => {
+    localStorage.setItem('bw_step', String(step));
+  }, [step]);
+
+  useEffect(() => {
+    localStorage.setItem('bw_details', JSON.stringify(formData));
+  }, [formData]);
+
+  const clearStorage = () => {
+    localStorage.removeItem('bw_step');
+    localStorage.removeItem('bw_details');
+  };
+
   const { data: session } = useSession();
   const currentUser = session?.user;
 
@@ -606,7 +634,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
           {step < 4 ? (
             <button onClick={nextStep} className="bg-clinical-rose text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-rose-lg hover:bg-clinical-rose-dark transition-all">Continue</button>
           ) : (
-            <button onClick={handleSubmit} className="bg-clinical-rose text-white px-16 py-6 rounded-2xl font-black text-base uppercase tracking-wider shadow-rose-lg hover:bg-clinical-rose-dark transition-all">Confirm Booking</button>
+            <button onClick={() => { handleSubmit(); setTimeout(clearStorage, 1000); }} className="bg-clinical-rose text-white px-16 py-6 rounded-2xl font-black text-base uppercase tracking-wider shadow-rose-lg hover:bg-clinical-rose-dark transition-all">Confirm Booking</button>
           )}
         </div>
       </div>

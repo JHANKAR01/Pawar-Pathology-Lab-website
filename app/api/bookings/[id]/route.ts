@@ -212,18 +212,37 @@ export async function PATCH(
       }
 
       // 3. Report Ready
-      if (updatedBooking.status === 'completed' && oldBooking.status !== 'completed') {
+      // 3. Report Ready / Payment Notification Logic
+      // Trigger if status becomes completed OR if balance becomes 0 while report is available
+      const isReportJustCompleted = (updatedBooking.status === 'completed' && oldBooking.status !== 'completed');
+      const isBalanceJustCleared = (updatedBooking.balanceAmount === 0 && oldBooking.balanceAmount > 0 && updatedBooking.reportFileUrl);
+
+      if (isReportJustCompleted || isBalanceJustCleared) {
         const contactEmail = updatedBooking.bookedByEmail !== 'guest' ? updatedBooking.bookedByEmail : updatedBooking.email;
         const userForNotification = await User.findOne({ email: contactEmail });
-        sendSmartNotification('REPORT_READY', {
-          customerName: updatedBooking.patientName,
-          customerEmail: contactEmail,
-          customerPhone: updatedBooking.contactNumber,
-          bookingId: updatedBooking._id.toString(),
-          testNames: updatedBooking.tests.map((t: any) => t.title),
-          reportLink: updatedBooking.reportFileUrl || '#',
-          userTelegramChatId: userForNotification?.telegramChatId
-        });
+
+        if (updatedBooking.balanceAmount > 0) {
+          // If report is "completed" but balance exists (rare loop, usually blocked by guardrail but safety net)
+          sendSmartNotification('PAYMENT_PENDING', {
+            customerName: updatedBooking.patientName,
+            customerEmail: contactEmail,
+            customerPhone: updatedBooking.contactNumber,
+            bookingId: updatedBooking._id.toString(),
+            balanceAmount: updatedBooking.balanceAmount,
+            userTelegramChatId: userForNotification?.telegramChatId
+          });
+        } else {
+          // Balance is 0 and Report is Ready
+          sendSmartNotification('REPORT_READY', {
+            customerName: updatedBooking.patientName,
+            customerEmail: contactEmail,
+            customerPhone: updatedBooking.contactNumber,
+            bookingId: updatedBooking._id.toString(),
+            testNames: updatedBooking.tests.map((t: any) => t.title),
+            reportLink: updatedBooking.reportFileUrl || '#',
+            userTelegramChatId: userForNotification?.telegramChatId
+          });
+        }
       }
 
       // 4. Cancelled

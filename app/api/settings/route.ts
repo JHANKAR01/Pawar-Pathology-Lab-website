@@ -22,7 +22,6 @@ export async function POST(request: Request) {
 
   await dbConnect();
   const body = await request.json();
-  console.log("Received Settings Update:", body); // Debugging
 
   // Update the singleton document
   const settings = await Settings.findOneAndUpdate({}, body, {

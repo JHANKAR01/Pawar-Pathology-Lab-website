@@ -4,6 +4,7 @@ import './globals.css';
 import React from 'react';
 import { ThemeProvider } from '../components/ThemeProvider';
 import SessionProvider from '../components/SessionProvider';
+import CookieBanner from '@/components/CookieBanner';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -93,6 +94,7 @@ export default async function RootLayout({
           <ThemeProvider>
             <div className="grain-overlay" />
             {children}
+            <CookieBanner />
             <Toaster position="top-center" richColors />
           </ThemeProvider>
         </SessionProvider>

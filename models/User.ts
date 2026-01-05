@@ -17,7 +17,8 @@ const UserSchema = new Schema({
   role: { type: String, enum: ['master', 'admin', 'partner', 'patient'], default: 'patient' },
   operationalRole: { type: String, default: 'none' },
   address: String,
-  telegramChatId: { type: String, default: '' }, // Added for Telegram Notifications
+  telegramChatId: { type: String, default: '' }, // Actual Chat ID
+  telegramSyncToken: { type: String, default: null }, // Temp token for deep linking
   isVerified: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true }, // Added for Soft Delete
   needsProfileCompletion: { type: Boolean, default: false }

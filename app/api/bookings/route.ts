@@ -31,13 +31,17 @@ export async function GET(request: Request) {
 
     let filter: Record<string, any> = {};
 
-    // Admin, Partner, and Master can see all bookings or filter by userId/email
-    if (role === 'master' || role === 'admin' || role === 'partner') {
+    // Admin and Master can see all bookings
+    if (role === 'master' || role === 'admin') {
       if (userId) {
         filter = { userId: userId };
       } else if (email) {
         filter = { bookedByEmail: email };
       }
+    } else if (role === 'partner') {
+      // Partners can ONLY see bookings assigned to them
+      filter = { assignedPartnerId: session.user.id };
+      if (userId) filter.userId = userId; // Optional sub-filter
     } else if (role === 'patient' || role === 'user') {
       // Patient/User can only see their own bookings
       if (userId && userId === authenticatedUserId) {

@@ -340,10 +340,13 @@ export async function sendSmartNotification(
             case 'BOOKING_CANCELLED':
                 subject = `Booking Cancelled #${bookingId}`;
                 telegramMessage = `❌ *Booking Cancelled* ❌\nBooking #${bookingId} has been cancelled.`;
+
+                const botUser = process.env.TELEGRAM_BOT_USERNAME || 'PawarPathLabBot';
                 emailHtml = `
           <div style="font-family: sans-serif; padding: 20px;">
             <h2>Booking Cancelled</h2>
             <p>Your booking #${bookingId} was cancelled.</p>
+            <p>If you have any questions, you can contact us via our Telegram Bot: <a href="https://t.me/${botUser}">@${botUser}</a></p>
             ${LAB_FOOTER}
           </div>
         `;
