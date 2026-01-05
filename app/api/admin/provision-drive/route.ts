@@ -2,7 +2,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/next-auth-options';
-import { provisionMonthFolders } from '@/lib/googleDrive';
+import { provisionNextBatch } from '@/lib/googleDrive';
+import dbConnect from '@/lib/dbConnect';
 
 export async function POST(request: Request) {
     try {
@@ -11,13 +12,18 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        const { year, monthName, daysInMonth } = await request.json();
+        await dbConnect();
 
-        if (!year || !monthName || !daysInMonth) {
-            return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
+        // Optional: Manual trigger can specify days, default to 10
+        let days = 10;
+        try {
+            const body = await request.json();
+            if (body.days) days = body.days;
+        } catch (e) {
+            // Body might be empty
         }
 
-        const result = await provisionMonthFolders(year, monthName, daysInMonth);
+        const result = await provisionNextBatch(days);
 
         return NextResponse.json(result);
 

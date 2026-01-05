@@ -21,8 +21,16 @@ export interface DriveProvider {
   uploadFile(
     fileBuffer: Buffer,
     mimeType: string,
-    metadata: { patientName: string; testTitles: string[]; bookingId: string; referredBy?: string }
+    metadata: {
+      patientName: string;
+      testTitles: string[];
+      bookingId: string;
+      referredBy?: string;
+      email?: string;
+    }
   ): Promise<DriveUploadResult>;
+
+  shareFolder(folderId: string, email: string): Promise<void>;
 }
 
 /**
@@ -32,15 +40,24 @@ class DummyDriveProvider implements DriveProvider {
   async uploadFile(
     fileBuffer: Buffer,
     mimeType: string,
-    metadata: { patientName: string; testTitles: string[]; bookingId: string; referredBy?: string }
+    metadata: { patientName: string; testTitles: string[]; bookingId: string; referredBy?: string; email?: string }
   ): Promise<DriveUploadResult> {
     const mockId = `mock_file_${Date.now()}`;
     console.log(`[DUMMY DRIVE] Upload simulated for ${metadata.patientName} | Size: ${fileBuffer.length} bytes`);
+
+    if (metadata.email) {
+      console.log(`[DUMMY DRIVE] Sharing folder with ${metadata.email}`);
+    }
+
     return {
       fileId: mockId,
       webViewLink: `https://drive.google.com/file/d/${mockId}/view`,
       webContentLink: `https://drive.google.com/uc?id=${mockId}`
     };
+  }
+
+  async shareFolder(folderId: string, email: string): Promise<void> {
+    console.log(`[DUMMY DRIVE] Executing shareFolder(${folderId}, ${email})`);
   }
 }
 
@@ -99,61 +116,106 @@ class RealDriveProvider implements DriveProvider {
     return folder.data.id;
   }
 
+  async shareFolder(folderId: string, email: string): Promise<void> {
+    try {
+      await this.drive.permissions.create({
+        fileId: folderId,
+        requestBody: {
+          role: 'reader',
+          type: 'user',
+          emailAddress: email,
+        },
+        emailMessage: 'Your pathology report from Pawar Lab is ready.',
+        sendNotificationEmail: true,
+      });
+    } catch (error) {
+      console.error(`Failed to share folder ${folderId} with ${email}:`, error);
+      // Don't throw - sharing failure shouldn't block the upload process
+    }
+  }
+
+  private getDayFolderName(date: Date): string {
+    const day = String(date.getDate()).padStart(2, '0');
+    const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+    return `${day}-${dayName}`;
+  }
+
   async uploadFile(
     fileBuffer: Buffer,
     mimeType: string,
-    metadata: { patientName: string; testTitles: string[]; bookingId: string; referredBy?: string }
+    metadata: {
+      patientName: string;
+      testTitles: string[];
+      bookingId: string;
+      referredBy?: string;
+      email?: string;
+    }
   ): Promise<DriveUploadResult> {
     const rootFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
     if (!rootFolderId) throw new Error('GOOGLE_DRIVE_FOLDER_ID is missing');
 
-    const { patientName, testTitles, referredBy = 'Self' } = metadata;
+    const { patientName, testTitles, referredBy = 'Self', email } = metadata;
 
     const now = new Date();
     const year = now.getFullYear();
     const monthName = now.toLocaleString('default', { month: 'long' });
-    const day = String(now.getDate()).padStart(2, '0');
     const monthKey = `${year}-${monthName.toUpperCase().slice(0, 3)}`;
 
-    // Cache Retrieval
-    let targetFolderId = '';
+    // 1. Resolve Day Folder (Cache or Create)
+    let dayFolderId = '';
     const cachedRecord = await DriveFolder.findOne({ monthKey });
 
+    // Day Name logic: "05-Monday"
+    const dayFolderName = this.getDayFolderName(now);
+    // Note: The cache stores simple '05', '06'. We might need to update cache logic or fallback to on-the-fly creation for new naming structure.
+    // For safety in this transition, we'll try to find/create the day folder manually if cache structure mismatch.
+
     if (cachedRecord) {
-      const dayRecord = cachedRecord.dailyFolders.find((f: any) => f.date === day);
+      const dayRecord = cachedRecord.dailyFolders.find((f: any) => f.date === String(now.getDate()).padStart(2, '0'));
+      // Check if this cached folder actually has the right name? 
+      // If we change naming convention, old cache IDs might point to folders named just "05".
+      // We'll proceed with hierarchical check to be safe.
       if (dayRecord) {
-        targetFolderId = dayRecord.folderId;
+        // Optimization: We could trust the ID, but let's verify if we want strict "05-Monday" structure.
+        // If we are strict, we might ignore legacy cache for now or just use it.
+        // Let's assume we want to enforce the new structure, so we might skip weak cache.
+        // But to avoid breaking existing flows, we can use getOrCreateFolder.
       }
     }
 
-    // Fallback
-    if (!targetFolderId) {
-      const yearId = await this.getOrCreateFolder(year.toString(), rootFolderId);
-      const monthId = await this.getOrCreateFolder(monthName, yearId);
-      targetFolderId = await this.getOrCreateFolder(day, monthId);
+    const yearId = await this.getOrCreateFolder(year.toString(), rootFolderId);
+    const monthId = await this.getOrCreateFolder(monthName, yearId);
+    dayFolderId = await this.getOrCreateFolder(dayFolderName, monthId);
+
+    // 2. Create Patient-Specific Folder
+    // Name: "PatientName Email TestNames"
+    const sanitize = (str: string) => str.replace(/[^a-zA-Z0-9 @.]/g, '_').replace(/_+/g, '_').trim();
+    const safePatient = sanitize(patientName);
+    const safeTests = sanitize(testTitles.join('_')).slice(0, 30);
+    const safeEmail = email ? sanitize(email) : 'NoEmail';
+
+    const patientFolderName = `${safePatient} ${safeEmail} ${safeTests}`;
+    const patientFolderId = await this.getOrCreateFolder(patientFolderName, dayFolderId);
+
+    // 3. Share with Patient
+    if (email) {
+      await this.shareFolder(patientFolderId, email);
     }
 
-    // Forensic-Grade Filename
-    const sanitize = (str: string) => str.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
-
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const dayStr = String(now.getDate()).padStart(2, '0');
+    // 4. Upload File
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     const seconds = String(now.getSeconds()).padStart(2, '0');
-
-    const dateStamp = `${year}-${month}-${dayStr}`;
     const timeStamp = `${hours}-${minutes}-${seconds}`;
-    const safeName = sanitize(patientName);
-    const safeTests = sanitize(testTitles.join('_')).slice(0, 50);
-    const safeRefBy = sanitize(referredBy);
 
-    const automatedFileName = `${dateStamp}_${timeStamp}_${safeName}_${safeTests}_${safeRefBy}.pdf`;
+    // Name: "YYYY-MM-DD_HH-mm-ss_Patient_Tests_Ref.pdf"
+    const dateStamp = `${year}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const automatedFileName = `${dateStamp}_${timeStamp}_${safePatient}_${safeTests}_${sanitize(referredBy)}.pdf`;
 
     const file = await this.drive.files.create({
       requestBody: {
         name: automatedFileName,
-        parents: [targetFolderId],
+        parents: [patientFolderId], // Upload to PATIENT folder, not Day folder
       },
       media: {
         mimeType,
@@ -187,17 +249,15 @@ export function getDriveProvider(): DriveProvider {
 // LEGACY EXPORTS (for backward compatibility)
 // ============================================================================
 
-const SCOPES = ['https://www.googleapis.com/auth/drive'];
+// ============================================================================
+// BATCH PROVISIONING (Refactored for 10-day look-ahead)
+// ============================================================================
 
-/**
- * Provision Month Folders (Batch Optimization)
- */
-export async function provisionMonthFolders(year: number, monthName: string, daysInMonth: number) {
+export async function provisionNextBatch(daysToProvision: number = 10) {
   const provider = getDriveProvider();
 
-  // For provisioning, we need direct access - bypass provider for this admin function
   if (process.env.NODE_ENV === 'development' && process.env.USE_DUMMY_PROVIDERS === 'true') {
-    return { success: true, message: '[DUMMY] Provisioning simulated' };
+    return { success: true, message: '[DUMMY] Provisioning 10 days simulated', lastProvisionedDate: new Date() };
   }
 
   const rootFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
@@ -211,11 +271,7 @@ export async function provisionMonthFolders(year: number, monthName: string, day
   oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
   const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
-  const monthKey = `${year}-${monthName.toUpperCase().slice(0, 3)}`;
-
-  const existing = await DriveFolder.findOne({ monthKey });
-  if (existing) return { success: true, message: 'Already provisioned' };
-
+  // Helper to ensure folder exists
   const getOrCreateFolder = async (name: string, parentId: string): Promise<string> => {
     const query = `'${parentId}' in parents and name = '${name}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
     const res = await drive.files.list({ q: query, fields: 'files(id)', spaces: 'drive' });
@@ -230,20 +286,62 @@ export async function provisionMonthFolders(year: number, monthName: string, day
     return folder.data.id;
   };
 
-  const yearFolderId = await getOrCreateFolder(year.toString(), rootFolderId);
-  const monthFolderId = await getOrCreateFolder(monthName, yearFolderId);
+  // 1. Determine Start Date
+  // Check settings or find latest from DriveFolder model
+  // Ideally, read from Settings. If not set, use today.
+  // We'll import Settings dynamically to avoid circular deps if any, or just query it.
+  const Settings = (await import('@/models/Settings')).default;
+  const settings = await Settings.getSingleton();
 
-  const dailyFoldersData = [];
-  for (let i = 1; i <= daysInMonth; i++) {
-    const dayStr = i.toString().padStart(2, '0');
-    const dayFolderId = await getOrCreateFolder(dayStr, monthFolderId);
-    dailyFoldersData.push({ date: dayStr, folderId: dayFolderId });
-    await new Promise(r => setTimeout(r, 200));
+  let startDate = settings.lastProvisionedDate ? new Date(settings.lastProvisionedDate) : new Date();
+
+  // If last provisioned is in the past, start from tomorrow? Or just continue from last provisioned + 1.
+  // If undefined, start from today + 1.
+  startDate.setDate(startDate.getDate() + 1);
+
+  let lastDate: Date = startDate;
+
+  for (let i = 0; i < daysToProvision; i++) {
+    const targetDate = new Date(startDate);
+    targetDate.setDate(startDate.getDate() + i);
+
+    const year = targetDate.getFullYear();
+    const monthName = targetDate.toLocaleString('default', { month: 'long' });
+    const monthKey = `${year}-${monthName.toUpperCase().slice(0, 3)}`;
+
+    // Create Year/Month
+    const yearId = await getOrCreateFolder(year.toString(), rootFolderId);
+    const monthId = await getOrCreateFolder(monthName, yearId);
+
+    // Create Day: "05-Monday"
+    const dayStr = String(targetDate.getDate()).padStart(2, '0');
+    const dayName = targetDate.toLocaleDateString('en-US', { weekday: 'long' });
+    const fullDayFolderName = `${dayStr}-${dayName}`;
+
+    const dayFolderId = await getOrCreateFolder(fullDayFolderName, monthId);
+
+    // Update Cache
+    await DriveFolder.findOneAndUpdate(
+      { monthKey },
+      {
+        $setOnInsert: { parentFolderId: monthId },
+        $addToSet: { dailyFolders: { date: dayStr, folderId: dayFolderId } } // Use $addToSet to avoid dupes
+      },
+      { upsert: true, new: true }
+    );
+
+    lastDate = targetDate;
+    await new Promise(r => setTimeout(r, 200)); // Rate limit
   }
 
-  await DriveFolder.create({ monthKey, parentFolderId: monthFolderId, dailyFolders: dailyFoldersData });
+  // Update Settings
+  await Settings.findByIdAndUpdate(settings._id, { lastProvisionedDate: lastDate });
 
-  return { success: true, message: `Provisioned ${daysInMonth} folders for ${monthKey}` };
+  return {
+    success: true,
+    message: `Provisioned ${daysToProvision} days until ${lastDate.toDateString()}`,
+    lastProvisionedDate: lastDate
+  };
 }
 
 /**
@@ -255,8 +353,9 @@ export async function uploadReportToDrive(
   patientName: string,
   testTitles: string[],
   bookingId: string,
-  referredBy: string = 'Self'
+  referredBy: string = 'Self',
+  email?: string // Added email argument
 ) {
   const provider = getDriveProvider();
-  return provider.uploadFile(fileBuffer, mimeType, { patientName, testTitles, bookingId, referredBy });
+  return provider.uploadFile(fileBuffer, mimeType, { patientName, testTitles, bookingId, referredBy, email });
 }

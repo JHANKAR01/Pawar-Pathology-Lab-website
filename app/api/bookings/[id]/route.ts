@@ -51,13 +51,16 @@ export async function PATCH(
       try {
         const testTitles = booking.tests.map((t: any) => t.title || t.testTitle || 'Unknown Test');
 
+        const contactEmail = booking.bookedByEmail !== 'guest' ? booking.bookedByEmail : booking.email;
+
         const driveResponse = await uploadReportToDrive(
           buffer,
           file.type,
           booking.patientName,
           testTitles,
           id,
-          booking.referredBy || 'Self'
+          booking.referredBy || 'Self',
+          contactEmail // Pass extracted email
         );
         reportUrl = driveResponse.webViewLink || '';
       } catch (driveError) {
@@ -107,7 +110,6 @@ export async function PATCH(
 
       // Logic: Partner Assignment & Reassignment
       if (body.assignedPartnerId && body.assignedPartnerId !== oldBooking.assignedPartnerId) {
-        // If it was already assigned, this is a REASSIGNMENT
         if (oldBooking.assignedPartnerId) {
           body.status = 'reassigned'; // Auto-set status
 
@@ -122,6 +124,33 @@ export async function PATCH(
         } else {
           // First time assignment
           body.status = 'assigned';
+        }
+      }
+
+      // =================================================================================
+      // FINANCIAL GUARDRAIL: Report Release
+      // =================================================================================
+      const tryingToRelease = (body.status === 'completed' || body.reportStatus === 'released');
+      if (tryingToRelease && (oldBooking.status !== 'completed' || oldBooking.reportStatus !== 'released')) {
+        if (oldBooking.balanceAmount > 0) {
+          // Block Release
+          const contactEmail = oldBooking.bookedByEmail !== 'guest' ? oldBooking.bookedByEmail : oldBooking.email;
+          const userForNotification = await User.findOne({ email: contactEmail });
+
+          // Send Payment Pending Notification
+          sendSmartNotification('PAYMENT_PENDING', {
+            customerName: oldBooking.patientName,
+            customerEmail: contactEmail,
+            customerPhone: oldBooking.contactNumber,
+            bookingId: oldBooking._id.toString(),
+            balanceAmount: oldBooking.balanceAmount,
+            userTelegramChatId: userForNotification?.telegramChatId
+          });
+
+          return NextResponse.json({
+            error: 'Payment Pending. Report cannot be released until balance is cleared.',
+            code: 'PAYMENT_PENDING'
+          }, { status: 402 }); // 402 Payment Required
         }
       }
 

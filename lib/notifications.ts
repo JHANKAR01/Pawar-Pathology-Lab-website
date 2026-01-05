@@ -130,7 +130,7 @@ export function getNotificationProvider(): NotificationProvider {
 // NOTIFICATION TYPES AND TEMPLATES
 // ============================================================================
 
-export type NotificationType = 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'REPORT_READY' | 'COUPON_APPLIED' | 'STAFF_NEW_BOOKING' | 'OTP_VERIFICATION' | 'PARTNER_ASSIGNMENT' | 'PARTNER_REASSIGNMENT';
+export type NotificationType = 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'REPORT_READY' | 'COUPON_APPLIED' | 'STAFF_NEW_BOOKING' | 'OTP_VERIFICATION' | 'PARTNER_ASSIGNMENT' | 'PARTNER_REASSIGNMENT' | 'PAYMENT_PENDING';
 
 interface NotificationData {
     customerName?: string;
@@ -145,6 +145,7 @@ interface NotificationData {
     otpCode?: string;
     partnerTelegramChatId?: string;
     userTelegramChatId?: string;
+    balanceAmount?: number;
 }
 
 const LAB_FOOTER = `
@@ -225,6 +226,11 @@ export async function sendSmartNotification(
 
             case 'PARTNER_REASSIGNMENT':
                 telegramMessage = `⚠️ *Assignment Update* ⚠️\nBooking #${bookingId} has been reassigned to another partner.\nYou are no longer responsible for this collection.`;
+                break;
+
+            case 'PAYMENT_PENDING':
+                subject = `Action Required: Payment Pending for Booking #${bookingId}`;
+                telegramMessage = `💰 *Payment Pending* 💰\nHi ${customerName}, your report is ready but there is a pending balance of ₹${data.balanceAmount}.\nPlease clear your dues to download the report.`;
                 break;
 
             case 'BOOKING_CONFIRMED':

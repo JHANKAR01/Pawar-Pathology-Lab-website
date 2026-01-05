@@ -37,7 +37,11 @@ const SettingsSchema = new Schema<ISettings & Document>(
     // Role-based Telegram Toggles
     telegramEnabledAdmin: { type: Boolean, default: false },
     telegramEnabledPartner: { type: Boolean, default: false },
-    telegramEnabledUser: { type: Boolean, default: false }
+    telegramEnabledUser: { type: Boolean, default: false },
+
+    // Drive Provisioning
+    lastProvisionedDate: { type: Date },
+    autoProvisionEnabled: { type: Boolean, default: false }
   },
   { timestamps: true }
 );

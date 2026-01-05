@@ -122,4 +122,8 @@ export interface ISettings {
   locationFencingEnabled: boolean;
   distanceType: 'road' | 'displacement';
   blockSundays: boolean;
+
+  // Drive Provisioning
+  lastProvisionedDate?: Date;
+  autoProvisionEnabled?: boolean;
 }
