@@ -191,10 +191,23 @@ class RealDriveProvider implements DriveProvider {
     // Name: "PatientName Email TestNames"
     const sanitize = (str: string) => str.replace(/[^a-zA-Z0-9 @.]/g, '_').replace(/_+/g, '_').trim();
     const safePatient = sanitize(patientName);
-    const safeTests = sanitize(testTitles.join('_')).slice(0, 30);
+    const safeTests = sanitize(testTitles.join('_')).slice(0, 50); // Increased to 50
     const safeEmail = email ? sanitize(email) : 'NoEmail';
 
-    const patientFolderName = `${safePatient} ${safeEmail} ${safeTests}`;
+    let patientFolderName = `${safePatient} ${safeEmail} ${safeTests}`;
+
+    // Global Safeguard: 200 chars
+    if (patientFolderName.length > 200) {
+      const excess = patientFolderName.length - 200;
+      // Truncate tests first
+      const truncatedTests = safeTests.slice(0, Math.max(0, safeTests.length - excess - 3)) + '...';
+      patientFolderName = `${safePatient} ${safeEmail} ${truncatedTests}`;
+      // Verify again, if still too long (e.g. long patient name), truncate total
+      if (patientFolderName.length > 200) {
+        patientFolderName = patientFolderName.slice(0, 200);
+      }
+    }
+
     const patientFolderId = await this.getOrCreateFolder(patientFolderName, dayFolderId);
 
     // 3. Share with Patient

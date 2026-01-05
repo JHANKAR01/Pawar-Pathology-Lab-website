@@ -146,6 +146,7 @@ interface NotificationData {
     partnerTelegramChatId?: string;
     userTelegramChatId?: string;
     balanceAmount?: number;
+    newPartnerName?: string;
 }
 
 const LAB_FOOTER = `
@@ -225,16 +226,50 @@ export async function sendSmartNotification(
                 break;
 
             case 'PARTNER_REASSIGNMENT':
-                telegramMessage = `⚠️ *Assignment Update* ⚠️\nBooking #${bookingId} has been reassigned to another partner.\nYou are no longer responsible for this collection.`;
+                telegramMessage = `⚠️ *Assignment Update* ⚠️\nBooking #${bookingId} has been reassigned to *${data.newPartnerName || 'another partner'}*.\nYou are no longer responsible for this collection.`;
                 break;
 
             case 'PAYMENT_PENDING':
                 subject = `Action Required: Payment Pending for Booking #${bookingId}`;
                 telegramMessage = `💰 *Payment Pending* 💰\nHi ${customerName}, your report is ready but there is a pending balance of ₹${data.balanceAmount}.\nPlease clear your dues to download the report.`;
+
+                emailHtml = `
+                    <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #e11d48; text-align: center;">Payment Required</h2>
+                        <p>Dear <strong>${customerName}</strong>,</p>
+                        <p>Your report for booking <strong>#${bookingId}</strong> is ready. However, there is a pending balance of <strong>₹${data.balanceAmount}</strong>.</p>
+                        <p>Please clear your dues to access and download your report.</p>
+                        <div style="background-color: #fff1f2; padding: 15px; border-left: 4px solid #e11d48; margin: 20px 0;">
+                            <p style="margin: 0; color: #be123c;"><strong>Pending Amount:</strong> ₹${data.balanceAmount}</p>
+                        </div>
+                         <p>Contact us to make a payment:</p>
+                        <div style="text-align: center;">
+                            <a href="${getWhatsAppLink(customerPhone || '', 'Hi, I want to clear my dues for booking #' + bookingId)}" 
+                                style="background-color: #25D366; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                                Pay via WhatsApp
+                            </a>
+                        </div>
+                        ${LAB_FOOTER}
+                    </div>
+                `;
                 break;
 
             case 'ADMIN_ALERT':
+                subject = `URGENT: Action Required for Pawar Pathology Lab - Drive Provisioning`;
                 telegramMessage = `🚨 *System Alert* 🚨\n${data.customerName || 'System'}: Drive folders are running low. Please check provisioning manually in Admin Settings.`;
+
+                emailHtml = `
+                    <div style="font-family: sans-serif; padding: 20px; border: 1px solid #dc2626; border-radius: 12px; max-width: 600px; margin: 0 auto; background-color: #fef2f2;">
+                        <h2 style="color: #dc2626; text-align: center;">⚠️ System Alert: Drive Provisioning</h2>
+                        <p><strong>Urgent Attention Required,</strong></p>
+                        <p>The system has detected that the pre-provisioned Google Drive folders for the upcoming days/month are running low.</p>
+                        <p>Please log in to the <strong>Admin Dashboard</strong> and manually trigger the <strong>Drive Provisioning</strong> tool to ensuring smooth operations.</p>
+                        <div style="text-align: center; margin-top: 20px;">
+                            <span style="background-color: #dc2626; color: white; padding: 8px 16px; border-radius: 4px; font-size: 14px;">Action Required Immediately</span>
+                        </div>
+                         ${LAB_FOOTER}
+                    </div>
+                `;
                 break;
 
             case 'BOOKING_CONFIRMED':
