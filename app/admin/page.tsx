@@ -47,7 +47,46 @@ interface BlackoutDateType {
   reason: string;
   startDate: string;
   endDate: string;
+  endDate: string;
 }
+
+const PaginationControls = ({ currentPage, totalPages, onPageChange, limit, onLimitChange, totalItems }: any) => (
+  <div className="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+    <div className="flex items-center gap-3">
+      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Rows per page:</span>
+      <select
+        value={limit}
+        onChange={(e) => onLimitChange(Number(e.target.value))}
+        className="bg-white border-2 border-slate-200 rounded-lg px-3 py-1 text-sm font-bold text-slate-700 outline-none focus:border-clinical-rose transition-colors"
+      >
+        <option value={10}>10</option>
+        <option value={20}>20</option>
+        <option value={50}>50</option>
+        <option value={100}>100</option>
+      </select>
+      <span className="text-xs text-slate-400 font-bold ml-2 uppercase tracking-wider">Total: {totalItems}</span>
+    </div>
+    <div className="flex items-center gap-3">
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-wider bg-white border-2 border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+      >
+        Previous
+      </button>
+      <span className="text-sm font-black text-slate-900 bg-white px-3 py-1 rounded-lg border border-slate-100">
+        {currentPage} / {totalPages || 1}
+      </span>
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages || totalPages === 0}
+        className="px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-wider bg-white border-2 border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+      >
+        Next
+      </button>
+    </div>
+  </div>
+);
 
 export default function AdminPage() {
   const router = useRouter();
@@ -62,6 +101,15 @@ export default function AdminPage() {
     notifications: { smsEnabled: true, emailEnabled: true, whatsappEnabled: true, whatsappOfficialEnabled: false, telegramEnabled: false, telegramAdminChatId: '', toggles: { admin: false, partner: false, user: false } },
     drive: { autoProvisionEnabled: false }
   });
+
+  // Pagination State
+  const [currentBookingPage, setCurrentBookingPage] = useState(1);
+  const [bookingsPerPage, setBookingsPerPage] = useState(20);
+  const [totalBookings, setTotalBookings] = useState(0);
+
+  const [currentPartnerPage, setCurrentPartnerPage] = useState(1);
+  const [partnersPerPage, setPartnersPerPage] = useState(10);
+  const [totalPartners, setTotalPartners] = useState(0);
   const [specimenModal, setSpecimenModal] = useState({ isOpen: false, bookingId: '', patientName: '' });
   const [isVerified, setIsVerified] = useState(false);
   const [blackoutDates, setBlackoutDates] = useState<BlackoutDateType[]>([]);
@@ -96,8 +144,6 @@ export default function AdminPage() {
         return;
       }
       setIsVerified(true);
-      fetchData();
-      fetchPartners();
       fetchSettings();
       fetchBlackoutDates();
       fetchCoupons();
@@ -105,13 +151,23 @@ export default function AdminPage() {
     }
   }, [session, status, router]);
 
+  // Pagination Effects
+  useEffect(() => {
+    if (status === 'authenticated') fetchData();
+  }, [currentBookingPage, bookingsPerPage, status]);
+
+  useEffect(() => {
+    if (status === 'authenticated') fetchPartners();
+  }, [currentPartnerPage, partnersPerPage, status]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/bookings?limit=100');
+      const res = await fetch(`/api/bookings?page=${currentBookingPage}&limit=${bookingsPerPage}`);
       if (res.ok) {
         const data = await res.json();
         setBookings(data.bookings || []);
+        setTotalBookings(data.metadata?.totalCount || 0);
       }
       else if (res.status === 401 || res.status === 403) router.push('/login');
     } catch (error) {
@@ -123,8 +179,12 @@ export default function AdminPage() {
 
   const fetchPartners = async () => {
     try {
-      const res = await fetch('/api/users?role=partner');
-      if (res.ok) setPartners(await res.json());
+      const res = await fetch(`/api/users?role=partner&page=${currentPartnerPage}&limit=${partnersPerPage}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPartners(data.users || []);
+        setTotalPartners(data.pagination?.totalDocs || 0);
+      }
       else if (res.status === 401 || res.status === 403) router.push('/login');
     } catch (error) {
       console.error('Failed to load partners', error);
@@ -671,37 +731,29 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          <nav className="space-y-3">
-            {[
-              { id: 'Intelligence', icon: LayoutDashboard },
-              { id: 'Bookings', icon: FlaskConical },
-              { id: 'Reports', icon: FileText },
-              { id: 'Specimens', icon: FlaskConical },
-              { id: 'Partners', icon: HeartHandshake },
-              { id: 'Coupons', icon: Ticket },
-              { id: 'Config', icon: SettingsIcon }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all ${activeTab === tab.id
-                  ? 'bg-clinical-rose text-white shadow-rose-lg'
-                  : 'text-slate-600 hover:text-clinical-rose hover:bg-clinical-rose-light'
-                  }`}
-              >
-                <tab.icon className="w-5 h-5" />
-                {tab.id}
-              </button>
-            ))}
-          </nav>
-        </div>
+        <nav className="flex-1 space-y-2">
+          {[
+            { id: 'Intelligence', icon: LayoutDashboard, label: 'Intelligence' },
+            { id: 'Bookings', icon: Clock, label: 'Bookings' },
+            { id: 'Partners', icon: HeartHandshake, label: 'Partners' },
+            { id: 'Config', icon: Settings2, label: 'Config' }
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 font-bold ${activeTab === item.id ? 'bg-slate-900 text-white shadow-xl scale-105' : 'text-slate-500 hover:bg-slate-100'}`}
+            >
+              <item.icon size={20} className={activeTab === item.id ? 'text-clinical-rose' : ''} />
+              {item.label}
+            </button>
+          ))}
+        </nav>
 
         <div className="mt-6 pt-6 border-t-2 border-slate-200">
           <button onClick={() => router.push('/')} className="w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all text-slate-600 hover:text-clinical-rose hover:bg-clinical-rose-light">
             <Home className="w-5 h-5" /> Homepage
           </button>
-          <button onClick={() => signOut({ callbackUrl: '/login' })} className="w-full mt-2 flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all text-slate-600 hover:text-clinical-rose hover:bg-clinical-rose-light">
+          <button onClick={handleLogout} className="w-full mt-2 flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all text-slate-600 hover:text-clinical-rose hover:bg-clinical-rose-light">
             <LogOut className="w-5 h-5" /> Logout
           </button>
         </div>

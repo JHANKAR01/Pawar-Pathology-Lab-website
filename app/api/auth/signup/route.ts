@@ -26,7 +26,7 @@ async function handler(request: Request) {
     const settings = await Settings.getSingleton();
 
     // 1. Validate OTP (if required)
-    if (settings.requireVerification) {
+    if (settings.appControl?.requireVerification) {
       if (!otp) {
         return NextResponse.json({ error: 'OTP is required' }, { status: 400 });
       }
