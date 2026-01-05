@@ -4,44 +4,40 @@ import { ISettings } from '@/types';
 
 const SettingsSchema = new Schema<ISettings & Document>(
   {
-    requireVerification: {
-      type: Boolean,
-      default: true,
-      required: true
+    // Global App Control
+    appControl: {
+      requireVerification: { type: Boolean, default: true },
+      maintenanceMode: { type: Boolean, default: false },
+      maintenanceModeUser: { type: Boolean, default: false },
+      maintenanceModePartner: { type: Boolean, default: false },
+      blockSundays: { type: Boolean, default: true },
+      recurringBookingsEnabled: { type: Boolean, default: false }, // New Toggle
     },
-    maintenanceMode: {
-      type: Boolean,
-      default: false
+    // Logistics & Fencing
+    logistics: {
+      serviceRadius: { type: Number, default: 10 },
+      locationFencingEnabled: { type: Boolean, default: false },
+      distanceType: { type: String, enum: ['road', 'displacement'], default: 'displacement' },
     },
-    announcement: {
-      type: String,
-      default: ''
-    },
-    smsEnabled: { type: Boolean, default: true },
-    emailEnabled: { type: Boolean, default: true },
-    serviceRadius: { type: Number, default: 10 },
-    locationFencingEnabled: { type: Boolean, default: false },
-    distanceType: { type: String, enum: ['road', 'displacement'], default: 'displacement' }, // Added distanceType
-    blockSundays: { type: Boolean, default: true },
-
-    // Detailed Maintenance
-    maintenanceModeUser: { type: Boolean, default: false },
-    maintenanceModePartner: { type: Boolean, default: false },
-
     // Smart Notification Hub
-    whatsappEnabled: { type: Boolean, default: true },
-    whatsappOfficialEnabled: { type: Boolean, default: false }, // Default false (link only)
-    telegramEnabled: { type: Boolean, default: false },
-    telegramAdminChatId: { type: String, default: '' },
-
-    // Role-based Telegram Toggles
-    telegramEnabledAdmin: { type: Boolean, default: false },
-    telegramEnabledPartner: { type: Boolean, default: false },
-    telegramEnabledUser: { type: Boolean, default: false },
-
-    // Drive Provisioning
-    lastProvisionedDate: { type: Date },
-    autoProvisionEnabled: { type: Boolean, default: false }
+    notifications: {
+      smsEnabled: { type: Boolean, default: true },
+      emailEnabled: { type: Boolean, default: true },
+      whatsappEnabled: { type: Boolean, default: true },
+      whatsappOfficialEnabled: { type: Boolean, default: false },
+      telegramEnabled: { type: Boolean, default: false },
+      telegramAdminChatId: { type: String, default: '' },
+      toggles: {
+        admin: { type: Boolean, default: false },
+        partner: { type: Boolean, default: false },
+        user: { type: Boolean, default: false },
+      }
+    },
+    // Infrastructure
+    drive: {
+      lastProvisionedDate: { type: Date },
+      autoProvisionEnabled: { type: Boolean, default: false }
+    }
   },
   { timestamps: true }
 );
@@ -56,7 +52,11 @@ SettingsSchema.statics.getSingleton = async function () {
     return settings;
   }
   // Create default if none exists
-  return await this.create({ requireVerification: true });
+  return await this.create({
+    appControl: { requireVerification: true, maintenanceMode: false, blockSundays: true },
+    logistics: { serviceRadius: 10, distanceType: 'displacement' },
+    notifications: { smsEnabled: true, emailEnabled: true, whatsappEnabled: true }
+  });
 };
 
 interface SettingsModel extends mongoose.Model<ISettings & Document> {

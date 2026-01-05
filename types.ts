@@ -102,28 +102,41 @@ export interface IBooking {
 }
 
 export interface ISettings {
-  requireVerification: boolean;
-  maintenanceMode: boolean;
-  maintenanceModeUser: boolean;
-  maintenanceModePartner: boolean;
-  announcement?: string;
-  smsEnabled: boolean;
-  emailEnabled: boolean;
-  whatsappEnabled: boolean;
-  whatsappOfficialEnabled?: boolean;
-  telegramEnabled?: boolean;
-  telegramAdminChatId?: string;
+  // Global App Control
+  appControl: {
+    requireVerification: boolean;
+    maintenanceMode: boolean;
+    maintenanceModeUser: boolean;
+    maintenanceModePartner: boolean;
+    blockSundays: boolean;
+    recurringBookingsEnabled: boolean;
+  };
 
-  // Role-based Telegram Toggles
-  telegramEnabledAdmin?: boolean;
-  telegramEnabledPartner?: boolean;
-  telegramEnabledUser?: boolean;
-  serviceRadius: number;
-  locationFencingEnabled: boolean;
-  distanceType: 'road' | 'displacement';
-  blockSundays: boolean;
+  // Logistics & Fencing
+  logistics: {
+    serviceRadius: number;
+    locationFencingEnabled: boolean;
+    distanceType: 'road' | 'displacement';
+  };
 
-  // Drive Provisioning
-  lastProvisionedDate?: Date;
-  autoProvisionEnabled?: boolean;
+  // Smart Notification Hub
+  notifications: {
+    smsEnabled: boolean;
+    emailEnabled: boolean;
+    whatsappEnabled: boolean;
+    whatsappOfficialEnabled: boolean;
+    telegramEnabled: boolean;
+    telegramAdminChatId: string;
+    toggles: {
+      admin: boolean;
+      partner: boolean;
+      user: boolean;
+    };
+  };
+
+  // Infrastructure
+  drive: {
+    lastProvisionedDate?: Date;
+    autoProvisionEnabled: boolean;
+  };
 }
