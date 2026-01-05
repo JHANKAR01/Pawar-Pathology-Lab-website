@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { toast } from 'sonner';
 import {
   ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home, Loader2, Calendar, FileText, X, CheckCircle, XCircle, Ticket, MapPin, BellRing,
-  LayoutDashboard, HeartHandshake, Settings as SettingsIcon
+  LayoutDashboard, HeartHandshake, Settings as SettingsIcon, Clock, CheckCircle2
 } from 'lucide-react';
 import { FlaskConical } from 'lucide-react';
 import { BookingStatus } from '@/types';
@@ -640,6 +640,7 @@ export default function AdminPage() {
             {[
               { id: 'Intelligence', icon: LayoutDashboard },
               { id: 'Bookings', icon: FlaskConical },
+              { id: 'Reports', icon: FileText },
               { id: 'Specimens', icon: FlaskConical },
               { id: 'Partners', icon: HeartHandshake },
               { id: 'Coupons', icon: Ticket },
@@ -818,6 +819,120 @@ export default function AdminPage() {
                     </motion.div>
                   ))
                 )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence mode="wait">
+            {activeTab === 'Reports' && (
+              <motion.div
+                key="Reports"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-12"
+              >
+                {/* Bucket 1: Payment Done + Approve */}
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+                    <CheckCircle className="text-success" /> Ready for Release (Paid)
+                    <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs">{bookings.filter(b => b.status === 'report_uploaded' && b.balanceAmount === 0).length}</span>
+                  </h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {bookings.filter(b => b.status === 'report_uploaded' && b.balanceAmount === 0).map(b => (
+                      <div key={b._id} className="card-premium p-6 border-l-4 border-success">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h4 className="font-bold text-lg">{b.patientName}</h4>
+                            <p className="text-xs text-slate-500 font-bold uppercase">{b.tests.map(t => t.title).join(', ')}</p>
+                          </div>
+                          <span className="bg-success text-white px-3 py-1 rounded-full text-xs font-black uppercase">Paid</span>
+                        </div>
+                        <button
+                          onClick={() => handleOpenReview(b)}
+                          className="w-full bg-success text-white px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-success/90 transition-all shadow-lg flex items-center justify-center gap-2"
+                        >
+                          <FileText size={16} /> Review & Approve
+                        </button>
+                      </div>
+                    ))}
+                    {bookings.filter(b => b.status === 'report_uploaded' && b.balanceAmount === 0).length === 0 && <p className="text-slate-400 text-sm font-medium italic col-span-full">No pending paid reports.</p>}
+                  </div>
+                </div>
+
+                {/* Bucket 2: Payment Pending + Approve */}
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+                    <Clock className="text-amber-500" /> Pending Payment (Action Required)
+                    <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs">{bookings.filter(b => b.status === 'report_uploaded' && b.balanceAmount > 0).length}</span>
+                  </h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {bookings.filter(b => b.status === 'report_uploaded' && b.balanceAmount > 0).map(b => (
+                      <div key={b._id} className="card-premium p-6 border-l-4 border-amber-500">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h4 className="font-bold text-lg">{b.patientName}</h4>
+                            <p className="text-xs text-slate-500 font-bold uppercase">{b.tests.map(t => t.title).join(', ')}</p>
+                          </div>
+                          <div className="text-right">
+                            <span className="bg-amber-100 text-amber-600 px-3 py-1 rounded-full text-xs font-black uppercase block mb-1">Unpaid</span>
+                            <span className="text-xs font-bold text-clinical-rose">Due: ₹{b.balanceAmount}</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleOpenReview(b)}
+                          className="w-full bg-amber-500 text-white px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-amber-600 transition-all shadow-lg flex items-center justify-center gap-2"
+                        >
+                          <FileText size={16} /> Review (Will Notify Payment)
+                        </button>
+                      </div>
+                    ))}
+                    {bookings.filter(b => b.status === 'report_uploaded' && b.balanceAmount > 0).length === 0 && <p className="text-slate-400 text-sm font-medium italic col-span-full">No pending unpaid reports.</p>}
+                  </div>
+                </div>
+
+                {/* Bucket 3: Approved/Released */}
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+                    <CheckCircle2 className="text-blue-600" /> Released Reports
+                    <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs">{bookings.filter(b => b.status === 'completed' && b.reportStatus === 'released').length}</span>
+                  </h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 opacity-75 hover:opacity-100 transition-opacity">
+                    {bookings.filter(b => b.status === 'completed' && b.reportStatus === 'released').slice(0, 5).map(b => (
+                      <div key={b._id} className="card-premium p-6 border-l-4 border-blue-600 bg-slate-50">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h4 className="font-bold text-slate-700">{b.patientName}</h4>
+                            <p className="text-xs text-slate-500">Released on {new Date(b.createdAt!).toLocaleDateString()}</p>
+                          </div>
+                          <a href={`/api/reports/download/${b._id}`} target="_blank" className="text-blue-600 hover:underline text-xs font-bold flex items-center gap-1"><FileText size={14} /> View PDF</a>
+                        </div>
+                      </div>
+                    ))}
+                    {bookings.filter(b => b.status === 'completed' && b.reportStatus === 'released').length > 5 && <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">+ {bookings.filter(b => b.status === 'completed' && b.reportStatus === 'released').length - 5} more (view in Bookings tab)</p>}
+                  </div>
+                </div>
+
+                {/* Bucket 4: Rejected */}
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+                    <XCircle className="text-rose-600" /> Rejected / Re-upload Requested
+                    <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs">{bookings.filter(b => b.reportStatus === 'rejected').length}</span>
+                  </h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {bookings.filter(b => b.reportStatus === 'rejected').map(b => (
+                      <div key={b._id} className="card-premium p-6 border-l-4 border-rose-600 bg-rose-50/50">
+                        <div>
+                          <h4 className="font-bold text-slate-900">{b.patientName}</h4>
+                          <p className="text-xs font-bold text-rose-600 mt-2 uppercase tracking-wide">Reason: {b.pathologistNotes}</p>
+                          <p className="text-xs text-slate-500 mt-1">Status reverted to: {b.status}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
               </motion.div>
             )}
           </AnimatePresence>

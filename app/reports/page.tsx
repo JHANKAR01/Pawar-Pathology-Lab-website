@@ -54,10 +54,11 @@ export default function ReportsPage() {
       const fetchBookings = async () => {
         setIsLoading(true);
         try {
-          const response = await fetch(`/api/bookings?userId=${currentUser.id}`);
+          const response = await fetch(`/api/bookings?userId=${currentUser.id}&limit=100`);
           if (response.ok) {
             const data = await response.json();
-            setAllBookings(data);
+            // Handle paginated response structure
+            setAllBookings(data.bookings || []);
           }
         } catch (error) {
           console.error("Failed to fetch user's bookings", error);
@@ -361,8 +362,8 @@ export default function ReportsPage() {
                           rel="noopener noreferrer"
                           aria-disabled={!booking.reportFileUrl || booking.status !== BookingStatus.COMPLETED}
                           className={`h-12 w-12 md:w-auto md:px-6 md:h-12 rounded-xl flex items-center justify-center gap-2 font-bold uppercase text-[10px] tracking-widest transition-all ${(!booking.reportFileUrl || booking.status !== BookingStatus.COMPLETED)
-                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                              : 'bg-rose-600 text-white shadow-lg shadow-rose-200 hover:bg-rose-700'
+                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                            : 'bg-rose-600 text-white shadow-lg shadow-rose-200 hover:bg-rose-700'
                             }`}
                           onClick={(e) => {
                             if (!booking.reportFileUrl || booking.status !== BookingStatus.COMPLETED) {
