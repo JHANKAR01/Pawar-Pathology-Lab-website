@@ -112,8 +112,12 @@ export interface ISettings {
     recurringBookingsEnabled: boolean;
   };
 
-  // Logistics & Fencing
-  logistics: {
+  // Logistics & Fencing  };
+  rateLimit?: {
+    ipRequestsPerMinute: number;
+    globalRequestsPerMinute: number;
+  };
+  logistics?: {
     serviceRadius: number;
     locationFencingEnabled: boolean;
     distanceType: 'road' | 'displacement';

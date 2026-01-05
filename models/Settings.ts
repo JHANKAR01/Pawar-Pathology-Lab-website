@@ -37,6 +37,11 @@ const SettingsSchema = new Schema<ISettings & Document>(
     drive: {
       lastProvisionedDate: { type: Date },
       autoProvisionEnabled: { type: Boolean, default: false }
+    },
+    // Security & Limits
+    rateLimit: {
+      ipRequestsPerMinute: { type: Number, default: 60 },
+      globalRequestsPerMinute: { type: Number, default: 1000 }
     }
   },
   { timestamps: true }
@@ -55,7 +60,8 @@ SettingsSchema.statics.getSingleton = async function () {
   return await this.create({
     appControl: { requireVerification: true, maintenanceMode: false, blockSundays: true },
     logistics: { serviceRadius: 10, distanceType: 'displacement' },
-    notifications: { smsEnabled: true, emailEnabled: true, whatsappEnabled: true }
+    notifications: { smsEnabled: true, emailEnabled: true, whatsappEnabled: true },
+    rateLimit: { ipRequestsPerMinute: 60, globalRequestsPerMinute: 1000 }
   });
 };
 
