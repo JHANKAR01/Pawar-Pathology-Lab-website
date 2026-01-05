@@ -19,6 +19,10 @@ export default function PartnerPage() {
   const [statusFilter, setStatusFilter] = useState('active'); // 'active' or 'completed'
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Specimen Collection Modal
+  const [showCollectionModal, setShowCollectionModal] = useState(false);
+  const [selectedTaskForCollection, setSelectedTaskForCollection] = useState<string | null>(null);
+
   // Filter tasks based on status and search query
   const filteredTasks = tasks.filter(task => {
     const matchesStatus = statusFilter === 'active'
@@ -109,9 +113,16 @@ export default function PartnerPage() {
     }
   };
 
-  const handleCollectSample = async (id: string) => {
-    if (window.confirm('Safety Check: Confirm specimen acquisition for this patient?')) {
-      handleUpdateStatus(id, 'sample_collected');
+  const handleCollectSample = (id: string) => {
+    setSelectedTaskForCollection(id);
+    setShowCollectionModal(true);
+  };
+
+  const confirmCollection = () => {
+    if (selectedTaskForCollection) {
+      handleUpdateStatus(selectedTaskForCollection, 'sample_collected');
+      setShowCollectionModal(false);
+      setSelectedTaskForCollection(null);
     }
   };
 
@@ -398,6 +409,7 @@ export default function PartnerPage() {
       {isRegisterOpen && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6">
           <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border border-slate-200">
+            {/* ... existing modal content ... */}
             <div className="bg-gradient-to-r from-clinical-rose to-clinical-rose-dark p-10 text-white flex justify-between items-center">
               <div>
                 <h3 className="text-2xl font-black uppercase tracking-tight">Direct Entry</h3>
@@ -405,7 +417,9 @@ export default function PartnerPage() {
               </div>
               <button onClick={() => setIsRegisterOpen(false)} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><X size={24} /></button>
             </div>
+            {/* Same form as before, just ensuring we don't break logic by referencing it loosely */}
             <form onSubmit={handleWalkInRegistration} className="p-10 space-y-6 max-h-[70vh] overflow-y-auto">
+              {/* Re-rendering form to ensure replaced content is valid structure */}
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="text-xs font-black uppercase text-slate-600 mb-2 block">Name</label>
@@ -442,6 +456,36 @@ export default function PartnerPage() {
               </div>
               <button className="w-full bg-clinical-rose text-white py-6 rounded-2xl font-black uppercase tracking-widest shadow-rose-lg hover:bg-clinical-rose-dark transition-all">Confirm & Log Specimen</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Specimen Collection */}
+      {showCollectionModal && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6">
+          <div className="bg-white max-w-sm w-full rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-200 border border-slate-200">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Package className="w-8 h-8 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900 mb-2">Confirm Collection</h3>
+              <p className="text-slate-500 text-sm font-medium">Are you sure you have collected the specimen for this patient?</p>
+            </div>
+            <div className="flex border-t-2 border-slate-100">
+              <button
+                onClick={() => setShowCollectionModal(false)}
+                className="flex-1 py-4 font-bold text-slate-500 hover:bg-slate-50 transition-colors uppercase text-xs tracking-widest"
+              >
+                Cancel
+              </button>
+              <div className="w-[2px] bg-slate-100"></div>
+              <button
+                onClick={confirmCollection}
+                className="flex-1 py-4 font-black text-blue-600 hover:bg-blue-50 transition-colors uppercase text-xs tracking-widest"
+              >
+                Confirm
+              </button>
+            </div>
           </div>
         </div>
       )}

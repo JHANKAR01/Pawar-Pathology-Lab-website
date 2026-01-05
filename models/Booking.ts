@@ -51,7 +51,13 @@ const BookingSchema = new Schema(
     pathologistNotes: { type: String, trim: true },
     referredBy: { type: String, default: 'Self' },
     assignedPartnerId: { type: String },
-    assignedPartnerName: { type: String }
+    assignedPartnerName: { type: String },
+    recurrence: {
+      type: String,
+      enum: ['none', 'daily', 'weekly', 'biweekly', 'monthly'],
+      default: 'none'
+    },
+    parentBookingId: { type: String }
   },
   { timestamps: true }
 );

@@ -34,7 +34,8 @@ async function handler(request: Request) {
     if (!coupon) {
       return NextResponse.json({
         valid: false,
-        error: 'Invalid or inactive coupon code'
+        error: 'Invalid or inactive coupon code',
+        errorCode: 'INVALID'
       });
     }
 
@@ -42,7 +43,8 @@ async function handler(request: Request) {
     if (new Date() > coupon.expiryDate) {
       return NextResponse.json({
         valid: false,
-        error: 'This coupon has expired'
+        error: 'This coupon has expired',
+        errorCode: 'EXPIRED'
       });
     }
 
@@ -50,7 +52,8 @@ async function handler(request: Request) {
     if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
       return NextResponse.json({
         valid: false,
-        error: 'This coupon has reached its usage limit'
+        error: 'This coupon has reached its usage limit',
+        errorCode: 'LIMIT_REACHED'
       });
     }
 

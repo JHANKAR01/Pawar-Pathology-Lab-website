@@ -120,8 +120,15 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
         setError('');
       } else {
         setDiscount(0);
-        setError(data.error || 'Invalid coupon code');
-        setPromoCode('');
+
+        if (data.errorCode === 'EXPIRED') {
+          setError('Coupon has expired');
+        } else if (data.errorCode === 'LIMIT_REACHED') {
+          setError('Coupon usage limit reached');
+        } else {
+          setError(data.error || 'Invalid coupon code');
+        }
+        setPromoCode(''); // Clear input for bad coupons
       }
     } catch (err) {
       console.error('Coupon validation error:', err);
@@ -135,7 +142,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
   const captureLocation = () => {
     // Security check for Geolocation API requirements
     if (window.location.hostname !== 'localhost' && window.location.protocol !== 'https:') {
-      alert("Browser Security Warning: Geolocation requires HTTPS or localhost. Please use a secure connection.");
+      alert("Browser Security Warning: Geolocation requires a Secure Context (HTTPS). Please ensure you are using 'https://' or running on localhost.");
       return;
     }
 
@@ -400,8 +407,8 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
               <h3 className="font-black text-xl mb-6 tracking-tight text-slate-900 uppercase">Review Selected Tests</h3>
               {selectedTests.map(t => (
                 <div key={t._id} className="flex justify-between items-center p-6 bg-slate-50 rounded-2xl border-2 border-slate-200">
-                  <div>
-                    <span className="font-bold text-slate-900">{t.title}</span>
+                  <div className="flex-1 pr-4">
+                    <span className="font-bold text-slate-900 leading-tight block">{t.title}</span>
                   </div>
                   <div className="flex items-center gap-4">
                     <span className="font-black text-clinical-rose text-lg">₹{t.price}</span>

@@ -54,7 +54,7 @@ async function handler(request: Request) {
     // 2. Check Existing User
     const existingUser = await User.findOne({ email: sanitizedEmail });
     if (existingUser) {
-      return NextResponse.json({ error: 'User already exists' }, { status: 400 });
+      return NextResponse.json({ error: 'User already exists' }, { status: 409 });
     }
 
     // Role security check

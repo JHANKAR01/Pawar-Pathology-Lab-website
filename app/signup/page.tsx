@@ -224,8 +224,15 @@ export default function SignupPage() {
 
               <div className="pt-4 space-y-4">
                 <button type="submit" className="w-full bg-clinical-rose text-white py-5 rounded-2xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-3 hover:bg-clinical-rose-dark transition-all shadow-rose-lg disabled:opacity-50" disabled={isLoading || settingsLoading}>
-                  {isLoading ? <Loader2 className="animate-spin" /> : (requireVerification ? "Send OTP" : "Create Account")}
+                  {isLoading ? <Loader2 className="animate-spin" /> : (requireVerification ? "Send OTP" : "Create Account (Skip Verification)")}
                 </button>
+
+                {!requireVerification && (
+                  <button type="button" onClick={() => handleSendOTP()} className="w-full bg-emerald-50 border-2 border-emerald-100 text-emerald-600 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-emerald-100 transition-all">
+                    Optional: Verify Email via OTP
+                  </button>
+                )}
+
                 <button type="button" onClick={() => router.push('/login')} className="w-full bg-transparent border-2 border-slate-300 text-slate-700 py-5 rounded-2xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-3 hover:bg-slate-50 hover:border-clinical-rose hover:text-clinical-rose transition-all">
                   Already have an account? Sign In
                 </button>
