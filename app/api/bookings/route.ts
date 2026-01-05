@@ -4,8 +4,11 @@ import dbConnect from '@/lib/dbConnect';
 import Booking from '@/models/Booking';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/next-auth-options';
+import { withRateLimit } from '@/lib/withRateLimit';
+import { sendSmartNotification } from '@/lib/notifications';
+import { createBookingWithTransaction } from '@/lib/services/bookingService';
 
-// GET /api/bookings - Fetch all bookings (Admin/Partner view) or user's own bookings (Patient/User)
+// GET /api/bookings - Fetch bookings with pagination (Admin/Partner/Patient views)
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) {
@@ -21,164 +24,79 @@ export async function GET(request: Request) {
     const email = searchParams.get('email');
     const userId = searchParams.get('userId');
 
-    // Admin and Partner can see all bookings or filter by userId/email
-    if (role === 'admin' || role === 'partner') {
-      let filter = {};
+    // Pagination Parameters (default: page 1, limit 10)
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '10', 10)));
+    const skip = (page - 1) * limit;
+
+    let filter: Record<string, any> = {};
+
+    // Admin, Partner, and Master can see all bookings or filter by userId/email
+    if (role === 'master' || role === 'admin' || role === 'partner') {
       if (userId) {
         filter = { userId: userId };
       } else if (email) {
         filter = { bookedByEmail: email };
       }
-
-      const bookings = await Booking.find(filter).sort({ createdAt: -1 });
-      return NextResponse.json(bookings);
-    }
-
-    // Patient/User can only see their own bookings
-    if (role === 'patient' || role === 'user') {
+    } else if (role === 'patient' || role === 'user') {
+      // Patient/User can only see their own bookings
       if (userId && userId === authenticatedUserId) {
-        const bookings = await Booking.find({ userId: userId }).sort({ createdAt: -1 });
-        return NextResponse.json(bookings);
+        filter = { userId: userId };
       } else if (email) {
-        // Allow patients to fetch by their own email
-        const bookings = await Booking.find({ bookedByEmail: email }).sort({ createdAt: -1 });
-        return NextResponse.json(bookings);
+        filter = { bookedByEmail: email };
       } else {
-        // If no userId or email provided, return user's own bookings
-        const bookings = await Booking.find({ userId: authenticatedUserId }).sort({ createdAt: -1 });
-        return NextResponse.json(bookings);
+        filter = { userId: authenticatedUserId };
       }
+    } else {
+      return NextResponse.json({ error: 'Forbidden: Access denied' }, { status: 403 });
     }
 
-    return NextResponse.json({ error: 'Forbidden: Access denied' }, { status: 403 });
+    // Execute paginated query with count
+    const [bookings, totalCount] = await Promise.all([
+      Booking.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Booking.countDocuments(filter)
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return NextResponse.json({
+      bookings,
+      metadata: {
+        totalCount,
+        currentPage: page,
+        totalPages,
+        limit
+      }
+    });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 });
   }
 }
 
-// POST /api/bookings - Create a new booking (Patient Wizard)
-import Coupon from '@/models/Coupon';
-import Test from '@/models/Test';
-import { sendSmartNotification } from '@/lib/notifications';
-
-// POST /api/bookings - Create a new booking (Patient Wizard)
-import { withRateLimit } from '@/lib/withRateLimit';
-import Settings from '@/models/Settings';
-import { getDisplacement, getRoadDistance } from '@/lib/geospatial';
-import { sanitizeInput } from '@/lib/sanitize';
-
-// POST /api/bookings - Create a new booking (Patient Wizard)
+// POST /api/bookings - Create a new booking with atomic transaction
 async function handler(request: Request) {
   await dbConnect();
   try {
     const body = await request.json();
-    const { tests, couponCode } = body;
 
-    // 1. Calculate Subtotal from Database
-    let serverSubtotal = 0;
-    // tests coming from frontend: [{ id, title, price, category }]
-    // We only trust the IDs
-    const testIds = tests.map((t: any) => t.id);
-    const dbTests = await Test.find({ _id: { $in: testIds } });
+    // Delegate all business logic to the service layer
+    const result = await createBookingWithTransaction(body);
 
-    if (dbTests.length !== testIds.length) {
-      return NextResponse.json({ error: 'Invalid test IDs provided' }, { status: 400 });
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
-    // Sum up the real prices
-    for (const dbTest of dbTests) {
-      serverSubtotal += dbTest.price;
-    }
+    const newBooking = result.booking;
 
-    // 2. Validate Coupon & Calculate Discount
-    let discountAmount = 0;
-    let usedCoupon = null;
-
-    if (couponCode) {
-      usedCoupon = await Coupon.findOne({ code: couponCode.toUpperCase().trim() });
-
-      if (!usedCoupon) {
-        return NextResponse.json({ error: 'Invalid coupon code' }, { status: 400 });
-      }
-
-      if (!usedCoupon.isActive) {
-        return NextResponse.json({ error: 'Coupon is inactive' }, { status: 400 });
-      }
-
-      if (new Date(usedCoupon.expiryDate) < new Date()) {
-        return NextResponse.json({ error: 'Coupon has expired' }, { status: 400 });
-      }
-
-      if (usedCoupon.usageLimit && usedCoupon.usedCount >= usedCoupon.usageLimit) {
-        return NextResponse.json({ error: 'Coupon usage limit reached' }, { status: 400 });
-      }
-
-      if (usedCoupon.discountType === 'percentage') {
-        discountAmount = (serverSubtotal * usedCoupon.value) / 100;
-      } else {
-        discountAmount = usedCoupon.value;
-      }
-    }
-
-    // 3. Final Verification
-    const serverTotal = Math.max(0, serverSubtotal - discountAmount);
-
-    if (Math.abs(serverTotal - body.totalAmount) > 1) {
-      console.error(`Price Mismatch! Server: ${serverTotal}, Client: ${body.totalAmount}`);
-      return NextResponse.json({ error: 'Price integrity check failed.' }, { status: 400 });
-    }
-
-    // --- Geofencing & Logistics Logic ---
-    let distanceFromLab = 0;
-    const settings = await Settings.getSingleton();
-
-    if (body.collectionType === 'home' && body.coordinates) {
-      // Server-side distance calculation for trust
-      if (settings.distanceType === 'road') {
-        distanceFromLab = await getRoadDistance(body.coordinates.lat, body.coordinates.lng);
-      } else {
-        distanceFromLab = getDisplacement(body.coordinates.lat, body.coordinates.lng);
-      }
-
-      // Enforce Geofencing
-      if (settings.locationFencingEnabled && distanceFromLab > settings.serviceRadius) {
-        return NextResponse.json({
-          error: `Location is ${distanceFromLab.toFixed(1)}km away. We only serve within ${settings.serviceRadius}km via ${settings.distanceType === 'road' ? 'road' : 'direct line'}.`
-        }, { status: 400 });
-      }
-    }
-
-    // Sanitize User Inputs (XSS Protection)
-    const sanitizedPatientName = sanitizeInput(body.patientName || '');
-    const sanitizedAddress = sanitizeInput(body.address || '');
-
-    // 4. Create Booking
-    const finalBookingData = {
-      ...body,
-      patientName: sanitizedPatientName,
-      address: sanitizedAddress,
-      scheduledDate: body.scheduledDate || body.date,
-      totalAmount: serverTotal,
-      discountAmount,
-      couponCode: couponCode ? couponCode.toUpperCase().trim() : undefined,
-      balanceAmount: (serverTotal - (body.amountTaken || 0)),
-      distanceFromLab // Save calculated distance
-    };
-
-    const newBooking = await Booking.create(finalBookingData);
-
-    // 5. Update Coupon Usage if applicable
-    if (usedCoupon) {
-      await Coupon.findByIdAndUpdate(usedCoupon._id, { $inc: { usedCount: 1 } });
-    }
-
-    // 6. Trigger Smart Notifications (Async - don't block response)
-    // 6. Trigger Smart Notifications (Async - don't block response)
+    // Trigger Smart Notifications (Async - don't block response)
     sendSmartNotification('STAFF_NEW_BOOKING', {
       customerName: newBooking.patientName,
       customerEmail: newBooking.bookedByEmail !== 'guest' ? newBooking.bookedByEmail : newBooking.email,
       customerPhone: newBooking.contactNumber,
-      bookingId: newBooking.id, // Use friendly ID
+      bookingId: newBooking.id,
       testNames: newBooking.tests.map((t: any) => t.title),
       totalAmount: newBooking.totalAmount,
       scheduledDate: newBooking.scheduledDate,
@@ -186,8 +104,7 @@ async function handler(request: Request) {
     });
 
     return NextResponse.json({ message: 'Booking created successfully', bookingId: newBooking._id }, { status: 201 });
-  } catch (error) {
-    console.error("Booking Creation Error:", error);
+  } catch (error: any) {
     return NextResponse.json({ error: 'Failed to create booking' }, { status: 400 });
   }
 }

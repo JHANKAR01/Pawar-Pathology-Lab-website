@@ -5,7 +5,7 @@ declare module "next-auth" {
     interface Session {
         user: {
             id: string;
-            role: string;
+            role: string; // 'master' | 'admin' | 'partner' | 'patient'
             phone?: string;
             address?: string;
             needsProfileCompletion?: boolean;
@@ -13,7 +13,7 @@ declare module "next-auth" {
     }
 
     interface User extends DefaultUser {
-        role: string;
+        role: string; // 'master' | 'admin' | 'partner' | 'patient'
         phone?: string;
         address?: string;
         needsProfileCompletion?: boolean;

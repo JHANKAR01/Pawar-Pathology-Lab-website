@@ -10,11 +10,11 @@ export async function middleware(req: NextRequest) {
   const isAuth = !!token;
 
   // 3. Protected Routes (Role-Based Access)
-
-  // 3. Protected Routes (Role-Based Access)
   if (pathname.startsWith('/admin')) {
     if (!isAuth) return NextResponse.redirect(new URL('/login', req.url));
-    if ((token as any)?.role !== 'admin') {
+    const role = (token as any)?.role;
+    // Master has inherited access to all admin routes
+    if (role !== 'master' && role !== 'admin') {
       return NextResponse.redirect(new URL('/', req.url));
     }
   }
@@ -22,7 +22,8 @@ export async function middleware(req: NextRequest) {
   if (pathname.startsWith('/partner')) {
     if (!isAuth) return NextResponse.redirect(new URL('/login', req.url));
     const role = (token as any)?.role;
-    if (role !== 'partner' && role !== 'admin') {
+    // Master has inherited access to all partner routes
+    if (role !== 'master' && role !== 'partner' && role !== 'admin') {
       return NextResponse.redirect(new URL('/', req.url));
     }
   }

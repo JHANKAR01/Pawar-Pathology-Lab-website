@@ -14,7 +14,7 @@ const UserSchema = new Schema({
       message: 'Phone number must be exactly 10 digits.'
     }
   },
-  role: { type: String, enum: ['admin', 'partner', 'patient'], default: 'patient' },
+  role: { type: String, enum: ['master', 'admin', 'partner', 'patient'], default: 'patient' },
   operationalRole: { type: String, default: 'none' },
   address: String,
   telegramChatId: { type: String, default: '' }, // Added for Telegram Notifications
