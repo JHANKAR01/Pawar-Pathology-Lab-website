@@ -130,7 +130,7 @@ export function getNotificationProvider(): NotificationProvider {
 // NOTIFICATION TYPES AND TEMPLATES
 // ============================================================================
 
-export type NotificationType = 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'REPORT_READY' | 'COUPON_APPLIED' | 'STAFF_NEW_BOOKING' | 'OTP_VERIFICATION' | 'PARTNER_ASSIGNMENT' | 'PARTNER_REASSIGNMENT' | 'PAYMENT_PENDING';
+export type NotificationType = 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'REPORT_READY' | 'COUPON_APPLIED' | 'STAFF_NEW_BOOKING' | 'OTP_VERIFICATION' | 'PARTNER_ASSIGNMENT' | 'PARTNER_REASSIGNMENT' | 'PAYMENT_PENDING' | 'ADMIN_ALERT';
 
 interface NotificationData {
     customerName?: string;
@@ -233,6 +233,10 @@ export async function sendSmartNotification(
                 telegramMessage = `💰 *Payment Pending* 💰\nHi ${customerName}, your report is ready but there is a pending balance of ₹${data.balanceAmount}.\nPlease clear your dues to download the report.`;
                 break;
 
+            case 'ADMIN_ALERT':
+                telegramMessage = `🚨 *System Alert* 🚨\n${data.customerName || 'System'}: Drive folders are running low. Please check provisioning manually in Admin Settings.`;
+                break;
+
             case 'BOOKING_CONFIRMED':
                 subject = `Booking Confirmed #${bookingId} - Pawar Pathology Lab`;
                 telegramMessage = `✅ *Booking Confirmed* ✅\nHi ${customerName}, your booking #${bookingId} is confirmed.\nTests: ${testsString}\nTotal: ₹${totalAmount}`;
@@ -324,7 +328,7 @@ export async function sendSmartNotification(
         // Send Telegram (Role Based)
         if (settings?.telegramEnabled && process.env.TELEGRAM_BOT_TOKEN && type !== 'OTP_VERIFICATION' && telegramMessage) {
             // Admin Alerts
-            if (settings.telegramEnabledAdmin && settings.telegramAdminChatId && (type === 'STAFF_NEW_BOOKING' || type === 'BOOKING_CANCELLED')) {
+            if (settings.telegramEnabledAdmin && settings.telegramAdminChatId && (type === 'STAFF_NEW_BOOKING' || type === 'BOOKING_CANCELLED' || type === 'ADMIN_ALERT')) {
                 try {
                     await provider.sendTelegram(settings.telegramAdminChatId, telegramMessage);
                 } catch (e) { /* Silent */ }

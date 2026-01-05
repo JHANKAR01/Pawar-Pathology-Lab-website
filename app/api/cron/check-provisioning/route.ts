@@ -36,12 +36,11 @@ export async function GET(request: Request) {
             if (lastDate < nextMonth) {
                 // Alert Admin!
                 console.log("Alert: Drive folders running low.");
-                // We'll reuse STAFF_NEW_BOOKING or create a SYSTEM_ALERT type?
-                // For now, we'll just log it as the requirements say "Action Required alert to Admin via Telegram".
-                // We need a generic ADMIN_ALERT notification type ideally.
-                // Assuming we can send a custom message or reuse an existing one creatively.
-                // Reusing STAFF_NEW_BOOKING with specific text? No, that's misleading.
-                // I will add system console log for now as "Simulate".
+                await sendSmartNotification('ADMIN_ALERT', {
+                    customerName: 'Drive Provisioning',
+                    bookingId: 'SYSTEM', // Dummy ID
+                    reportLink: ''
+                });
             }
         }
 

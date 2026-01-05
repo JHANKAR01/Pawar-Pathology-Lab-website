@@ -126,7 +126,7 @@ class RealDriveProvider implements DriveProvider {
           emailAddress: email,
         },
         emailMessage: 'Your pathology report from Pawar Lab is ready.',
-        sendNotificationEmail: true,
+        sendNotificationEmail: false,
       });
     } catch (error) {
       console.error(`Failed to share folder ${folderId} with ${email}:`, error);
