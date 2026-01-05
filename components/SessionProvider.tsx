@@ -4,9 +4,8 @@ import { SessionProvider as NextAuthSessionProvider, useSession } from 'next-aut
 import React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
-export default function SessionProvider({ children, session }: { children: React.ReactNode, session?: any }) {
-  // Check for incomplete profile (Google Login default phone)
-  const { data: sessionData } = useSession(); // Corrected usage
+const ProfileWatcher = () => {
+  const { data: sessionData } = useSession();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -16,6 +15,15 @@ export default function SessionProvider({ children, session }: { children: React
     }
   }, [sessionData, pathname, router]);
 
-  return <NextAuthSessionProvider session={session}>{children}</NextAuthSessionProvider>;
+  return null;
+};
+
+export default function SessionProvider({ children, session }: { children: React.ReactNode, session?: any }) {
+  return (
+    <NextAuthSessionProvider session={session}>
+      <ProfileWatcher />
+      {children}
+    </NextAuthSessionProvider>
+  );
 }
 
