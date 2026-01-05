@@ -70,11 +70,12 @@ export default function PartnerPage() {
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/bookings');
+      const res = await fetch('/api/bookings?limit=100');
       if (res.ok) {
         const data = await res.json();
+        const allBookings = data.bookings || [];
         // For the demo, we show tasks assigned or in progress
-        setTasks(data.filter((b: any) =>
+        setTasks(allBookings.filter((b: any) =>
           ['assigned', 'reached', 'sample_collected', 'report_uploaded', 'completed'].includes(b.status)
         ));
       } else if (res.status === 401 || res.status === 403) {
@@ -460,7 +461,7 @@ export default function PartnerPage() {
         </div>
       )}
 
-      {/* Confirmation Modal for Specimen Collection */}
+      {/* Confirmation Modal for Specimen Collection - Replaced window.confirm with Tailwind UI */}
       {showCollectionModal && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6">
           <div className="bg-white max-w-sm w-full rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-200 border border-slate-200">

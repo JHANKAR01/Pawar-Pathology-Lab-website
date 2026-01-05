@@ -102,8 +102,11 @@ export default function AdminPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/bookings');
-      if (res.ok) setBookings(await res.json());
+      const res = await fetch('/api/bookings?limit=100');
+      if (res.ok) {
+        const data = await res.json();
+        setBookings(data.bookings || []);
+      }
       else if (res.status === 401 || res.status === 403) router.push('/login');
     } catch (error) {
       console.error('Failed to load admin data', error);
@@ -1226,6 +1229,10 @@ export default function AdminPage() {
                       <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 md:col-span-2">
                         <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2"><ShieldCheck size={18} /> System Maintenance</h4>
                         <div className="grid md:grid-cols-2 gap-6">
+                          <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-red-100 shadow-sm col-span-2 md:col-span-2">
+                            <div><h5 className="font-bold text-xs uppercase tracking-wide text-slate-700">Global Emergency Lock</h5><p className="text-[10px] text-slate-500">Block ALL access (except Admin)</p></div>
+                            <div className="relative inline-block w-10 h-5"><input type="checkbox" className="peer absolute w-full h-full opacity-0 cursor-pointer" checked={(config as any).maintenanceMode ?? false} onChange={(e) => updateConfig({ maintenanceMode: e.target.checked })} /><span className={`block w-full h-full rounded-full transition ${(config as any).maintenanceMode ? 'bg-red-600' : 'bg-slate-300'}`}></span><span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).maintenanceMode ? 'translate-x-5' : ''}`}></span></div>
+                          </div>
                           <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                             <div><h5 className="font-bold text-xs uppercase tracking-wide text-slate-700">Patient Portal</h5><p className="text-[10px] text-slate-500">Block patient access</p></div>
                             <div className="relative inline-block w-10 h-5"><input type="checkbox" className="peer absolute w-full h-full opacity-0 cursor-pointer" checked={(config as any).maintenanceModeUser ?? false} onChange={(e) => updateConfig({ maintenanceModeUser: e.target.checked })} /><span className={`block w-full h-full rounded-full transition ${(config as any).maintenanceModeUser ? 'bg-rose-500' : 'bg-slate-300'}`}></span><span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).maintenanceModeUser ? 'translate-x-5' : ''}`}></span></div>
