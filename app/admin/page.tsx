@@ -17,6 +17,7 @@ import { FlaskConical } from 'lucide-react';
 import { BookingStatus } from '@/types';
 import PaginationControls from '@/components/ui/PaginationControls';
 import CustomModal from '@/components/ui/CustomModal';
+import StatusTracker from '@/components/StatusTracker';
 
 interface BookingType {
   _id: string;
@@ -63,6 +64,14 @@ export default function AdminPage() {
   const [limit, setLimit] = useState(10);
   const [paginationMeta, setPaginationMeta] = useState({ total: 0, totalPages: 1 });
   const [searchQuery, setSearchQuery] = useState('');
+  const [assignmentModal, setAssignmentModal] = useState<{
+    isOpen: boolean;
+    type: 'assign' | 'reassign' | 'unassign';
+    booking: any | null;
+    targetPartnerId: string;
+    partnerName?: string;
+  }>({ isOpen: false, type: 'assign', booking: null, targetPartnerId: '', partnerName: '' });
+
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed'>('all'); // Renamed/Adjusted from old logic if necessary
 
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -152,21 +161,48 @@ export default function AdminPage() {
     } catch (e) { console.error("Analytics fetch failed", e); }
   };
 
-  const handleAssignPartner = async (bookingId: string, partnerId: string) => {
+  const handlePartnerAction = (action: 'assign' | 'reassign' | 'unassign', booking: any, partnerId: string = '') => {
+    const partnerName = partners.find(p => p._id === partnerId)?.name || '';
+    setAssignmentModal({
+      isOpen: true,
+      type: action,
+      booking,
+      targetPartnerId: partnerId,
+      partnerName
+    });
+  };
+
+  const handleConfirmPartnerUpdate = async () => {
     try {
-      const res = await fetch(`/api/bookings/${bookingId}`, {
+      const { booking, targetPartnerId, type, partnerName } = assignmentModal;
+      if (!booking) return;
+
+      const notify_new = type === 'assign' || type === 'reassign';
+      const notify_prev = type === 'reassign' || type === 'unassign';
+
+      const res = await fetch(`/api/bookings/${booking._id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignedPartner: partnerId, status: 'assigned' })
+        body: JSON.stringify({
+          status: type === 'unassign' ? 'accepted' : 'assigned',
+          assignedPartnerName: type === 'unassign' ? null : partnerName,
+          assignedPartnerId: type === 'unassign' ? null : targetPartnerId,
+          notify_new_partner: notify_new,
+          notify_previous_partner: notify_prev,
+          previous_partner_name: booking.assignedPartnerName
+        })
       });
+
       if (res.ok) {
-        toast.success("Partner assigned successfully");
+        toast.success(type === 'unassign' ? 'Partner removed' : 'Partner assigned successfully');
         fetchData();
+        setAssignmentModal(prev => ({ ...prev, isOpen: false }));
       } else {
-        toast.error("Failed to assign partner");
+        const err = await res.json();
+        toast.error(err.error || 'Assignment failed');
       }
     } catch (e) {
-      toast.error("Error assigning partner");
+      toast.error("Error updating assignment");
     }
   };
 
@@ -1274,6 +1310,11 @@ export default function AdminPage() {
                               <p className="font-bold text-lg text-clinical-rose">₹{booking.balanceAmount}</p>
                             </div>
                           </div>
+                          {activeTab === 'Active Bookings' && (
+                            <div className="w-full border-t border-slate-100 mt-4 pt-4">
+                              <StatusTracker status={booking.status} reportStatus={booking.reportStatus || 'pending_review'} />
+                            </div>
+                          )}
 
                         </div>
 
@@ -1297,27 +1338,48 @@ export default function AdminPage() {
                           ) : (
                             /* Standard/Active Booking Actions */
                             <>
-                              {booking.status === 'accepted' && (
-                                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
-                                  <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">Assign Partner</label>
-                                  <select
-                                    className="w-full bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-clinical-rose cursor-pointer"
-                                    onChange={(e) => {
-                                      if (e.target.value) {
-                                        if (booking.assignedPartnerName) {
-                                          handleOpenPartnerReassign(booking, e.target.value);
-                                        } else {
-                                          handleAssignPartner(booking._id, e.target.value);
+                              {/* Unified Assignment UI for Active Bookings */}
+                              {booking.status !== 'pending' && booking.status !== 'rejected' && booking.status !== 'cancelled' && (
+                                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 mt-2">
+                                  <label className="text-[10px] font-black uppercase text-slate-400 mb-1 flex justify-between items-center">
+                                    <span>Partner Assignment</span>
+                                    {booking.assignedPartnerName && (
+                                      <button
+                                        onClick={() => handlePartnerAction('unassign', booking)}
+                                        className="text-red-400 hover:text-red-500 text-[10px] underline"
+                                      >
+                                        Unassign
+                                      </button>
+                                    )}
+                                  </label>
+                                  <div className="relative">
+                                    <div className={`absolute inset-y-0 left-3 flex items-center pointer-events-none ${booking.assignedPartnerName ? 'text-blue-500' : 'text-slate-400'}`}>
+                                      <HeartHandshake size={14} />
+                                    </div>
+                                    <select
+                                      className={`w-full appearance-none pl-9 pr-4 py-2 text-xs font-bold rounded-xl border outline-none cursor-pointer transition-all ${booking.assignedPartnerName
+                                        ? 'bg-blue-50 border-blue-200 text-blue-700'
+                                        : 'bg-white border-slate-200 text-slate-500'
+                                        }`}
+                                      value={booking.assignedPartnerId || ""}
+                                      onChange={(e) => {
+                                        if (e.target.value) {
+                                          if (booking.assignedPartnerName) {
+                                            // Re-assign
+                                            handlePartnerAction('reassign', booking, e.target.value);
+                                          } else {
+                                            // New Assign
+                                            handlePartnerAction('assign', booking, e.target.value);
+                                          }
                                         }
-                                      }
-                                    }}
-                                    defaultValue=""
-                                  >
-                                    <option value="" disabled>Select Partner</option>
-                                    {partners.map(p => (
-                                      <option key={p._id} value={p._id}>{p.name}</option>
-                                    ))}
-                                  </select>
+                                      }}
+                                    >
+                                      <option value="" disabled>Select Partner</option>
+                                      {partners.map(p => (
+                                        <option key={p._id} value={p._id}>{p.name}</option>
+                                      ))}
+                                    </select>
+                                  </div>
                                 </div>
                               )}
 
@@ -1929,52 +1991,24 @@ export default function AdminPage() {
         {/* Partner Re-assignment Confirmation Modal */}
       </AnimatePresence >
 
-      {/* Partner Re-assignment Confirmation Modal */}
-      <AnimatePresence>
-        {
-          partnerReassignModal.isOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-              onClick={() => setPartnerReassignModal(prev => ({ ...prev, isOpen: false }))}
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-center mb-6 text-amber-500">
-                  <HeartHandshake size={48} />
-                </div>
-                <h3 className="text-xl font-black text-slate-900 text-center mb-2">Confirm Re-assignment</h3>
-                <p className="text-center text-slate-500 mb-8 font-medium">
-                  Are you sure you want to re-assign this specimen from <br />
-                  <span className="font-bold text-slate-900">{partnerReassignModal.currentPartnerName}</span> to <span className="font-bold text-clinical-rose">{partnerReassignModal.newPartnerName}</span>?
-                </p>
-
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setPartnerReassignModal(prev => ({ ...prev, isOpen: false }))}
-                    className="flex-1 bg-slate-100 text-slate-600 px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-slate-200 transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleConfirmPartnerReassign}
-                    className="flex-1 bg-clinical-rose text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-clinical-rose-dark transition-all"
-                  >
-                    Confirm
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )
+      {/* Assignment Modal (Generic) */}
+      <CustomModal
+        isOpen={assignmentModal.isOpen}
+        onClose={() => setAssignmentModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={handleConfirmPartnerUpdate}
+        title={
+          assignmentModal.type === 'assign' ? 'Confirm Assignment' :
+            assignmentModal.type === 'reassign' ? 'Change Partner Assignment' :
+              'Remove Partner'
         }
-      </AnimatePresence >
+        description={
+          assignmentModal.type === 'assign' ? `Assign this booking to ${assignmentModal.partnerName}? They will be notified immediately.` :
+            assignmentModal.type === 'reassign' ? `Warning: You are switching assignment from ${assignmentModal.booking?.assignedPartnerName} to ${assignmentModal.partnerName}. Both partners will be notified.` :
+              `Are you sure you want to remove ${assignmentModal.booking?.assignedPartnerName} from this booking? They will be notified of the cancellation.`
+        }
+        variant={assignmentModal.type === 'reassign' ? 'warning' : assignmentModal.type === 'unassign' ? 'danger' : 'default'}
+        confirmText={assignmentModal.type === 'unassign' ? 'Remove Partner' : 'Confirm Assignment'}
+      />
 
       {/* Rejection Modal for Pending Bookings */}
       <AnimatePresence>
