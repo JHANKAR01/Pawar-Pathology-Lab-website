@@ -78,17 +78,25 @@ export async function GET(req: NextRequest) {
         const totalRevenue = aggregationResult.reduce((acc, curr) => acc + curr.dailyRevenue, 0);
         const bookingCount = aggregationResult.reduce((acc, curr) => acc + curr.count, 0);
 
-        // Fill in missing dates for the chart
-        // Implementation detail: If we want a perfect chart, we should fill gaps with 0.
-        // The frontend can also handle gaps, but safer to do it here or just return raw data.
-        // For simplicity, let's return raw data and correct gaps on frontend or here.
-        // Let's try to fill gaps here for "Daily Trends".
+        const dailyTrendsMap = new Map(aggregationResult.map(item => [item._id, item]));
 
-        const dailyTrends = aggregationResult.map(item => ({
-            date: item._id,
-            revenue: item.dailyRevenue,
-            count: item.count
-        }));
+        // Generate all dates in the range
+        const dailyTrends: any[] = [];
+        let current = new Date(startDateStr || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+        const end = new Date(endDateStr || new Date());
+
+        while (current <= end) {
+            const dateStr = current.toISOString().split('T')[0];
+            const data = dailyTrendsMap.get(dateStr);
+
+            dailyTrends.push({
+                date: dateStr,
+                revenue: data ? data.dailyRevenue : 0,
+                count: data ? data.count : 0
+            });
+
+            current.setDate(current.getDate() + 1);
+        }
 
         return NextResponse.json({
             totalRevenue,

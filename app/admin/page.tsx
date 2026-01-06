@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { toast } from 'sonner';
 import {
   ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home, Loader2, Calendar, FileText, X, CheckCircle, XCircle, Ticket, MapPin, BellRing,
-  LayoutDashboard, HeartHandshake, Settings as SettingsIcon
+  LayoutDashboard, HeartHandshake, Settings as SettingsIcon, Info
 } from 'lucide-react';
 import { FlaskConical } from 'lucide-react';
 import { BookingStatus } from '@/types';
@@ -769,35 +769,36 @@ export default function AdminPage() {
                   </motion.div>
                 </div>
 
-                {/* Daily Trends Chart */}
+                {/* Daily Trends Chart with Improved Visibility */}
                 <div className="card-premium p-8">
                   <h3 className="text-xl font-black text-slate-900 mb-6">Daily Revenue Trends</h3>
-                  <div className="h-64 flex items-end gap-2">
+                  <div className="h-64 flex items-end gap-3 px-4">
                     {analyticsData.dailyTrends.map((day, idx) => {
                       const maxRev = Math.max(...analyticsData.dailyTrends.map((d: any) => d.revenue)) || 1;
-                      const height = (day.revenue / maxRev) * 100;
+                      // Improved scaling: ensure even small amounts have a visible bar
+                      const height = Math.max((day.revenue / maxRev) * 100, day.revenue > 0 ? 5 : 0);
+
                       return (
-                        <div key={idx} className="flex-1 flex flex-col items-center gap-2 group relative">
+                        <div key={idx} className="flex-1 flex flex-col items-center gap-2 group relative h-full justify-end">
                           <div
-                            className="w-full bg-clinical-rose rounded-t-lg transition-all duration-500 hover:bg-clinical-rose-dark"
-                            style={{
-                              height: `${height}%`,
-                              minHeight: day.revenue > 0 ? '4px' : '0px'
-                            }}
+                            className="w-full bg-clinical-rose rounded-t-lg transition-all duration-500 hover:bg-clinical-rose-dark shadow-sm"
+                            style={{ height: `${height}%` }}
                           ></div>
-                          <span className="text-[10px] font-bold text-slate-400 rotate-0 truncate w-full text-center group-hover:text-clinical-rose">
-                            {new Date(day.date).getDate()}
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter w-full text-center group-hover:text-clinical-rose">
+                            {new Date(day.date).getDate()} {new Date(day.date).toLocaleString('default', { month: 'short' })}
                           </span>
-                          {/* Tooltip */}
-                          <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 bg-slate-900 text-white text-xs px-2 py-1 rounded pointer-events-none transition-opacity whitespace-nowrap z-10">
-                            {day.date}: ₹{day.revenue}
+                          {/* Enhanced Tooltip */}
+                          <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 bg-slate-900 text-white text-[10px] font-bold px-3 py-2 rounded-lg pointer-events-none transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-10 shadow-xl">
+                            {day.date}<br />
+                            <span className="text-clinical-rose text-sm">₹{day.revenue}</span>
                           </div>
                         </div>
                       );
                     })}
                     {analyticsData.dailyTrends.length === 0 && (
-                      <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold">
-                        No data for selected period
+                      <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 font-black uppercase tracking-widest gap-2">
+                        <Info size={32} />
+                        No data for period
                       </div>
                     )}
                   </div>
@@ -1290,18 +1291,24 @@ export default function AdminPage() {
                           <div>
                             <h4 className="font-bold text-slate-900 flex items-center gap-2">
                               Block Sundays
-                              {!(config as any).planFlags?.allowSundayBookings && <span className="bg-slate-200 text-slate-500 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">Locked</span>}
+                              {!(config as any).planFlags?.allowSundayBookings && session?.user?.role !== 'master' && <span className="bg-slate-200 text-slate-500 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">Locked</span>}
                             </h4>
                             <p className="text-xs text-slate-500 mt-1">Disable booking on Sundays</p>
                           </div>
-                          <div className={`relative inline-block w-12 h-6 transition duration-200 ease-in-out ${!(config as any).planFlags?.allowSundayBookings ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                          <div className={`relative inline-block w-12 h-6 transition duration-200 ease-in-out ${!(config as any).planFlags?.allowSundayBookings && session?.user?.role !== 'master' ? 'opacity-50 cursor-not-allowed' : ''}`}>
                             <input
                               type="checkbox"
                               id="sunday-toggle"
                               className="peer absolute left-0 top-0 w-full h-full opacity-0 z-10 cursor-pointer"
                               checked={(config as any).blockSundays ?? true}
-                              onChange={(e) => !(config as any).planFlags?.allowSundayBookings ? toast.error("Upgrade your plan to enable Sunday bookings") : updateConfig({ blockSundays: e.target.checked })}
-                              disabled={!(config as any).planFlags?.allowSundayBookings}
+                              onChange={(e) => {
+                                if (!(config as any).planFlags?.allowSundayBookings && session?.user?.role !== 'master') {
+                                  toast.error("Upgrade your plan to enable Sunday bookings");
+                                  return;
+                                }
+                                updateConfig({ blockSundays: e.target.checked });
+                              }}
+                              disabled={!(config as any).planFlags?.allowSundayBookings && session?.user?.role !== 'master'}
                             />
                             <label
                               htmlFor="sunday-toggle"
@@ -1335,17 +1342,23 @@ export default function AdminPage() {
                             <div>
                               <h5 className="font-bold text-sm text-slate-800 flex items-center gap-2">
                                 WhatsApp Integration
-                                {!(config as any).planFlags?.allowWhatsApp && <span className="bg-slate-200 text-slate-500 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">Locked</span>}
+                                {!(config as any).planFlags?.allowWhatsApp && session?.user?.role !== 'master' && <span className="bg-slate-200 text-slate-500 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">Locked</span>}
                               </h5>
                               <p className="text-xs text-slate-500">Enable WhatsApp messaging</p>
                             </div>
-                            <div className={`relative inline-block w-10 h-5 ${!(config as any).planFlags?.allowWhatsApp ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                            <div className={`relative inline-block w-10 h-5 ${!(config as any).planFlags?.allowWhatsApp && session?.user?.role !== 'master' ? 'opacity-50 cursor-not-allowed' : ''}`}>
                               <input
                                 type="checkbox"
                                 className="peer absolute w-full h-full opacity-0 cursor-pointer"
                                 checked={(config as any).whatsappEnabled ?? true}
-                                onChange={(e) => !(config as any).planFlags?.allowWhatsApp ? toast.error("Upgrade your plan to enable WhatsApp") : updateConfig({ whatsappEnabled: e.target.checked })}
-                                disabled={!(config as any).planFlags?.allowWhatsApp}
+                                onChange={(e) => {
+                                  if (!(config as any).planFlags?.allowWhatsApp && session?.user?.role !== 'master') {
+                                    toast.error("Premium Feature Locked. Contact Master Admin.");
+                                    return;
+                                  }
+                                  updateConfig({ whatsappEnabled: e.target.checked });
+                                }}
+                                disabled={!(config as any).planFlags?.allowWhatsApp && session?.user?.role !== 'master'}
                               />
                               <span className={`block w-full h-full rounded-full transition ${(config as any).whatsappEnabled ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
                               <span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).whatsappEnabled ? 'translate-x-5' : ''}`}></span>

@@ -4,51 +4,35 @@ import { getToken } from 'next-auth/jwt';
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-
-  // 1. Session & redirect logic
   const token = await getToken({ req });
   const isAuth = !!token;
+  const role = (token as any)?.role;
 
-  // 3. Protected Routes (Role-Based Access)
+  // 1. Redirect if already logged in (Login/Root protection)
+  if (isAuth && (pathname === '/login' || pathname === '/')) {
+    if (role === 'master') return NextResponse.redirect(new URL('/master', req.url));
+    if (role === 'admin') return NextResponse.redirect(new URL('/admin', req.url));
+  }
 
-  // 3. Protected Routes (Role-Based Access)
+  // 2. Protected Routes
   if (pathname.startsWith('/admin')) {
     if (!isAuth) return NextResponse.redirect(new URL('/login', req.url));
-    const role = (token as any)?.role;
-    if (role !== 'admin' && role !== 'master') {
-      return NextResponse.redirect(new URL('/', req.url));
-    }
+    if (role !== 'admin' && role !== 'master') return NextResponse.redirect(new URL('/', req.url));
+  }
+
+  if (pathname.startsWith('/master')) {
+    if (!isAuth) return NextResponse.redirect(new URL('/login', req.url));
+    if (role !== 'master') return NextResponse.redirect(new URL('/', req.url));
   }
 
   if (pathname.startsWith('/partner')) {
     if (!isAuth) return NextResponse.redirect(new URL('/login', req.url));
-    const role = (token as any)?.role;
-    if (role !== 'partner' && role !== 'admin') {
-      return NextResponse.redirect(new URL('/', req.url));
-    }
-  }
-
-  // Protect Master Routes
-  if (pathname.startsWith('/master')) {
-    if (!isAuth) return NextResponse.redirect(new URL('/login', req.url));
-    if ((token as any)?.role !== 'master') {
-      return NextResponse.redirect(new URL('/', req.url));
-    }
+    if (role !== 'partner' && role !== 'admin') return NextResponse.redirect(new URL('/', req.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  // Pattern to match all paths BUT exclude static assets, favicon, etc.
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files (images etc)
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 };
