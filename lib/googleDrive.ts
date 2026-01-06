@@ -78,7 +78,7 @@ export async function provisionMonthFolders(year: number, monthName: string, day
     const monthFolderId = await getOrCreateFolder(monthName, yearFolderId);
 
     // 3. Batched Creation of Daily Folders
-    const dailyFoldersData = [];
+    const dailyFoldersData: { date: string; folderId: string }[] = [];
 
     // We can't actually "batch" create in one API call, but we can parallelize or just loop. 
     // Loop is safer for rate limits.

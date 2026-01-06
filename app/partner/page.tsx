@@ -22,20 +22,11 @@ export default function PartnerPage() {
   const [loading, setLoading] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('active'); // 'active' or 'completed'
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<'active' | 'completed'>('active');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter tasks based on status and search query
-  const filteredTasks = tasks.filter(task => {
-    const matchesStatus = statusFilter === 'active'
-      ? !['report_uploaded', 'completed'].includes(task.status)
-      : ['report_uploaded', 'completed'].includes(task.status);
-
-    const matchesSearch = task.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task._id.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return matchesStatus && matchesSearch;
-  });
+  // Removed client-side filteredTasks logic. We will fetch directly.
 
 
   // Walk-in Form State
@@ -67,20 +58,34 @@ export default function PartnerPage() {
     } else {
       router.push('/login');
     }
-  }, [session, status, router]);
+  }, [session, status, router, currentPage, limit, statusFilter]); // Trigger on simple state changes
+
+  // Debounced Search Re-fetch
+  useEffect(() => {
+    if (isVerified) {
+      const timer = setTimeout(() => {
+        setCurrentPage(1); // Reset page on search
+        fetchBookings();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [searchQuery]);
 
   const fetchBookings = async () => {
     setLoading(true);
     try {
       const query = new URLSearchParams({
         page: currentPage.toString(),
-        limit: limit.toString()
+        limit: limit.toString(),
+        // Map 'active'/'completed' to what API expects if needed, or API handles 'active'/'completed' string directly
+        statusTab: statusFilter === 'active' ? 'active' : 'completed',
+        search: searchQuery
       });
       const res = await fetch(`/api/bookings?${query}`);
       if (res.ok) {
         const data = await res.json();
         // Handle breaking change
-        let bookings = [];
+        let bookings: any[] = [];
         if (Array.isArray(data)) {
           bookings = data;
         } else {
@@ -88,10 +93,11 @@ export default function PartnerPage() {
           setPaginationMeta(data.metadata);
         }
 
-        // For the demo, we show tasks assigned or in progress
-        setTasks(bookings.filter((b: any) =>
-          ['assigned', 'reached', 'sample_collected', 'report_uploaded', 'completed'].includes(b.status)
-        ));
+        // Use data directly
+        setTasks(bookings);
+        if (statusFilter === 'active' && bookings.length === 0 && searchQuery === '') {
+          // Optional: could handle empty states better
+        }
       } else if (res.status === 401 || res.status === 403) {
         router.push('/login');
       }
@@ -343,13 +349,13 @@ export default function PartnerPage() {
         />
 
         <div className="space-y-6">
-          {filteredTasks.length === 0 ? (
+          {tasks.length === 0 ? (
             <div className="text-center py-24 bg-white rounded-3xl border-2 border-dashed border-slate-300 flex flex-col items-center">
               <ClipboardList className="w-20 h-20 text-slate-300 mb-4" />
               <p className="text-slate-500 font-bold text-lg">No active collections assigned.</p>
             </div>
           ) : (
-            filteredTasks.map(task => (
+            tasks.map(task => (
               <div key={task._id} className="card-premium p-10 flex flex-col md:flex-row justify-between gap-8 items-center">
                 <div className="flex-1 w-full">
                   <div className="flex items-center gap-3 mb-4">

@@ -24,6 +24,8 @@ export async function GET(request: Request) {
     // Admin and Partner can see all bookings or filter by userId/email
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
+    const statusTab = searchParams.get('statusTab'); // active, completed, specimens
+    const search = searchParams.get('search') || '';
     const skip = (page - 1) * limit;
 
     let filter: any = {};
@@ -48,6 +50,32 @@ export async function GET(request: Request) {
       }
     } else {
       return NextResponse.json({ error: 'Forbidden: Access denied' }, { status: 403 });
+    }
+
+    // --- Search Logic (Case Insensitive Regex) ---
+    if (search) {
+      filter.$or = [
+        { patientName: { $regex: search, $options: 'i' } },
+        { _id: search } // Exact ID match usually
+      ];
+    }
+
+    // --- Status Tab Logic ---
+    if (statusTab) {
+      switch (statusTab) {
+        case 'active':
+          filter.status = { $nin: ['completed', 'cancelled', 'rejected', 'report_uploaded'] };
+          break;
+        case 'completed':
+          filter.status = { $in: ['completed', 'report_uploaded'] };
+          break;
+        case 'specimens':
+          filter.status = { $in: ['accepted', 'assigned', 'sample_collected', 'reached'] };
+          break;
+        case 'all':
+          // No status filter
+          break;
+      }
     }
 
     const total = await Booking.countDocuments(filter);
@@ -107,7 +135,7 @@ async function handler(request: Request) {
 
     // 2. Validate Coupon & Calculate Discount
     let discountAmount = 0;
-    let usedCoupon = null;
+    let usedCoupon: any = null;
 
     if (couponCode) {
       usedCoupon = await Coupon.findOne({ code: couponCode.toUpperCase().trim() });

@@ -58,10 +58,13 @@ export default function AdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('Intelligence');
   const [bookings, setBookings] = useState<BookingType[]>([]);
-  // Pagination State
+  // Filters
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [paginationMeta, setPaginationMeta] = useState({ total: 0, totalPages: 1 });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed'>('all'); // Renamed/Adjusted from old logic if necessary
+
   const [partners, setPartners] = useState<Partner[]>([]);
   const [newPartner, setNewPartner] = useState({ name: '', email: '', username: '', password: '' });
   const [loading, setLoading] = useState(true);
@@ -172,7 +175,9 @@ export default function AdminPage() {
     try {
       const query = new URLSearchParams({
         page: currentPage.toString(),
-        limit: limit.toString()
+        limit: limit.toString(),
+        statusTab: statusFilter,
+        search: searchQuery
       });
       const res = await fetch(`/api/bookings?${query}`);
       if (res.ok) {
@@ -193,12 +198,23 @@ export default function AdminPage() {
     }
   };
 
-  // Re-fetch when items changed
+  // Re-fetch when items/filters changed
   useEffect(() => {
     if (activeTab === 'Bookings' && status === 'authenticated') {
       fetchData();
     }
-  }, [currentPage, limit, activeTab]);
+  }, [currentPage, limit, activeTab, statusFilter]); // Trigger on status filter change
+
+  // Debounced Search Re-fetch
+  useEffect(() => {
+    if (activeTab === 'Bookings' && status === 'authenticated') {
+      const timer = setTimeout(() => {
+        setCurrentPage(1); // Reset page on search
+        fetchData();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [searchQuery]);
 
   const fetchPartners = async () => {
     try {
@@ -1256,6 +1272,36 @@ export default function AdminPage() {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
               >
+                <div className="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-6 gap-4">
+                  <div className="flex bg-slate-100 p-1 rounded-xl">
+                    {(['all', 'active', 'completed'] as const).map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => { setStatusFilter(tab); setCurrentPage(1); }}
+                        className={`px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-wide transition-all ${statusFilter === tab
+                            ? 'bg-white text-clinical-rose shadow-md'
+                            : 'text-slate-500 hover:text-slate-700'
+                          }`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="relative w-full md:w-auto">
+                    <input
+                      type="text"
+                      placeholder="Search patient or ID..."
+                      className="pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm text-slate-900 focus:ring-2 focus:ring-clinical-rose/20 outline-none w-full md:w-80 transition-all"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <div className="absolute left-3 top-3.5 text-slate-400">
+                      <RefreshCw size={16} /> {/* Using Refresh icon as placeholder search icon was not imported */}
+                    </div>
+                  </div>
+                </div>
+
                 <PaginationControls
                   currentPage={currentPage}
                   totalPages={paginationMeta.totalPages}
@@ -1351,6 +1397,17 @@ export default function AdminPage() {
                   {bookings.length === 0 && (
                     <div className="text-center py-12 text-slate-400 font-bold">No bookings found.</div>
                   )}
+                </div>
+
+                <div className="mt-8">
+                  <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={paginationMeta.totalPages}
+                    limit={limit}
+                    total={paginationMeta.total}
+                    onPageChange={setCurrentPage}
+                    onLimitChange={(l) => { setLimit(l); setCurrentPage(1); }}
+                  />
                 </div>
               </motion.div>
             )}
