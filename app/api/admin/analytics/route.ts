@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
 
         matchStage.status = { $ne: 'cancelled' };
 
-        const pipeline = [
+        const pipeline: any[] = [
             { $match: matchStage },
             {
                 $group: {
