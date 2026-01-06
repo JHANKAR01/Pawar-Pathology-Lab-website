@@ -176,7 +176,7 @@ export default function AdminPage() {
       const query = new URLSearchParams({
         page: currentPage.toString(),
         limit: limit.toString(),
-        statusTab: statusFilter,
+        statusTab: activeTab === 'Approvals' ? 'approvals' : statusFilter,
         search: searchQuery
       });
       const res = await fetch(`/api/bookings?${query}`);
@@ -200,14 +200,14 @@ export default function AdminPage() {
 
   // Re-fetch when items/filters changed
   useEffect(() => {
-    if (activeTab === 'Bookings' && status === 'authenticated') {
+    if ((activeTab === 'Bookings' || activeTab === 'Approvals') && status === 'authenticated') {
       fetchData();
     }
   }, [currentPage, limit, activeTab, statusFilter]); // Trigger on status filter change
 
   // Debounced Search Re-fetch
   useEffect(() => {
-    if (activeTab === 'Bookings' && status === 'authenticated') {
+    if ((activeTab === 'Bookings' || activeTab === 'Approvals') && status === 'authenticated') {
       const timer = setTimeout(() => {
         setCurrentPage(1); // Reset page on search
         fetchData();
@@ -743,6 +743,7 @@ export default function AdminPage() {
           <nav className="space-y-3">
             {[
               { id: 'Intelligence', icon: LayoutDashboard },
+              { id: 'Approvals', icon: CheckCircle },
               { id: 'Bookings', icon: FlaskConical },
               { id: 'Specimens', icon: FlaskConical },
               { id: 'Partners', icon: HeartHandshake },
@@ -874,104 +875,7 @@ export default function AdminPage() {
             )}
           </AnimatePresence>
 
-          <AnimatePresence mode="wait">
-            {activeTab === 'Bookings' && (
-              <motion.div
-                key="Bookings"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-              >
-                {bookings.filter(b => b.status !== 'completed').length === 0 ? (
-                  <div className="col-span-full flex flex-col items-center justify-center p-12 text-slate-400">
-                    <FlaskConical size={48} className="mb-4 opacity-50" />
-                    <p className="font-bold">No active bookings to manage</p>
-                  </div>
-                ) : (
-                  bookings.filter(b => b.status !== 'completed').map((b, index) => (
-                    <motion.div
-                      key={b._id}
-                      className="card-premium p-6 flex flex-col gap-4 border-2 border-slate-100 hover:border-slate-300 transition-all"
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="text-lg font-black text-slate-900 line-clamp-1">{b.patientName}</h4>
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">{b.collectionType || 'Lab Visit'}</p>
-                        </div>
-                        <span className={getStatusBadge(b.status)}>{b.status}</span>
-                      </div>
 
-                      <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                        <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">Tests Requested</p>
-                        <div className="flex flex-wrap gap-2">
-                          {b.tests.map((t, idx) => (
-                            <span key={idx} className="bg-white px-2 py-1 rounded-md border border-slate-200 text-xs font-bold text-slate-700 shadow-sm">
-                              {t.title}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      {b.distanceFromLab && (
-                        <div className="flex items-center gap-3 bg-blue-50 text-blue-700 px-4 py-3 rounded-xl border border-blue-100">
-                          <MapPin size={18} />
-                          <div>
-                            <p className="text-xs font-black uppercase tracking-widest">Logistics Distance</p>
-                            <p className="font-bold">{b.distanceFromLab.toFixed(1)} KM via Road</p>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex gap-4 text-slate-900 border-t border-slate-100 pt-4 mt-auto">
-                        <div className="flex-1">
-                          <p className="text-slate-500 text-xs uppercase font-bold tracking-widest">Total</p>
-                          <p className="font-bold text-lg">₹{b.totalAmount}</p>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-slate-500 text-xs uppercase font-bold tracking-widest">Balance</p>
-                          <p className="font-bold text-lg text-clinical-rose">₹{b.balanceAmount}</p>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex flex-wrap gap-3 mt-2">
-                        {b.status === 'pending' && (
-                          <>
-                            <button
-                              onClick={() => handleUpdateStatus(b._id, 'accepted')}
-                              className="flex-1 bg-success/10 text-success px-4 py-3 rounded-xl font-bold text-xs hover:bg-success/20 transition-all border-2 border-success/20 flex items-center justify-center gap-2"
-                            >
-                              <CheckCircle size={16} /> Approve
-                            </button>
-                            <button
-                              onClick={() => handleOpenRejection(b)}
-                              className="flex-1 bg-clinical-rose/10 text-clinical-rose px-4 py-3 rounded-xl font-bold text-xs hover:bg-clinical-rose/20 transition-all border-2 border-clinical-rose/20 flex items-center justify-center gap-2"
-                            >
-                              <XCircle size={16} /> Reject
-                            </button>
-                          </>
-                        )}
-                        {b.status === 'report_uploaded' && b.reportFileUrl && (
-                          <button
-                            onClick={() => handleOpenReview(b)}
-                            className="w-full bg-clinical-rose/10 text-clinical-rose px-4 py-3 rounded-xl font-bold text-xs hover:bg-clinical-rose/20 transition-all border-2 border-clinical-rose/20 flex items-center justify-center gap-2"
-                          >
-                            <FileText size={16} /> Review Report
-                          </button>
-                        )}
-                        {/* Fallback for other statuses if needed, or leave empty */}
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           <AnimatePresence mode="wait">
             {activeTab === 'Specimens' && (
@@ -1264,29 +1168,38 @@ export default function AdminPage() {
           </AnimatePresence>
 
           <AnimatePresence mode="wait">
-            {activeTab === 'Bookings' && (
+            {(activeTab === 'Bookings' || activeTab === 'Approvals') && (
               <motion.div
-                key="Bookings"
+                key={activeTab}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
               >
                 <div className="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-6 gap-4">
-                  <div className="flex bg-slate-100 p-1 rounded-xl">
-                    {(['all', 'active', 'completed'] as const).map(tab => (
-                      <button
-                        key={tab}
-                        onClick={() => { setStatusFilter(tab); setCurrentPage(1); }}
-                        className={`px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-wide transition-all ${statusFilter === tab
+
+                  {/* Status Tabs - ONLY for Bookings */}
+                  {activeTab === 'Bookings' ? (
+                    <div className="flex bg-slate-100 p-1 rounded-xl">
+                      {(['all', 'active', 'completed'] as const).map(tab => (
+                        <button
+                          key={tab}
+                          onClick={() => { setStatusFilter(tab); setCurrentPage(1); }}
+                          className={`px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-wide transition-all ${statusFilter === tab
                             ? 'bg-white text-clinical-rose shadow-md'
                             : 'text-slate-500 hover:text-slate-700'
-                          }`}
-                      >
-                        {tab}
-                      </button>
-                    ))}
-                  </div>
+                            }`}
+                        >
+                          {tab}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex bg-amber-50 p-2 rounded-xl border border-amber-100 items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+                      <span className="text-amber-700 font-bold text-xs uppercase tracking-wider">Pending Approvals</span>
+                    </div>
+                  )}
 
                   <div className="relative w-full md:w-auto">
                     <input
@@ -1297,7 +1210,7 @@ export default function AdminPage() {
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                     <div className="absolute left-3 top-3.5 text-slate-400">
-                      <RefreshCw size={16} /> {/* Using Refresh icon as placeholder search icon was not imported */}
+                      <RefreshCw size={16} />
                     </div>
                   </div>
                 </div>
@@ -1311,7 +1224,7 @@ export default function AdminPage() {
                   onLimitChange={(l) => { setLimit(l); setCurrentPage(1); }}
                 />
 
-                <div className="space-y-6">
+                <div className="space-y-6 mt-6">
                   {bookings.map((booking) => (
                     <div key={booking._id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
                       <div className="flex flex-col md:flex-row gap-6 justify-between">
@@ -1343,59 +1256,104 @@ export default function AdminPage() {
                             <p className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center"><MapPin size={10} /></div> {booking.address || 'Lab Visit'}</p>
                             <p className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center"><Phone size={10} /></div> {booking.contactNumber}</p>
                           </div>
+
+                          {/* Financials Block - Restored */}
+                          <div className="flex gap-4 text-slate-900 border-t border-slate-100 pt-4 w-full max-w-sm">
+                            <div className="flex-1">
+                              <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">Total</p>
+                              <p className="font-bold text-lg">₹{booking.totalAmount}</p>
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">Balance</p>
+                              <p className="font-bold text-lg text-clinical-rose">₹{booking.balanceAmount}</p>
+                            </div>
+                          </div>
+
                         </div>
 
-                        <div className="flex flex-col gap-3 min-w-[200px]">
-                          {booking.status === 'pending' && (
-                            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
-                              <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">Assign Partner</label>
-                              <select
-                                className="w-full bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-clinical-rose"
-                                onChange={(e) => {
-                                  if (e.target.value) handleAssignPartner(booking._id, e.target.value);
-                                }}
-                                defaultValue=""
-                              >
-                                <option value="" disabled>Select Partner</option>
-                                {partners.map(p => (
-                                  <option key={p._id} value={p._id}>{p.name}</option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
-
-                          {booking.status === 'report_uploaded' && (
-                            <button
-                              onClick={() => { setSelectedBookingForReview(booking); setReviewModalOpen(true); }}
-                              className="w-full py-3 bg-clinical-rose text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-rose-lg hover:bg-clinical-rose-dark transition-all flex items-center justify-center gap-2"
-                            >
-                              <FileText size={16} /> Review Report
-                            </button>
-                          )}
-
-                          {booking.status === 'assigned' && (
-                            <div className="text-center p-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold border border-blue-100">
-                              Assigned to Partner
-                            </div>
-                          )}
-
-                          <div className="flex gap-2 justify-end mt-auto">
-                            {booking.status !== 'cancelled' && booking.status !== 'completed' && (
+                        <div className="flex flex-col gap-3 min-w-[200px] justify-center">
+                          {activeTab === 'Approvals' && booking.status === 'pending' ? (
+                            /* Approvals Workflow Buttons */
+                            <div className="flex flex-col gap-3">
                               <button
-                                onClick={() => { setSelectedBookingForRejection(booking); setRejectionModalOpen(true); }}
-                                className="px-3 py-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                                title="Reject Booking"
+                                onClick={() => handleUpdateStatus(booking._id, 'accepted')}
+                                className="w-full bg-success text-white px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-success/90 transition-all shadow-lg flex items-center justify-center gap-2"
                               >
-                                <XCircle size={20} />
+                                <CheckCircle size={18} /> Approve Quest
                               </button>
-                            )}
-                          </div>
+                              <button
+                                onClick={() => handleOpenRejection(booking)}
+                                className="w-full bg-white text-clinical-rose border-2 border-clinical-rose px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-clinical-rose-light transition-all shadow-sm flex items-center justify-center gap-2"
+                              >
+                                <XCircle size={18} /> Reject
+                              </button>
+                            </div>
+                          ) : (
+                            /* Standard/Active Booking Actions */
+                            <>
+                              {booking.status === 'accepted' && (
+                                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                                  <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">Assign Partner</label>
+                                  <select
+                                    className="w-full bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-clinical-rose cursor-pointer"
+                                    onChange={(e) => {
+                                      if (e.target.value) handleAssignPartner(booking._id, e.target.value);
+                                    }}
+                                    defaultValue=""
+                                  >
+                                    <option value="" disabled>Select Partner</option>
+                                    {partners.map(p => (
+                                      <option key={p._id} value={p._id}>{p.name}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              )}
+
+                              {booking.status === 'report_uploaded' && (
+                                <button
+                                  onClick={() => { setSelectedBookingForReview(booking); setReviewModalOpen(true); }}
+                                  className="w-full py-3 bg-clinical-rose text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-rose-lg hover:bg-clinical-rose-dark transition-all flex items-center justify-center gap-2"
+                                >
+                                  <FileText size={16} /> Review Report
+                                </button>
+                              )}
+
+                              {booking.status === 'assigned' && (
+                                <div className="text-center p-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold border border-blue-100">
+                                  Assigned to Partner
+                                </div>
+                              )}
+
+                              {/* Rejection/Cancellation for non-completed items */}
+                              {booking.status !== 'cancelled' && booking.status !== 'completed' && booking.status !== 'rejected' && activeTab !== 'Approvals' && (
+                                <div className="flex gap-2 justify-end mt-2">
+                                  <button
+                                    onClick={() => { setSelectedBookingForRejection(booking); setRejectionModalOpen(true); }}
+                                    className="px-3 py-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all text-xs font-bold uppercase tracking-wider flex items-center gap-1"
+                                    title="Reject Booking"
+                                  >
+                                    <XCircle size={16} /> Cancel
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
                   ))}
                   {bookings.length === 0 && (
-                    <div className="text-center py-12 text-slate-400 font-bold">No bookings found.</div>
+                    <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border-2 border-dashed border-slate-200 text-center">
+                      <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                        <LayoutDashboard className="text-slate-300 w-10 h-10" />
+                      </div>
+                      <h4 className="text-lg font-black text-slate-900">No records found</h4>
+                      <p className="text-slate-500 font-bold max-w-md mx-auto mt-2">
+                        {activeTab === 'Approvals'
+                          ? "Great job! All pending requests have been processed."
+                          : "No bookings match your current filter criteria."}
+                      </p>
+                    </div>
                   )}
                 </div>
 

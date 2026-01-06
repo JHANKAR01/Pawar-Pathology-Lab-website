@@ -63,17 +63,21 @@ export async function GET(request: Request) {
     // --- Status Tab Logic ---
     if (statusTab) {
       switch (statusTab) {
+        case 'approvals':
+          filter.status = 'pending';
+          break;
         case 'active':
-          filter.status = { $nin: ['completed', 'cancelled', 'rejected', 'report_uploaded'] };
+          filter.status = { $in: ['accepted', 'assigned', 'reached', 'sample_collected'] };
           break;
         case 'completed':
-          filter.status = { $in: ['completed', 'report_uploaded'] };
-          break;
-        case 'specimens':
-          filter.status = { $in: ['accepted', 'assigned', 'sample_collected', 'reached'] };
+          filter.status = { $in: ['report_uploaded', 'completed'] };
           break;
         case 'all':
           // No status filter
+          break;
+        default:
+          // If 'specimens' or other legacy values passed, strictly map them or ignore
+          if (statusTab === 'specimens') filter.status = { $in: ['accepted', 'assigned', 'sample_collected', 'reached'] };
           break;
       }
     }
