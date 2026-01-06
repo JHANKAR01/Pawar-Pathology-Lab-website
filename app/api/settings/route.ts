@@ -25,36 +25,37 @@ export async function POST(req: NextRequest) {
     await dbConnect();
     let settings = await Settings.getSingleton();
 
-    // 1. MASTER CASCADE LOGIC
+    // 1. MASTER CASCADE LOGIC - Disable feature when permission is revoked
     if (session.user.role === 'master' && updates.planFlags) {
-      // If master disables WhatsApp in plan, forcefully disable the feature
-      if (updates.planFlags.allowWhatsApp === false) {
-        updates.whatsappEnabled = false;
-      }
-      // If master disables Sunday Bookings (sets allow to false), force Block Sundays to true
-      if (updates.planFlags.allowSundayBookings === false) {
-        updates.blockSundays = true;
-      }
+      const pf = updates.planFlags;
+      // Verification
+      if (pf.allowVerification === false) updates.requireVerification = false;
+      // SMS/Email
+      if (pf.allowSmsEmail === false) { updates.smsEnabled = false; updates.emailEnabled = false; }
+      // Sunday Bookings (inverse: disallowing = force block)
+      if (pf.allowSundayBookings === false) updates.blockSundays = true;
+      // Maintenance Config
+      if (pf.allowMaintenanceConfig === false) { updates.maintenanceModeUser = false; updates.maintenanceModePartner = false; }
+      // WhatsApp
+      if (pf.allowWhatsApp === false) { updates.whatsappEnabled = false; updates.whatsappOfficialEnabled = false; }
+      // Telegram
+      if (pf.allowTelegram === false) { updates.telegramEnabled = false; updates.telegramEnabledAdmin = false; updates.telegramEnabledPartner = false; updates.telegramEnabledUser = false; }
+      // Geofencing
+      if (pf.allowGeofencing === false) updates.locationFencingEnabled = false;
     }
 
-    // 2. ADMIN PROTECTION LOGIC
+    // 2. ADMIN PROTECTION LOGIC - Prevent enabling features if Plan forbids
     if (session.user.role === 'admin') {
-      // Prevent Admin from enabling restricted features if Plan forbids it
-      if (settings.planFlags?.allowWhatsApp === false && updates.whatsappEnabled === true) {
-        return NextResponse.json({ message: "Plan Restriction: Upgrade to enable WhatsApp" }, { status: 403 });
-      }
-
-      // Note: blockSundays logic is inverse. 
-      // If allowSundayBookings is FALSE, then blockSundays MUST be TRUE.
-      // If Admin tries to set blockSundays = false (allow booking) when plan forbids it:
-      if (settings.planFlags?.allowSundayBookings === false && updates.blockSundays === false) {
-        return NextResponse.json({ message: "Plan Restriction: Sunday bookings not allowed" }, { status: 403 });
-      }
-
+      const pf = settings.planFlags;
+      if (pf?.allowVerification === false && updates.requireVerification === true) return NextResponse.json({ message: "Plan Restriction: Verification not allowed" }, { status: 403 });
+      if (pf?.allowSmsEmail === false && (updates.smsEnabled === true || updates.emailEnabled === true)) return NextResponse.json({ message: "Plan Restriction: SMS/Email not allowed" }, { status: 403 });
+      if (pf?.allowSundayBookings === false && updates.blockSundays === false) return NextResponse.json({ message: "Plan Restriction: Sunday bookings not allowed" }, { status: 403 });
+      if (pf?.allowMaintenanceConfig === false && (updates.maintenanceModeUser === true || updates.maintenanceModePartner === true)) return NextResponse.json({ message: "Plan Restriction: Maintenance config not allowed" }, { status: 403 });
+      if (pf?.allowWhatsApp === false && updates.whatsappEnabled === true) return NextResponse.json({ message: "Plan Restriction: WhatsApp not allowed" }, { status: 403 });
+      if (pf?.allowTelegram === false && updates.telegramEnabled === true) return NextResponse.json({ message: "Plan Restriction: Telegram not allowed" }, { status: 403 });
+      if (pf?.allowGeofencing === false && updates.locationFencingEnabled === true) return NextResponse.json({ message: "Plan Restriction: Geofencing not allowed" }, { status: 403 });
       // Prevent Admin from modifying planFlags directly
-      if (updates.planFlags) {
-        delete updates.planFlags;
-      }
+      if (updates.planFlags) delete updates.planFlags;
     }
 
     Object.assign(settings, updates);

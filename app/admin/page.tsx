@@ -1214,7 +1214,13 @@ export default function AdminPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                       {/* Verification Toggle */}
-                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 relative overflow-hidden">
+                        {!(config as any).planFlags?.allowVerification && (session?.user?.role as any) !== 'master' && (
+                          <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
+                            <LockIcon className="text-slate-400 mb-2" size={20} />
+                            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Locked</p>
+                          </div>
+                        )}
                         <div className="flex justify-between items-start mb-4">
                           <div>
                             <h4 className="font-bold text-slate-900">Patient Verification</h4>
@@ -1227,6 +1233,7 @@ export default function AdminPage() {
                               className="peer absolute left-0 top-0 w-full h-full opacity-0 z-10 cursor-pointer"
                               checked={config.requireVerification}
                               onChange={(e) => updateConfig({ requireVerification: e.target.checked })}
+                              disabled={!(config as any).planFlags?.allowVerification && (session?.user?.role as any) !== 'master'}
                             />
                             <label
                               htmlFor="verification-toggle"
@@ -1238,7 +1245,13 @@ export default function AdminPage() {
                       </div>
 
                       {/* SMS Notifications */}
-                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 relative overflow-hidden">
+                        {!(config as any).planFlags?.allowSmsEmail && (session?.user?.role as any) !== 'master' && (
+                          <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
+                            <LockIcon className="text-slate-400 mb-2" size={20} />
+                            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Locked</p>
+                          </div>
+                        )}
                         <div className="flex justify-between items-start mb-4">
                           <div>
                             <h4 className="font-bold text-slate-900">SMS Notifications</h4>
@@ -1251,6 +1264,7 @@ export default function AdminPage() {
                               className="peer absolute left-0 top-0 w-full h-full opacity-0 z-10 cursor-pointer"
                               checked={(config as any).smsEnabled ?? true}
                               onChange={(e) => updateConfig({ smsEnabled: e.target.checked })}
+                              disabled={!(config as any).planFlags?.allowSmsEmail && (session?.user?.role as any) !== 'master'}
                             />
                             <label
                               htmlFor="sms-toggle"
@@ -1262,7 +1276,13 @@ export default function AdminPage() {
                       </div>
 
                       {/* Email Notifications */}
-                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 relative overflow-hidden">
+                        {!(config as any).planFlags?.allowSmsEmail && (session?.user?.role as any) !== 'master' && (
+                          <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
+                            <LockIcon className="text-slate-400 mb-2" size={20} />
+                            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Locked</p>
+                          </div>
+                        )}
                         <div className="flex justify-between items-start mb-4">
                           <div>
                             <h4 className="font-bold text-slate-900">Email Notifications</h4>
@@ -1275,6 +1295,7 @@ export default function AdminPage() {
                               className="peer absolute left-0 top-0 w-full h-full opacity-0 z-10 cursor-pointer"
                               checked={(config as any).emailEnabled ?? true}
                               onChange={(e) => updateConfig({ emailEnabled: e.target.checked })}
+                              disabled={!(config as any).planFlags?.allowSmsEmail && (session?.user?.role as any) !== 'master'}
                             />
                             <label
                               htmlFor="email-toggle"
@@ -1320,16 +1341,22 @@ export default function AdminPage() {
                       </div>
 
                       {/* Detailed Maintenance */}
-                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 md:col-span-2">
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 md:col-span-2 relative overflow-hidden">
+                        {!(config as any).planFlags?.allowMaintenanceConfig && (session?.user?.role as any) !== 'master' && (
+                          <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
+                            <LockIcon className="text-slate-400 mb-2" size={24} />
+                            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Maintenance Config Locked</p>
+                          </div>
+                        )}
                         <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2"><ShieldCheck size={18} /> System Maintenance</h4>
                         <div className="grid md:grid-cols-2 gap-6">
                           <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                             <div><h5 className="font-bold text-xs uppercase tracking-wide text-slate-700">Patient Portal</h5><p className="text-[10px] text-slate-500">Block patient access</p></div>
-                            <div className="relative inline-block w-10 h-5"><input type="checkbox" className="peer absolute w-full h-full opacity-0 cursor-pointer" checked={(config as any).maintenanceModeUser ?? false} onChange={(e) => updateConfig({ maintenanceModeUser: e.target.checked })} /><span className={`block w-full h-full rounded-full transition ${(config as any).maintenanceModeUser ? 'bg-rose-500' : 'bg-slate-300'}`}></span><span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).maintenanceModeUser ? 'translate-x-5' : ''}`}></span></div>
+                            <div className="relative inline-block w-10 h-5"><input type="checkbox" className="peer absolute w-full h-full opacity-0 cursor-pointer" checked={(config as any).maintenanceModeUser ?? false} onChange={(e) => updateConfig({ maintenanceModeUser: e.target.checked })} disabled={!(config as any).planFlags?.allowMaintenanceConfig && (session?.user?.role as any) !== 'master'} /><span className={`block w-full h-full rounded-full transition ${(config as any).maintenanceModeUser ? 'bg-rose-500' : 'bg-slate-300'}`}></span><span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).maintenanceModeUser ? 'translate-x-5' : ''}`}></span></div>
                           </div>
                           <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                             <div><h5 className="font-bold text-xs uppercase tracking-wide text-slate-700">Partner Portal</h5><p className="text-[10px] text-slate-500">Block partner access</p></div>
-                            <div className="relative inline-block w-10 h-5"><input type="checkbox" className="peer absolute w-full h-full opacity-0 cursor-pointer" checked={(config as any).maintenanceModePartner ?? false} onChange={(e) => updateConfig({ maintenanceModePartner: e.target.checked })} /><span className={`block w-full h-full rounded-full transition ${(config as any).maintenanceModePartner ? 'bg-rose-500' : 'bg-slate-300'}`}></span><span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).maintenanceModePartner ? 'translate-x-5' : ''}`}></span></div>
+                            <div className="relative inline-block w-10 h-5"><input type="checkbox" className="peer absolute w-full h-full opacity-0 cursor-pointer" checked={(config as any).maintenanceModePartner ?? false} onChange={(e) => updateConfig({ maintenanceModePartner: e.target.checked })} disabled={!(config as any).planFlags?.allowMaintenanceConfig && (session?.user?.role as any) !== 'master'} /><span className={`block w-full h-full rounded-full transition ${(config as any).maintenanceModePartner ? 'bg-rose-500' : 'bg-slate-300'}`}></span><span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).maintenanceModePartner ? 'translate-x-5' : ''}`}></span></div>
                           </div>
                         </div>
                       </div>
@@ -1436,7 +1463,13 @@ export default function AdminPage() {
                       </div>
 
                       {/* Geographic Fencing */}
-                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 md:col-span-2">
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 md:col-span-2 relative overflow-hidden">
+                        {!(config as any).planFlags?.allowGeofencing && (session?.user?.role as any) !== 'master' && (
+                          <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
+                            <LockIcon className="text-slate-400 mb-2" size={24} />
+                            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Geofencing Locked</p>
+                          </div>
+                        )}
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                           <div className="flex-1">
                             <div className="flex justify-between items-center mb-2">

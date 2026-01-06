@@ -40,9 +40,14 @@ const SettingsSchema = new Schema<ISettings & Document>(
     telegramEnabledUser: { type: Boolean, default: false },
     // Plan Flags for SaaS Gating
     planFlags: {
-      allowWhatsApp: { type: Boolean, default: false },
+      allowVerification: { type: Boolean, default: true },
+      allowSmsEmail: { type: Boolean, default: true },
       allowSundayBookings: { type: Boolean, default: false },
+      allowMaintenanceConfig: { type: Boolean, default: true },
+      allowWhatsApp: { type: Boolean, default: false },
+      allowTelegram: { type: Boolean, default: false },
       allowDriveInfrastructure: { type: Boolean, default: false },
+      allowGeofencing: { type: Boolean, default: true },
       allowBlackoutManagement: { type: Boolean, default: false }
     }
   },

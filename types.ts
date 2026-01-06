@@ -122,9 +122,14 @@ export interface ISettings {
   distanceType: 'road' | 'displacement';
   blockSundays: boolean;
   planFlags?: {
-    allowWhatsApp: boolean;
+    allowVerification: boolean;
+    allowSmsEmail: boolean;
     allowSundayBookings: boolean;
+    allowMaintenanceConfig: boolean;
+    allowWhatsApp: boolean;
+    allowTelegram: boolean;
     allowDriveInfrastructure: boolean;
+    allowGeofencing: boolean;
     allowBlackoutManagement: boolean;
   };
 }
