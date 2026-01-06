@@ -1,7 +1,8 @@
 export enum UserRole {
   ADMIN = 'admin',
   PARTNER = 'partner',
-  PATIENT = 'patient'
+  PATIENT = 'patient',
+  MASTER = 'master'
 }
 
 export enum BookingStatus {
@@ -123,5 +124,7 @@ export interface ISettings {
   planFlags?: {
     allowWhatsApp: boolean;
     allowSundayBookings: boolean;
+    allowDriveInfrastructure: boolean;
+    allowBlackoutManagement: boolean;
   };
 }

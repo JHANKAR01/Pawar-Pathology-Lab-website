@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Loader2, Calendar, Lock, Trash2, KeyRound, Map, Bell, Server, CloudCog, LogOut, LayoutDashboard } from 'lucide-react';
+import { ShieldCheck, Loader2, Calendar, Lock, Trash2, KeyRound, Map, Bell, Server, CloudCog, LogOut, LayoutDashboard, Database } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function MasterDashboard() {
@@ -120,18 +120,24 @@ export default function MasterDashboard() {
                 </header>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* COL 1: Security & SaaS */}
+                    {/* COL 1: SaaS Gating & Security */}
                     <div className="space-y-6">
                         <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 space-y-4">
-                            <h2 className="font-black text-purple-400 flex items-center gap-2 text-lg"><Lock size={20} /> SaaS Gating</h2>
+                            <h2 className="font-black text-purple-400 flex items-center gap-2 text-lg"><Lock size={20} /> SaaS Plan Permissions</h2>
+                            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Uncheck to LOCK feature for Admins</p>
                             <div className="space-y-2">
-                                {['allowWhatsApp', 'allowSundayBookings'].map(flag => (
-                                    <div key={flag} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-xl border border-slate-600/30">
-                                        <span className="text-xs font-bold font-mono text-slate-300">{flag}</span>
+                                {[
+                                    { key: 'allowWhatsApp', label: 'Allow WhatsApp' },
+                                    { key: 'allowSundayBookings', label: 'Allow Sunday Ops' },
+                                    { key: 'allowDriveInfrastructure', label: 'Allow Drive Sync' },
+                                    { key: 'allowBlackoutManagement', label: 'Allow Blackout Mgmt' }
+                                ].map(flag => (
+                                    <div key={flag.key} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-xl border border-slate-600/30">
+                                        <span className="text-xs font-bold font-mono text-slate-300">{flag.label}</span>
                                         <input
                                             type="checkbox"
-                                            checked={config.planFlags?.[flag]}
-                                            onChange={(e) => handleUpdate({ planFlags: { ...config.planFlags, [flag]: e.target.checked } })}
+                                            checked={config.planFlags?.[flag.key]}
+                                            onChange={(e) => handleUpdate({ planFlags: { ...config.planFlags, [flag.key]: e.target.checked } })}
                                             className="w-4 h-4 rounded border-slate-500 text-purple-600 focus:ring-purple-500/50 bg-slate-700"
                                         />
                                     </div>
@@ -140,27 +146,24 @@ export default function MasterDashboard() {
                         </div>
 
                         <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 space-y-4">
-                            <h2 className="font-black text-blue-400 flex items-center gap-2 text-lg"><KeyRound size={20} /> Security Defaults</h2>
-                            <Toggle label="Require OTP" field="requireVerification" subLabel="Patient Email/Phone Verification" />
-                        </div>
-
-                        <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 space-y-4">
-                            <h2 className="font-black text-rose-400 flex items-center gap-2 text-lg"><Server size={20} /> Maintenance</h2>
+                            <h2 className="font-black text-blue-400 flex items-center gap-2 text-lg"><KeyRound size={20} /> Security & Maintenance</h2>
+                            <Toggle label="Require OTP Signup" field="requireVerification" />
+                            <div className="h-px bg-slate-700 my-2" />
                             <Toggle label="Full Lockdown" field="maintenanceMode" subLabel="Stop All Access" />
                             <Toggle label="Patient Portal" field="maintenanceModeUser" subLabel="Block Patients" />
                             <Toggle label="Partner Portal" field="maintenanceModePartner" subLabel="Block Partners" />
                         </div>
                     </div>
 
-                    {/* COL 2: Notifications & Logistics */}
+                    {/* COL 2: Notification & Logic */}
                     <div className="space-y-6">
                         <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 space-y-4">
-                            <h2 className="font-black text-emerald-400 flex items-center gap-2 text-lg"><Bell size={20} /> Notification Hub</h2>
+                            <h2 className="font-black text-emerald-400 flex items-center gap-2 text-lg"><Bell size={20} /> Communication Hub</h2>
                             <Toggle label="SMS Gateway" field="smsEnabled" />
                             <Toggle label="Email Gateway" field="emailEnabled" />
                             <div className="h-px bg-slate-700 my-2" />
-                            <Toggle label="WhatsApp" field="whatsappEnabled" />
-                            {config.whatsappEnabled && <Toggle label="Official API" field="whatsappOfficialEnabled" subLabel="Use Cloud API" />}
+                            <Toggle label="WhatsApp Logic" field="whatsappEnabled" />
+                            {config.whatsappEnabled && <Toggle label="Official Cloud API" field="whatsappOfficialEnabled" subLabel="Use Paid API" />}
                             <div className="h-px bg-slate-700 my-2" />
                             <Toggle label="Telegram Bot" field="telegramEnabled" />
 
@@ -213,13 +216,13 @@ export default function MasterDashboard() {
                         </div>
                     </div>
 
-                    {/* COL 3: Operations & Blackouts */}
+                    {/* COL 3: Infrastructure */}
                     <div className="space-y-6">
                         <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 space-y-4 relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-3 opacity-10">
-                                <CloudCog size={100} />
+                                <Database size={100} />
                             </div>
-                            <h2 className="font-black text-sky-400 flex items-center gap-2 text-lg relative z-10"><Server size={20} /> Infrastructure</h2>
+                            <h2 className="font-black text-sky-400 flex items-center gap-2 text-lg relative z-10"><CloudCog size={20} /> Cloud Infrastructure</h2>
 
                             <button
                                 onClick={triggerProvisioning}
@@ -228,7 +231,7 @@ export default function MasterDashboard() {
                             >
                                 {provisioning ? <Loader2 className="animate-spin mx-auto" /> : 'Provision Drive Folders'}
                             </button>
-                            <p className="text-[10px] text-slate-400 text-center relative z-10">Manually trigger monthly folder structure creation.</p>
+                            <p className="text-[10px] text-slate-400 text-center relative z-10">Manually trigger folder structure for new month.</p>
                         </div>
 
                         <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 space-y-4 flex-1">

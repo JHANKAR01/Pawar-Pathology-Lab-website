@@ -41,7 +41,9 @@ const SettingsSchema = new Schema<ISettings & Document>(
     // Plan Flags for SaaS Gating
     planFlags: {
       allowWhatsApp: { type: Boolean, default: false },
-      allowSundayBookings: { type: Boolean, default: false }
+      allowSundayBookings: { type: Boolean, default: false },
+      allowDriveInfrastructure: { type: Boolean, default: false },
+      allowBlackoutManagement: { type: Boolean, default: false }
     }
   },
   { timestamps: true }

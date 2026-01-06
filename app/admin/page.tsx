@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { toast } from 'sonner';
 import {
   ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home, Loader2, Calendar, FileText, X, CheckCircle, XCircle, Ticket, MapPin, BellRing,
-  LayoutDashboard, HeartHandshake, Settings as SettingsIcon, Info
+  LayoutDashboard, HeartHandshake, Settings as SettingsIcon, Info, Lock
 } from 'lucide-react';
 import { FlaskConical } from 'lucide-react';
 import { BookingStatus } from '@/types';
@@ -89,7 +89,7 @@ export default function AdminPage() {
 
     const role = session?.user?.role?.toLowerCase();
     if (status === 'authenticated') {
-      if (role !== 'admin') {
+      if (role !== 'admin' && role !== 'master') {
         router.push('/login');
         return;
       }
@@ -1403,7 +1403,16 @@ export default function AdminPage() {
 
 
                       {/* Google Drive Provisioning (Phase 4) */}
-                      <div className={`p-6 rounded-2xl border ${nextMonthAlert ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'} md:col-span-1`}>
+                      <div className={`relative p-6 rounded-2xl border ${nextMonthAlert ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'} md:col-span-1 overflow-hidden`}>
+                        {/* Locked Overlay */}
+                        {!(config as any).planFlags?.allowDriveInfrastructure && session?.user?.role !== 'master' && (
+                          <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
+                            <Lock className="text-slate-400 mb-2" size={24} />
+                            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Feature Locked</p>
+                            <p className="text-[10px] text-slate-400 font-bold mt-1">Upgrade Plan</p>
+                          </div>
+                        )}
+
                         <div className="flex items-start gap-4">
                           <div className={`p-3 rounded-xl ${nextMonthAlert ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
                             <SettingsIcon size={24} />
@@ -1416,7 +1425,7 @@ export default function AdminPage() {
 
                             <button
                               onClick={handleProvisionFolders}
-                              disabled={provisioningStatus === 'loading'}
+                              disabled={provisioningStatus === 'loading' || (!(config as any).planFlags?.allowDriveInfrastructure && session?.user?.role !== 'master')}
                               className={`mt-4 w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${nextMonthAlert ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
                             >
                               {provisioningStatus === 'loading' ? <Loader2 className="animate-spin" /> : 'Provision Next Month'}
@@ -1491,11 +1500,20 @@ export default function AdminPage() {
                 </div>
 
                 <motion.div
-                  className="card-premium p-12 max-w-2xl mt-8"
+                  className="card-premium p-12 max-w-2xl mt-8 relative overflow-hidden"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
                 >
+                  {/* Locked Overlay */}
+                  {!(config as any).planFlags?.allowBlackoutManagement && session?.user?.role !== 'master' && (
+                    <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
+                      <Lock className="text-slate-400 mb-2" size={32} />
+                      <p className="text-sm font-black text-slate-500 uppercase tracking-widest">Calendar Management Locked</p>
+                      <p className="text-xs text-slate-400 font-bold mt-1">Upgrade your SaaS Plan</p>
+                    </div>
+                  )}
+
                   <h3 className="text-2xl font-black text-slate-900 mb-10 flex items-center gap-4">
                     <Calendar className="text-clinical-rose" size={28} /> Clinical Calendar Management
                   </h3>

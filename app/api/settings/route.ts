@@ -1,68 +1,67 @@
-
-import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/dbConnect';
-import Settings from '@/models/Settings';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/next-auth-options';
+import dbConnect from '@/lib/dbConnect';
+import Settings from '@/models/Settings';
 
-export async function GET() {
-  await dbConnect();
-  const settings = await Settings.getSingleton();
-  return NextResponse.json(settings);
+export async function GET(req: NextRequest) {
+  try {
+    await dbConnect();
+    const settings = await Settings.getSingleton();
+    return NextResponse.json(settings);
+  } catch (error: any) {
+    return NextResponse.json({ message: error.message }, { status: 500 });
+  }
 }
 
-export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  const role = session?.user?.role?.toLowerCase();
+export async function POST(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user.role !== 'admin' && session.user.role !== 'master')) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
 
-  if (!session || (role !== 'admin' && role !== 'master')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const updates = await req.json();
+    await dbConnect();
+    let settings = await Settings.getSingleton();
+
+    // 1. MASTER CASCADE LOGIC
+    if (session.user.role === 'master' && updates.planFlags) {
+      // If master disables WhatsApp in plan, forcefully disable the feature
+      if (updates.planFlags.allowWhatsApp === false) {
+        updates.whatsappEnabled = false;
+      }
+      // If master disables Sunday Bookings (sets allow to false), force Block Sundays to true
+      if (updates.planFlags.allowSundayBookings === false) {
+        updates.blockSundays = true;
+      }
+    }
+
+    // 2. ADMIN PROTECTION LOGIC
+    if (session.user.role === 'admin') {
+      // Prevent Admin from enabling restricted features if Plan forbids it
+      if (settings.planFlags?.allowWhatsApp === false && updates.whatsappEnabled === true) {
+        return NextResponse.json({ message: "Plan Restriction: Upgrade to enable WhatsApp" }, { status: 403 });
+      }
+
+      // Note: blockSundays logic is inverse. 
+      // If allowSundayBookings is FALSE, then blockSundays MUST be TRUE.
+      // If Admin tries to set blockSundays = false (allow booking) when plan forbids it:
+      if (settings.planFlags?.allowSundayBookings === false && updates.blockSundays === false) {
+        return NextResponse.json({ message: "Plan Restriction: Sunday bookings not allowed" }, { status: 403 });
+      }
+
+      // Prevent Admin from modifying planFlags directly
+      if (updates.planFlags) {
+        delete updates.planFlags;
+      }
+    }
+
+    Object.assign(settings, updates);
+    await settings.save();
+
+    return NextResponse.json(settings);
+  } catch (error: any) {
+    return NextResponse.json({ message: error.message }, { status: 500 });
   }
-
-  await dbConnect();
-  const body = await request.json();
-  console.log("Received Settings Update:", body); // Debugging
-
-  // Retrieve current settings to check plan flags
-  const currentSettings = await Settings.getSingleton();
-
-  // If user is NOT a master, enforce plan checks
-  if (role !== 'master') {
-    const planFlags = currentSettings.planFlags || { allowWhatsApp: false, allowSundayBookings: false };
-
-    // Check WhatsApp Gating
-    // If trying to enable WhatsApp (whatsappEnabled=true) but plan says allowWhatsApp=false
-    if (body.whatsappEnabled === true && !planFlags.allowWhatsApp) {
-      return NextResponse.json(
-        { error: 'Forbidden. Your plan does not support WhatsApp integration.' },
-        { status: 403 }
-      );
-    }
-
-    // Check Sunday Gating
-    // If trying to UNBLOCK sundays (blockSundays=false) but plan says allowSundayBookings=false
-    // NOTE: "allowSundayBookings" means you CAN take bookings. "blockSundays" means you CANNOT.
-    // So if allowSundayBookings is FALSE, then blockSundays MUST be TRUE.
-    // If user tries to set blockSundays = false, it's a violation.
-    if (body.blockSundays === false && !planFlags.allowSundayBookings) {
-      return NextResponse.json(
-        { error: 'Forbidden. Your plan does not support Sunday bookings.' },
-        { status: 403 }
-      );
-    }
-
-    // Prevent Admin from modifying planFlags themselves
-    if (body.planFlags) {
-      delete body.planFlags;
-    }
-  }
-
-  // Update the singleton document
-  const settings = await Settings.findOneAndUpdate({}, body, {
-    new: true,
-    upsert: true, // Create if doesn't exist
-    setDefaultsOnInsert: true
-  });
-
-  return NextResponse.json(settings);
 }
