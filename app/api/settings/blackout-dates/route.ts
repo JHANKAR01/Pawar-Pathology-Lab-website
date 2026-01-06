@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/next-auth-options';
 import dbConnect from '@/lib/dbConnect';
 import BlackoutDate from '@/models/BlackoutDate';
-import { verifyAdmin } from '@/lib/auth';
 
 // GET handler
 export async function GET() {
@@ -22,9 +23,9 @@ export async function GET() {
 
 // POST handler
 export async function POST(request: Request) {
-  const authResult = await verifyAdmin(request);
-  if (authResult.response) {
-    return authResult.response;
+  const session = await getServerSession(authOptions);
+  if (!session || (session.user.role !== 'admin' && session.user.role !== 'master')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
   await dbConnect();
@@ -43,22 +44,22 @@ export async function POST(request: Request) {
 
 // DELETE handler
 export async function DELETE(request: Request) {
-    const authResult = await verifyAdmin(request);
-    if (authResult.response) {
-        return authResult.response;
+  const session = await getServerSession(authOptions);
+  if (!session || (session.user.role !== 'admin' && session.user.role !== 'master')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  }
+
+  await dbConnect();
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'Missing blackout date ID' }, { status: 400 });
     }
-    
-    await dbConnect();
-    try {
-        const { searchParams } = new URL(request.url);
-        const id = searchParams.get('id');
-        if (!id) {
-            return NextResponse.json({ error: 'Missing blackout date ID' }, { status: 400 });
-        }
-        await BlackoutDate.findByIdAndDelete(id);
-        return NextResponse.json({ message: 'Blackout date deleted' }, { status: 200 });
-    } catch (error) {
-        console.error('Blackout DELETE Error:', error);
-        return NextResponse.json({ error: 'Failed to delete blackout date' }, { status: 500 });
-    }
+    await BlackoutDate.findByIdAndDelete(id);
+    return NextResponse.json({ message: 'Blackout date deleted' }, { status: 200 });
+  } catch (error) {
+    console.error('Blackout DELETE Error:', error);
+    return NextResponse.json({ error: 'Failed to delete blackout date' }, { status: 500 });
+  }
 }

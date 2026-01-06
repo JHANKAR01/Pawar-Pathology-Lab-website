@@ -18,7 +18,7 @@ export async function verifyAdmin(request: Request): Promise<{ isAdmin: boolean,
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedToken;
 
-    if (decoded.role === 'admin') {
+    if (decoded.role === 'admin' || decoded.role === 'master') {
       return { isAdmin: true };
     } else {
       return { isAdmin: false, response: NextResponse.json({ error: 'Forbidden: Not an admin' }, { status: 403 }) };

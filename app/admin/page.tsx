@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { toast } from 'sonner';
 import {
   ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home, Loader2, Calendar, FileText, X, CheckCircle, XCircle, Ticket, MapPin, BellRing,
-  LayoutDashboard, HeartHandshake, Settings as SettingsIcon, Info, Lock
+  LayoutDashboard, HeartHandshake, Settings as SettingsIcon, Info, Lock as LockIcon
 } from 'lucide-react';
 import { FlaskConical } from 'lucide-react';
 import { BookingStatus } from '@/types';
@@ -1291,24 +1291,24 @@ export default function AdminPage() {
                           <div>
                             <h4 className="font-bold text-slate-900 flex items-center gap-2">
                               Block Sundays
-                              {!(config as any).planFlags?.allowSundayBookings && session?.user?.role !== 'master' && <span className="bg-slate-200 text-slate-500 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">Locked</span>}
+                              {!(config as any).planFlags?.allowSundayBookings && (session?.user?.role as any) !== 'master' && <span className="bg-slate-200 text-slate-500 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">Locked</span>}
                             </h4>
                             <p className="text-xs text-slate-500 mt-1">Disable booking on Sundays</p>
                           </div>
-                          <div className={`relative inline-block w-12 h-6 transition duration-200 ease-in-out ${!(config as any).planFlags?.allowSundayBookings && session?.user?.role !== 'master' ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                          <div className={`relative inline-block w-12 h-6 transition duration-200 ease-in-out ${!(config as any).planFlags?.allowSundayBookings && (session?.user?.role as any) !== 'master' ? 'opacity-50 cursor-not-allowed' : ''}`}>
                             <input
                               type="checkbox"
                               id="sunday-toggle"
                               className="peer absolute left-0 top-0 w-full h-full opacity-0 z-10 cursor-pointer"
                               checked={(config as any).blockSundays ?? true}
                               onChange={(e) => {
-                                if (!(config as any).planFlags?.allowSundayBookings && session?.user?.role !== 'master') {
+                                if (!(config as any).planFlags?.allowSundayBookings && (session?.user?.role as any) !== 'master') {
                                   toast.error("Upgrade your plan to enable Sunday bookings");
                                   return;
                                 }
                                 updateConfig({ blockSundays: e.target.checked });
                               }}
-                              disabled={!(config as any).planFlags?.allowSundayBookings && session?.user?.role !== 'master'}
+                              disabled={!(config as any).planFlags?.allowSundayBookings && (session?.user?.role as any) !== 'master'}
                             />
                             <label
                               htmlFor="sunday-toggle"
@@ -1342,23 +1342,23 @@ export default function AdminPage() {
                             <div>
                               <h5 className="font-bold text-sm text-slate-800 flex items-center gap-2">
                                 WhatsApp Integration
-                                {!(config as any).planFlags?.allowWhatsApp && session?.user?.role !== 'master' && <span className="bg-slate-200 text-slate-500 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">Locked</span>}
+                                {!(config as any).planFlags?.allowWhatsApp && (session?.user?.role as any) !== 'master' && <span className="bg-slate-200 text-slate-500 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">Locked</span>}
                               </h5>
                               <p className="text-xs text-slate-500">Enable WhatsApp messaging</p>
                             </div>
-                            <div className={`relative inline-block w-10 h-5 ${!(config as any).planFlags?.allowWhatsApp && session?.user?.role !== 'master' ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                            <div className={`relative inline-block w-10 h-5 ${!(config as any).planFlags?.allowWhatsApp && (session?.user?.role as any) !== 'master' ? 'opacity-50 cursor-not-allowed' : ''}`}>
                               <input
                                 type="checkbox"
                                 className="peer absolute w-full h-full opacity-0 cursor-pointer"
                                 checked={(config as any).whatsappEnabled ?? true}
                                 onChange={(e) => {
-                                  if (!(config as any).planFlags?.allowWhatsApp && session?.user?.role !== 'master') {
+                                  if (!(config as any).planFlags?.allowWhatsApp && (session?.user?.role as any) !== 'master') {
                                     toast.error("Premium Feature Locked. Contact Master Admin.");
                                     return;
                                   }
                                   updateConfig({ whatsappEnabled: e.target.checked });
                                 }}
-                                disabled={!(config as any).planFlags?.allowWhatsApp && session?.user?.role !== 'master'}
+                                disabled={!(config as any).planFlags?.allowWhatsApp && (session?.user?.role as any) !== 'master'}
                               />
                               <span className={`block w-full h-full rounded-full transition ${(config as any).whatsappEnabled ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
                               <span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).whatsappEnabled ? 'translate-x-5' : ''}`}></span>
@@ -1405,9 +1405,9 @@ export default function AdminPage() {
                       {/* Google Drive Provisioning (Phase 4) */}
                       <div className={`relative p-6 rounded-2xl border ${nextMonthAlert ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'} md:col-span-1 overflow-hidden`}>
                         {/* Locked Overlay */}
-                        {!(config as any).planFlags?.allowDriveInfrastructure && session?.user?.role !== 'master' && (
+                        {!(config as any).planFlags?.allowDriveInfrastructure && (session?.user?.role as any) !== 'master' && (
                           <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
-                            <Lock className="text-slate-400 mb-2" size={24} />
+                            <LockIcon className="text-slate-400 mb-2" size={24} />
                             <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Feature Locked</p>
                             <p className="text-[10px] text-slate-400 font-bold mt-1">Upgrade Plan</p>
                           </div>
@@ -1425,7 +1425,7 @@ export default function AdminPage() {
 
                             <button
                               onClick={handleProvisionFolders}
-                              disabled={provisioningStatus === 'loading' || (!(config as any).planFlags?.allowDriveInfrastructure && session?.user?.role !== 'master')}
+                              disabled={provisioningStatus === 'loading' || (!(config as any).planFlags?.allowDriveInfrastructure && (session?.user?.role as any) !== 'master')}
                               className={`mt-4 w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${nextMonthAlert ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
                             >
                               {provisioningStatus === 'loading' ? <Loader2 className="animate-spin" /> : 'Provision Next Month'}
@@ -1506,9 +1506,9 @@ export default function AdminPage() {
                   transition={{ delay: 0.2 }}
                 >
                   {/* Locked Overlay */}
-                  {!(config as any).planFlags?.allowBlackoutManagement && session?.user?.role !== 'master' && (
+                  {!(config as any).planFlags?.allowBlackoutManagement && (session?.user?.role as any) !== 'master' && (
                     <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
-                      <Lock className="text-slate-400 mb-2" size={32} />
+                      <LockIcon className="text-slate-400 mb-2" size={32} />
                       <p className="text-sm font-black text-slate-500 uppercase tracking-widest">Calendar Management Locked</p>
                       <p className="text-xs text-slate-400 font-bold mt-1">Upgrade your SaaS Plan</p>
                     </div>

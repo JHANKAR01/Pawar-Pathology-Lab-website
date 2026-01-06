@@ -7,7 +7,7 @@ import { provisionMonthFolders } from '@/lib/googleDrive';
 export async function POST(request: Request) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session || session.user.role !== 'admin') {
+        if (!session || (session.user.role !== 'admin' && session.user.role !== 'master')) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 

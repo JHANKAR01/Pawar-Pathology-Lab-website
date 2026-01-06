@@ -35,7 +35,19 @@ export default function MasterDashboard() {
     };
 
     const handleUpdate = async (updates: any) => {
-        setConfig({ ...config, ...updates });
+        let newConfig = { ...config, ...updates };
+
+        // Optimistic UI for Cascade-Off Logic
+        if (updates.planFlags) {
+            if (updates.planFlags.allowWhatsApp === false) {
+                newConfig.whatsappEnabled = false;
+            }
+            if (updates.planFlags.allowSundayBookings === false) {
+                newConfig.blockSundays = true;
+            }
+        }
+
+        setConfig(newConfig);
         try {
             const res = await fetch('/api/settings', {
                 method: 'POST',
@@ -61,12 +73,23 @@ export default function MasterDashboard() {
     };
 
     const triggerProvisioning = async () => {
-        if (!confirm("Confirm Provisioning Drive Folders?")) return;
+        if (!confirm("Confirm Provisioning Drive Folders for NEXT MONTH?")) return;
         setProvisioning(true);
         try {
-            const res = await fetch('/api/admin/provision-drive', { method: 'POST' });
+            // Calculate Next Month params
+            const now = new Date();
+            const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            const year = nextMonth.getFullYear();
+            const monthName = nextMonth.toLocaleString('default', { month: 'long' });
+            const daysInMonth = new Date(year, nextMonth.getMonth() + 1, 0).getDate();
+
+            const res = await fetch('/api/admin/provision-drive', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ year, monthName, daysInMonth })
+            });
             const data = await res.json();
-            if (res.ok) toast.success(data.message || "Drive Provisioned");
+            if (res.ok) toast.success(data.message || `Provisioned ${monthName} ${year}`);
             else toast.error("Provisioning Failed");
         } catch (e) { toast.error("Error connecting to API"); }
         finally { setProvisioning(false); }
