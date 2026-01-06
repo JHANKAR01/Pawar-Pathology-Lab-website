@@ -40,7 +40,8 @@ export default function MasterDashboard() {
     };
 
     const handleToggle = async (key: string, value: boolean) => {
-        const newPlanFlags = { ...config.planFlags, [key]: value };
+        if (!config) return;
+        const newPlanFlags = { ...(config.planFlags || {}), [key]: value };
         setConfig({ ...config, planFlags: newPlanFlags });
         try {
             const res = await fetch('/api/settings', {
@@ -57,8 +58,9 @@ export default function MasterDashboard() {
         } catch (e) { toast.error("Sync failed"); fetchData(); }
     };
 
-    if (loading) return <div className="flex h-screen items-center justify-center bg-slate-900 text-white"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
 
+    if (loading) return <div className="flex h-screen items-center justify-center bg-slate-900 text-white"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
+    if (!config) return <div className="flex h-screen items-center justify-center bg-slate-900 text-white">Failed to load settings</div>;
     return (
         <div className="min-h-screen bg-slate-900 text-white p-6 font-sans">
             <div className="max-w-4xl mx-auto space-y-8">
@@ -99,8 +101,8 @@ export default function MasterDashboard() {
                             <div
                                 key={flag.key}
                                 className={`p-4 rounded-2xl border transition-all cursor-pointer ${config.planFlags?.[flag.key]
-                                        ? 'bg-green-900/20 border-green-500/50 hover:bg-green-900/30'
-                                        : 'bg-red-900/20 border-red-500/50 hover:bg-red-900/30'
+                                    ? 'bg-green-900/20 border-green-500/50 hover:bg-green-900/30'
+                                    : 'bg-red-900/20 border-red-500/50 hover:bg-red-900/30'
                                     }`}
                                 onClick={() => handleToggle(flag.key, !config.planFlags?.[flag.key])}
                             >

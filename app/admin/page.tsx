@@ -1307,7 +1307,13 @@ export default function AdminPage() {
                       </div>
 
                       {/* Block Sundays */}
-                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 relative overflow-hidden">
+                        {!(config as any).planFlags?.allowSundayBookings && (session?.user?.role as any) !== 'master' && (
+                          <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
+                            <LockIcon className="text-slate-400 mb-2" size={20} />
+                            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Locked</p>
+                          </div>
+                        )}
                         <div className="flex justify-between items-start mb-4">
                           <div>
                             <h4 className="font-bold text-slate-900 flex items-center gap-2">
@@ -1365,66 +1371,88 @@ export default function AdminPage() {
                       <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 md:col-span-2">
                         <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2"><BellRing size={18} /> Smart Notification Hub</h4>
                         <div className="space-y-4">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <h5 className="font-bold text-sm text-slate-800 flex items-center gap-2">
-                                WhatsApp Integration
-                                {!(config as any).planFlags?.allowWhatsApp && (session?.user?.role as any) !== 'master' && <span className="bg-slate-200 text-slate-500 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">Locked</span>}
-                              </h5>
-                              <p className="text-xs text-slate-500">Enable WhatsApp messaging</p>
-                            </div>
-                            <div className={`relative inline-block w-10 h-5 ${!(config as any).planFlags?.allowWhatsApp && (session?.user?.role as any) !== 'master' ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                              <input
-                                type="checkbox"
-                                className="peer absolute w-full h-full opacity-0 cursor-pointer"
-                                checked={(config as any).whatsappEnabled ?? true}
-                                onChange={(e) => {
-                                  if (!(config as any).planFlags?.allowWhatsApp && (session?.user?.role as any) !== 'master') {
-                                    toast.error("Premium Feature Locked. Contact Master Admin.");
-                                    return;
-                                  }
-                                  updateConfig({ whatsappEnabled: e.target.checked });
-                                }}
-                                disabled={!(config as any).planFlags?.allowWhatsApp && (session?.user?.role as any) !== 'master'}
-                              />
-                              <span className={`block w-full h-full rounded-full transition ${(config as any).whatsappEnabled ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
-                              <span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).whatsappEnabled ? 'translate-x-5' : ''}`}></span>
-                            </div>
-                          </div>
-                          {(config as any).whatsappEnabled && (
-                            <div className="pl-4 border-l-2 border-slate-200 ml-2">
-                              <div className="flex items-center gap-2 mb-2">
-                                <input type="checkbox" id="wa-official" checked={(config as any).whatsappOfficialEnabled ?? false} onChange={(e) => updateConfig({ whatsappOfficialEnabled: e.target.checked })} className="w-4 h-4 text-rose-600 rounded focus:ring-rose-500" />
-                                <label htmlFor="wa-official" className="text-xs font-bold text-slate-700">Use Official Cloud API (Costs apply)</label>
+                          {/* WhatsApp Section */}
+                          <div className="relative p-4 bg-white rounded-xl border border-slate-100 overflow-hidden">
+                            {!(config as any).planFlags?.allowWhatsApp && (session?.user?.role as any) !== 'master' && (
+                              <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
+                                <LockIcon className="text-slate-400 mb-2" size={20} />
+                                <p className="text-xs font-black text-slate-500 uppercase tracking-widest">WhatsApp Locked</p>
                               </div>
-                              <p className="text-[10px] text-slate-500">If unchecked, system sends Email with a "Chat on WhatsApp" deep-link (Free).</p>
+                            )}
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <h5 className="font-bold text-sm text-slate-800">WhatsApp Integration</h5>
+                                <p className="text-xs text-slate-500">Enable WhatsApp messaging</p>
+                              </div>
+                              <div className={`relative inline-block w-10 h-5 ${!(config as any).planFlags?.allowWhatsApp && (session?.user?.role as any) !== 'master' ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                <input
+                                  type="checkbox"
+                                  className="peer absolute w-full h-full opacity-0 cursor-pointer"
+                                  checked={(config as any).whatsappEnabled ?? true}
+                                  onChange={(e) => {
+                                    if (!(config as any).planFlags?.allowWhatsApp && (session?.user?.role as any) !== 'master') {
+                                      toast.error("Premium Feature Locked. Contact Master Admin.");
+                                      return;
+                                    }
+                                    updateConfig({ whatsappEnabled: e.target.checked });
+                                  }}
+                                  disabled={!(config as any).planFlags?.allowWhatsApp && (session?.user?.role as any) !== 'master'}
+                                />
+                                <span className={`block w-full h-full rounded-full transition ${(config as any).whatsappEnabled ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
+                                <span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).whatsappEnabled ? 'translate-x-5' : ''}`}></span>
+                              </div>
                             </div>
-                          )}
-                          <div className="flex justify-between items-center pt-4 border-t border-slate-200">
-                            <div><h5 className="font-bold text-sm text-slate-800">Telegram Staff Alerts</h5><p className="text-xs text-slate-500">Internal alerts for new bookings</p></div>
-                            <div className="relative inline-block w-10 h-5"><input type="checkbox" className="peer absolute w-full h-full opacity-0 cursor-pointer" checked={(config as any).telegramEnabled ?? false} onChange={(e) => updateConfig({ telegramEnabled: e.target.checked })} /><span className={`block w-full h-full rounded-full transition ${(config as any).telegramEnabled ? 'bg-sky-500' : 'bg-slate-300'}`}></span><span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).telegramEnabled ? 'translate-x-5' : ''}`}></span></div>
+                            {(config as any).whatsappEnabled && (
+                              <div className="pl-4 border-l-2 border-slate-200 ml-2 mt-3">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <input type="checkbox" id="wa-official" checked={(config as any).whatsappOfficialEnabled ?? false} onChange={(e) => updateConfig({ whatsappOfficialEnabled: e.target.checked })} className="w-4 h-4 text-rose-600 rounded focus:ring-rose-500" />
+                                  <label htmlFor="wa-official" className="text-xs font-bold text-slate-700">Use Official Cloud API (Costs apply)</label>
+                                </div>
+                                <p className="text-[10px] text-slate-500">If unchecked, system sends Email with a "Chat on WhatsApp" deep-link (Free).</p>
+                              </div>
+                            )}
                           </div>
-                          {(config as any).telegramEnabled && (
-                            <div className="space-y-4 pt-2">
-                              <input type="text" placeholder="Admin Chat ID" value={(config as any).telegramAdminChatId || ''} onChange={(e) => updateConfig({ telegramAdminChatId: e.target.value })} className="w-full text-xs px-3 py-2 border rounded-lg" />
 
-                              <div className="grid grid-cols-3 gap-2 text-xs">
-                                <label className="flex items-center gap-1 cursor-pointer">
-                                  <input type="checkbox" checked={(config as any).telegramEnabledAdmin ?? false} onChange={(e) => updateConfig({ telegramEnabledAdmin: e.target.checked })} />
-                                  <span>Admin Alerts</span>
-                                </label>
-                                <label className="flex items-center gap-1 cursor-pointer">
-                                  <input type="checkbox" checked={(config as any).telegramEnabledPartner ?? false} onChange={(e) => updateConfig({ telegramEnabledPartner: e.target.checked })} />
-                                  <span>Partner Alerts</span>
-                                </label>
-                                <label className="flex items-center gap-1 cursor-pointer">
-                                  <input type="checkbox" checked={(config as any).telegramEnabledUser ?? false} onChange={(e) => updateConfig({ telegramEnabledUser: e.target.checked })} />
-                                  <span>User Alerts</span>
-                                </label>
+                          {/* Telegram Section */}
+                          <div className="relative p-4 bg-white rounded-xl border border-slate-100 overflow-hidden">
+                            {!(config as any).planFlags?.allowTelegram && (session?.user?.role as any) !== 'master' && (
+                              <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
+                                <LockIcon className="text-slate-400 mb-2" size={20} />
+                                <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Telegram Locked</p>
                               </div>
-                              <a href="https://t.me/PawarPathLabBot" target="_blank" className="text-[10px] text-blue-500 hover:underline block text-center">Open @PawarPathLabBot & type /id to get ID</a>
+                            )}
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <h5 className="font-bold text-sm text-slate-800">Telegram Staff Alerts</h5>
+                                <p className="text-xs text-slate-500">Internal alerts for new bookings</p>
+                              </div>
+                              <div className={`relative inline-block w-10 h-5 ${!(config as any).planFlags?.allowTelegram && (session?.user?.role as any) !== 'master' ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                <input type="checkbox" className="peer absolute w-full h-full opacity-0 cursor-pointer" checked={(config as any).telegramEnabled ?? false} onChange={(e) => updateConfig({ telegramEnabled: e.target.checked })} disabled={!(config as any).planFlags?.allowTelegram && (session?.user?.role as any) !== 'master'} />
+                                <span className={`block w-full h-full rounded-full transition ${(config as any).telegramEnabled ? 'bg-sky-500' : 'bg-slate-300'}`}></span>
+                                <span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).telegramEnabled ? 'translate-x-5' : ''}`}></span>
+                              </div>
                             </div>
-                          )}
+                            {(config as any).telegramEnabled && (
+                              <div className="space-y-4 pt-3">
+                                <input type="text" placeholder="Admin Chat ID" value={(config as any).telegramAdminChatId || ''} onChange={(e) => updateConfig({ telegramAdminChatId: e.target.value })} className="w-full text-xs px-3 py-2 border rounded-lg" />
+                                <div className="grid grid-cols-3 gap-2 text-xs">
+                                  <label className="flex items-center gap-1 cursor-pointer">
+                                    <input type="checkbox" checked={(config as any).telegramEnabledAdmin ?? false} onChange={(e) => updateConfig({ telegramEnabledAdmin: e.target.checked })} />
+                                    <span>Admin Alerts</span>
+                                  </label>
+                                  <label className="flex items-center gap-1 cursor-pointer">
+                                    <input type="checkbox" checked={(config as any).telegramEnabledPartner ?? false} onChange={(e) => updateConfig({ telegramEnabledPartner: e.target.checked })} />
+                                    <span>Partner Alerts</span>
+                                  </label>
+                                  <label className="flex items-center gap-1 cursor-pointer">
+                                    <input type="checkbox" checked={(config as any).telegramEnabledUser ?? false} onChange={(e) => updateConfig({ telegramEnabledUser: e.target.checked })} />
+                                    <span>User Alerts</span>
+                                  </label>
+                                </div>
+                                <a href="https://t.me/PawarPathLabBot" target="_blank" className="text-[10px] text-blue-500 hover:underline block text-center">Open @PawarPathLabBot & type /id to get ID</a>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -1590,298 +1618,306 @@ export default function AdminPage() {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
-      </main>
+        </div >
+      </main >
 
       {/* Review Report Modal */}
       <AnimatePresence>
-        {reviewModalOpen && selectedBookingForReview && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-            onClick={() => !isProcessingReview && setReviewModalOpen(false)}
-          >
+        {
+          reviewModalOpen && selectedBookingForReview && (
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+              onClick={() => !isProcessingReview && setReviewModalOpen(false)}
             >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b-2 border-slate-200">
-                <div>
-                  <h2 className="text-2xl font-black text-slate-900">Review Report</h2>
-                  <p className="text-sm text-slate-600 mt-1">
-                    {selectedBookingForReview.patientName} - {selectedBookingForReview.tests.map(t => t.title).join(' + ')}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setReviewModalOpen(false)}
-                  disabled={isProcessingReview}
-                  className="p-2 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50"
-                >
-                  <X className="w-6 h-6 text-slate-600" />
-                </button>
-              </div>
-
-              {/* PDF Viewer */}
-              <div className="flex-1 overflow-hidden p-6">
-                {selectedBookingForReview.reportFileUrl ? (
-                  <iframe
-                    src={`/api/reports/download/${selectedBookingForReview._id}`}
-                    className="w-full h-full min-h-[500px] border-2 border-slate-200 rounded-xl"
-                    title="Report Preview"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-slate-500">
-                    <p>No report file available</p>
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Modal Header */}
+                <div className="flex items-center justify-between p-6 border-b-2 border-slate-200">
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-900">Review Report</h2>
+                    <p className="text-sm text-slate-600 mt-1">
+                      {selectedBookingForReview.patientName} - {selectedBookingForReview.tests.map(t => t.title).join(' + ')}
+                    </p>
                   </div>
-                )}
-              </div>
-
-              {/* Modal Footer with Actions */}
-              <div className="p-6 border-t-2 border-slate-200 space-y-4">
-                {/* Reject Notes Input */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Rejection Notes (Required for Reject)
-                  </label>
-                  <textarea
-                    value={rejectNotes}
-                    onChange={(e) => setRejectNotes(e.target.value)}
-                    placeholder="Enter notes for the partner about why the report is being rejected..."
-                    className="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-medium focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all resize-none"
-                    rows={3}
-                    disabled={isProcessingReview}
-                  />
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-4">
                   <button
-                    onClick={handleReleaseReport}
+                    onClick={() => setReviewModalOpen(false)}
                     disabled={isProcessingReview}
-                    className="flex-1 bg-success text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-success/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="p-2 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50"
                   >
-                    {isProcessingReview ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-5 h-5" />
-                        Release Report
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={handleRejectReport}
-                    disabled={isProcessingReview || !rejectNotes.trim()}
-                    className="flex-1 bg-clinical-rose text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-clinical-rose-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {isProcessingReview ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="w-5 h-5" />
-                        Reject / Re-upload
-                      </>
-                    )}
+                    <X className="w-6 h-6 text-slate-600" />
                   </button>
                 </div>
-              </div>
+
+                {/* PDF Viewer */}
+                <div className="flex-1 overflow-hidden p-6">
+                  {selectedBookingForReview.reportFileUrl ? (
+                    <iframe
+                      src={`/api/reports/download/${selectedBookingForReview._id}`}
+                      className="w-full h-full min-h-[500px] border-2 border-slate-200 rounded-xl"
+                      title="Report Preview"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-slate-500">
+                      <p>No report file available</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Modal Footer with Actions */}
+                <div className="p-6 border-t-2 border-slate-200 space-y-4">
+                  {/* Reject Notes Input */}
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                      Rejection Notes (Required for Reject)
+                    </label>
+                    <textarea
+                      value={rejectNotes}
+                      onChange={(e) => setRejectNotes(e.target.value)}
+                      placeholder="Enter notes for the partner about why the report is being rejected..."
+                      className="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-medium focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all resize-none"
+                      rows={3}
+                      disabled={isProcessingReview}
+                    />
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-4">
+                    <button
+                      onClick={handleReleaseReport}
+                      disabled={isProcessingReview}
+                      className="flex-1 bg-success text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-success/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {isProcessingReview ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-5 h-5" />
+                          Release Report
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={handleRejectReport}
+                      disabled={isProcessingReview || !rejectNotes.trim()}
+                      className="flex-1 bg-clinical-rose text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-clinical-rose-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {isProcessingReview ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-5 h-5" />
+                          Reject / Re-upload
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
+          )
+        }
         {/* Partner Re-assignment Confirmation Modal */}
-      </AnimatePresence>
+      </AnimatePresence >
 
       {/* Partner Re-assignment Confirmation Modal */}
       <AnimatePresence>
-        {partnerReassignModal.isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-            onClick={() => setPartnerReassignModal(prev => ({ ...prev, isOpen: false }))}
-          >
+        {
+          partnerReassignModal.isOpen && (
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+              onClick={() => setPartnerReassignModal(prev => ({ ...prev, isOpen: false }))}
             >
-              <div className="flex items-center justify-center mb-6 text-amber-500">
-                <HeartHandshake size={48} />
-              </div>
-              <h3 className="text-xl font-black text-slate-900 text-center mb-2">Confirm Re-assignment</h3>
-              <p className="text-center text-slate-500 mb-8 font-medium">
-                Are you sure you want to re-assign this specimen from <br />
-                <span className="font-bold text-slate-900">{partnerReassignModal.currentPartnerName}</span> to <span className="font-bold text-clinical-rose">{partnerReassignModal.newPartnerName}</span>?
-              </p>
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-center mb-6 text-amber-500">
+                  <HeartHandshake size={48} />
+                </div>
+                <h3 className="text-xl font-black text-slate-900 text-center mb-2">Confirm Re-assignment</h3>
+                <p className="text-center text-slate-500 mb-8 font-medium">
+                  Are you sure you want to re-assign this specimen from <br />
+                  <span className="font-bold text-slate-900">{partnerReassignModal.currentPartnerName}</span> to <span className="font-bold text-clinical-rose">{partnerReassignModal.newPartnerName}</span>?
+                </p>
 
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setPartnerReassignModal(prev => ({ ...prev, isOpen: false }))}
-                  className="flex-1 bg-slate-100 text-slate-600 px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-slate-200 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmPartnerReassign}
-                  className="flex-1 bg-clinical-rose text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-clinical-rose-dark transition-all"
-                >
-                  Confirm
-                </button>
-              </div>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setPartnerReassignModal(prev => ({ ...prev, isOpen: false }))}
+                    className="flex-1 bg-slate-100 text-slate-600 px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-slate-200 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmPartnerReassign}
+                    className="flex-1 bg-clinical-rose text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-clinical-rose-dark transition-all"
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )
+        }
+      </AnimatePresence >
 
       {/* Rejection Modal for Pending Bookings */}
       <AnimatePresence>
-        {rejectionModalOpen && selectedBookingForRejection && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-            onClick={() => !isProcessingReview && setRejectionModalOpen(false)}
-          >
+        {
+          rejectionModalOpen && selectedBookingForRejection && (
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+              onClick={() => !isProcessingReview && setRejectionModalOpen(false)}
             >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3">
-                  <XCircle className="text-clinical-rose" size={28} />
-                  Reject Booking
-                </h2>
-                <button onClick={() => setRejectionModalOpen(false)} disabled={isProcessingReview} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                  <X size={24} className="text-slate-400 hover:text-slate-600" />
-                </button>
-              </div>
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                    <XCircle className="text-clinical-rose" size={28} />
+                    Reject Booking
+                  </h2>
+                  <button onClick={() => setRejectionModalOpen(false)} disabled={isProcessingReview} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                    <X size={24} className="text-slate-400 hover:text-slate-600" />
+                  </button>
+                </div>
 
-              <div className="mb-6">
-                <p className="text-slate-600 font-bold mb-2">Patient: <span className="text-slate-900">{selectedBookingForRejection.patientName}</span></p>
-                <p className="text-slate-500 text-sm">Please specify the reason for rejection. This will be sent to the user.</p>
-              </div>
+                <div className="mb-6">
+                  <p className="text-slate-600 font-bold mb-2">Patient: <span className="text-slate-900">{selectedBookingForRejection.patientName}</span></p>
+                  <p className="text-slate-500 text-sm">Please specify the reason for rejection. This will be sent to the user.</p>
+                </div>
 
-              <textarea
-                value={rejectNotes}
-                onChange={(e) => setRejectNotes(e.target.value)}
-                placeholder="Reason (e.g., Use precise location, Service unavailable in area...)"
-                className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all resize-none mb-6 h-32"
-                disabled={isProcessingReview}
-              />
-
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setRejectionModalOpen(false)}
+                <textarea
+                  value={rejectNotes}
+                  onChange={(e) => setRejectNotes(e.target.value)}
+                  placeholder="Reason (e.g., Use precise location, Service unavailable in area...)"
+                  className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all resize-none mb-6 h-32"
                   disabled={isProcessingReview}
-                  className="flex-1 bg-slate-100 text-slate-600 px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-slate-200 transition-all disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmRejection}
-                  disabled={isProcessingReview || !rejectNotes.trim()}
-                  className="flex-1 bg-clinical-rose text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-clinical-rose-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isProcessingReview ? <Loader2 className="animate-spin" /> : <XCircle size={18} />}
-                  Confirm Reject
-                </button>
-              </div>
+                />
+
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setRejectionModalOpen(false)}
+                    disabled={isProcessingReview}
+                    className="flex-1 bg-slate-100 text-slate-600 px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-slate-200 transition-all disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmRejection}
+                    disabled={isProcessingReview || !rejectNotes.trim()}
+                    className="flex-1 bg-clinical-rose text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-clinical-rose-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isProcessingReview ? <Loader2 className="animate-spin" /> : <XCircle size={18} />}
+                    Confirm Reject
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )
+        }
+      </AnimatePresence >
       {/* Coupon Usage Insights Modal */}
       <AnimatePresence>
-        {couponUsageModal.isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-            onClick={() => setCouponUsageModal(prev => ({ ...prev, isOpen: false }))}
-          >
+        {
+          couponUsageModal.isOpen && (
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+              onClick={() => setCouponUsageModal(prev => ({ ...prev, isOpen: false }))}
             >
-              <div className="flex items-center justify-between p-6 border-b-2 border-slate-200">
-                <div>
-                  <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-                    <Ticket className="text-clinical-rose" />
-                    Coupon Usage: {couponUsageModal.couponCode}
-                  </h2>
-                  <p className="text-sm text-slate-500 font-bold mt-1">
-                    Used {couponUsageModal.matches.length} times
-                  </p>
-                </div>
-                <button
-                  onClick={() => setCouponUsageModal(prev => ({ ...prev, isOpen: false }))}
-                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-                >
-                  <X size={24} className="text-slate-400 hover:text-slate-600" />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6">
-                {couponUsageModal.matches.length === 0 ? (
-                  <div className="text-center py-12 text-slate-400">
-                    <p>No usages found for this coupon.</p>
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between p-6 border-b-2 border-slate-200">
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+                      <Ticket className="text-clinical-rose" />
+                      Coupon Usage: {couponUsageModal.couponCode}
+                    </h2>
+                    <p className="text-sm text-slate-500 font-bold mt-1">
+                      Used {couponUsageModal.matches.length} times
+                    </p>
                   </div>
-                ) : (
-                  <table className="w-full text-left">
-                    <thead className="bg-slate-50 sticky top-0">
-                      <tr>
-                        <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 rounded-l-lg">Date</th>
-                        <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500">Patient</th>
-                        <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500">Tests</th>
-                        <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 text-right rounded-r-lg">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {couponUsageModal.matches.map(match => (
-                        <tr key={match._id} className="hover:bg-slate-50 transition-colors">
-                          <td className="p-3 font-bold text-slate-600 text-sm">
-                            {new Date(match.createdAt || '').toLocaleDateString('en-GB', {
-                              day: '2-digit', month: 'short', year: 'numeric'
-                            })}
-                          </td>
-                          <td className="p-3 font-bold text-slate-900">{match.patientName}</td>
-                          <td className="p-3 font-bold text-slate-500 text-xs">
-                            {match.tests?.map(t => t.title).join(', ') || '-'}
-                          </td>
-                          <td className="p-3 font-bold text-slate-900 text-right">₹{match.totalAmount}</td>
+                  <button
+                    onClick={() => setCouponUsageModal(prev => ({ ...prev, isOpen: false }))}
+                    className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                  >
+                    <X size={24} className="text-slate-400 hover:text-slate-600" />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-6">
+                  {couponUsageModal.matches.length === 0 ? (
+                    <div className="text-center py-12 text-slate-400">
+                      <p>No usages found for this coupon.</p>
+                    </div>
+                  ) : (
+                    <table className="w-full text-left">
+                      <thead className="bg-slate-50 sticky top-0">
+                        <tr>
+                          <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 rounded-l-lg">Date</th>
+                          <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500">Patient</th>
+                          <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500">Tests</th>
+                          <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 text-right rounded-r-lg">Total</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {couponUsageModal.matches.map(match => (
+                          <tr key={match._id} className="hover:bg-slate-50 transition-colors">
+                            <td className="p-3 font-bold text-slate-600 text-sm">
+                              {new Date(match.createdAt || '').toLocaleDateString('en-GB', {
+                                day: '2-digit', month: 'short', year: 'numeric'
+                              })}
+                            </td>
+                            <td className="p-3 font-bold text-slate-900">{match.patientName}</td>
+                            <td className="p-3 font-bold text-slate-500 text-xs">
+                              {match.tests?.map(t => t.title).join(', ') || '-'}
+                            </td>
+                            <td className="p-3 font-bold text-slate-900 text-right">₹{match.totalAmount}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+          )
+        }
+      </AnimatePresence >
+    </div >
   );
 }
