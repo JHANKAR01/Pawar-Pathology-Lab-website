@@ -37,7 +37,12 @@ const SettingsSchema = new Schema<ISettings & Document>(
     // Role-based Telegram Toggles
     telegramEnabledAdmin: { type: Boolean, default: false },
     telegramEnabledPartner: { type: Boolean, default: false },
-    telegramEnabledUser: { type: Boolean, default: false }
+    telegramEnabledUser: { type: Boolean, default: false },
+    // Plan Flags for SaaS Gating
+    planFlags: {
+      allowWhatsApp: { type: Boolean, default: false },
+      allowSundayBookings: { type: Boolean, default: false }
+    }
   },
   { timestamps: true }
 );

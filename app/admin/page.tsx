@@ -67,6 +67,11 @@ export default function AdminPage() {
   const [coupons, setCoupons] = useState<any[]>([]);
   const [newCoupon, setNewCoupon] = useState({ code: '', discountType: 'percentage' as 'percentage' | 'fixed', value: 0, expiryDate: '', usageLimit: '' });
 
+  // SaaS Analytics State
+  const [analyticsData, setAnalyticsData] = useState<{ totalRevenue: number; bookingCount: number; dailyTrends: any[] }>({ totalRevenue: 0, bookingCount: 0, dailyTrends: [] });
+  const [dateFilter, setDateFilter] = useState('week'); // today, week, month, custom
+  const [customRange, setCustomRange] = useState({ start: '', end: '' });
+
   // Phase 4: Drive Provisioning
   const [provisioningStatus, setProvisioningStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [nextMonthAlert, setNextMonthAlert] = useState(false);
@@ -95,9 +100,45 @@ export default function AdminPage() {
       fetchBlackoutDates();
       fetchBlackoutDates();
       fetchCoupons();
+      fetchCoupons();
       checkNextMonthProvisioning(); // New Check
     }
   }, [session, status, router]);
+
+  useEffect(() => {
+    if (status === 'authenticated' && activeTab === 'Intelligence') {
+      fetchAnalytics();
+    }
+  }, [activeTab, dateFilter, customRange, status]);
+
+  const fetchAnalytics = async () => {
+    try {
+      let start = new Date();
+      let end = new Date();
+
+      if (dateFilter === 'today') {
+        start.setHours(0, 0, 0, 0);
+      } else if (dateFilter === 'week') {
+        start.setDate(start.getDate() - 7);
+      } else if (dateFilter === 'month') {
+        start.setDate(start.getDate() - 30);
+      } else if (dateFilter === 'custom') {
+        if (!customRange.start || !customRange.end) return;
+        start = new Date(customRange.start);
+        end = new Date(customRange.end);
+      }
+
+      const query = new URLSearchParams({
+        startDate: start.toISOString(),
+        endDate: end.toISOString()
+      });
+
+      const res = await fetch(`/api/admin/analytics?${query}`);
+      if (res.ok) {
+        setAnalyticsData(await res.json());
+      }
+    } catch (e) { console.error("Analytics fetch failed", e); }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -687,35 +728,77 @@ export default function AdminPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="grid grid-cols-1 md:grid-cols-3 gap-8"
+                className="space-y-8"
               >
-                <motion.div
-                  className="card-premium p-10"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <p className="text-slate-500 text-xs font-black uppercase tracking-widest mb-4">Total Revenue</p>
-                  <p className="text-5xl font-black text-slate-900">₹{bookings.reduce((acc, b) => acc + (b.totalAmount || 0), 0)}</p>
-                </motion.div>
-                <motion.div
-                  className="card-premium p-10"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <p className="text-warning text-xs font-black uppercase tracking-widest mb-4">Pending Approval</p>
-                  <p className="text-5xl font-black text-slate-900">{bookings.filter(b => b.status === 'pending').length}</p>
-                </motion.div>
-                <motion.div
-                  className="card-premium p-10"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <p className="text-success text-xs font-black uppercase tracking-widest mb-4">Completed Cycles</p>
-                  <p className="text-5xl font-black text-slate-900">{bookings.filter(b => b.status === 'completed').length}</p>
-                </motion.div>
+                {/* Date Filter Controls */}
+                <div className="flex flex-wrap items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                  <div className="flex bg-slate-100 p-1 rounded-xl">
+                    {['today', 'week', 'month', 'custom'].map((filter) => (
+                      <button
+                        key={filter}
+                        onClick={() => setDateFilter(filter)}
+                        className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${dateFilter === filter ? 'bg-white text-clinical-rose shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                      >
+                        {filter}
+                      </button>
+                    ))}
+                  </div>
+                  {dateFilter === 'custom' && (
+                    <div className="flex items-center gap-2">
+                      <input type="date" className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold" onChange={(e) => setCustomRange(prev => ({ ...prev, start: e.target.value }))} />
+                      <span className="text-slate-400">-</span>
+                      <input type="date" className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold" onChange={(e) => setCustomRange(prev => ({ ...prev, end: e.target.value }))} />
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  <motion.div className="card-premium p-10" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                    <p className="text-slate-500 text-xs font-black uppercase tracking-widest mb-4">Total Revenue</p>
+                    <p className="text-5xl font-black text-slate-900">₹{analyticsData.totalRevenue}</p>
+                  </motion.div>
+                  <motion.div className="card-premium p-10" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                    <p className="text-warning text-xs font-black uppercase tracking-widest mb-4">Total Bookings</p>
+                    <p className="text-5xl font-black text-slate-900">{analyticsData.bookingCount}</p>
+                  </motion.div>
+                  <motion.div className="card-premium p-10 flex flex-col justify-end" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                    <p className="text-success text-xs font-black uppercase tracking-widest mb-4">Average Value</p>
+                    <p className="text-4xl font-black text-slate-900">
+                      ₹{analyticsData.bookingCount > 0 ? Math.round(analyticsData.totalRevenue / analyticsData.bookingCount) : 0}
+                    </p>
+                  </motion.div>
+                </div>
+
+                {/* Daily Trends Chart */}
+                <div className="card-premium p-8">
+                  <h3 className="text-xl font-black text-slate-900 mb-6">Daily Revenue Trends</h3>
+                  <div className="h-64 flex items-end gap-2">
+                    {analyticsData.dailyTrends.map((day, idx) => {
+                      const maxRev = Math.max(...analyticsData.dailyTrends.map((d: any) => d.revenue)) || 1;
+                      const height = (day.revenue / maxRev) * 100;
+                      return (
+                        <div key={idx} className="flex-1 flex flex-col items-center gap-2 group relative">
+                          <div
+                            className="w-full bg-clinical-rose/20 rounded-t-lg transition-all duration-500 hover:bg-clinical-rose"
+                            style={{ height: `${height}%` }}
+                          ></div>
+                          <span className="text-[10px] font-bold text-slate-400 rotate-0 truncate w-full text-center group-hover:text-clinical-rose">
+                            {new Date(day.date).getDate()}
+                          </span>
+                          {/* Tooltip */}
+                          <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 bg-slate-900 text-white text-xs px-2 py-1 rounded pointer-events-none transition-opacity whitespace-nowrap z-10">
+                            {day.date}: ₹{day.revenue}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {analyticsData.dailyTrends.length === 0 && (
+                      <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold">
+                        No data for selected period
+                      </div>
+                    )}
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1202,16 +1285,20 @@ export default function AdminPage() {
                       <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
                         <div className="flex justify-between items-start mb-4">
                           <div>
-                            <h4 className="font-bold text-slate-900">Block Sundays</h4>
+                            <h4 className="font-bold text-slate-900 flex items-center gap-2">
+                              Block Sundays
+                              {!(config as any).planFlags?.allowSundayBookings && <span className="bg-slate-200 text-slate-500 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">Locked</span>}
+                            </h4>
                             <p className="text-xs text-slate-500 mt-1">Disable booking on Sundays</p>
                           </div>
-                          <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out">
+                          <div className={`relative inline-block w-12 h-6 transition duration-200 ease-in-out ${!(config as any).planFlags?.allowSundayBookings ? 'opacity-50 cursor-not-allowed' : ''}`}>
                             <input
                               type="checkbox"
                               id="sunday-toggle"
                               className="peer absolute left-0 top-0 w-full h-full opacity-0 z-10 cursor-pointer"
                               checked={(config as any).blockSundays ?? true}
-                              onChange={(e) => updateConfig({ blockSundays: e.target.checked })}
+                              onChange={(e) => !(config as any).planFlags?.allowSundayBookings ? toast.error("Upgrade your plan to enable Sunday bookings") : updateConfig({ blockSundays: e.target.checked })}
+                              disabled={!(config as any).planFlags?.allowSundayBookings}
                             />
                             <label
                               htmlFor="sunday-toggle"
@@ -1242,8 +1329,24 @@ export default function AdminPage() {
                         <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2"><BellRing size={18} /> Smart Notification Hub</h4>
                         <div className="space-y-4">
                           <div className="flex justify-between items-center">
-                            <div><h5 className="font-bold text-sm text-slate-800">WhatsApp Integration</h5><p className="text-xs text-slate-500">Enable WhatsApp messaging</p></div>
-                            <div className="relative inline-block w-10 h-5"><input type="checkbox" className="peer absolute w-full h-full opacity-0 cursor-pointer" checked={(config as any).whatsappEnabled ?? true} onChange={(e) => updateConfig({ whatsappEnabled: e.target.checked })} /><span className={`block w-full h-full rounded-full transition ${(config as any).whatsappEnabled ? 'bg-emerald-500' : 'bg-slate-300'}`}></span><span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).whatsappEnabled ? 'translate-x-5' : ''}`}></span></div>
+                            <div>
+                              <h5 className="font-bold text-sm text-slate-800 flex items-center gap-2">
+                                WhatsApp Integration
+                                {!(config as any).planFlags?.allowWhatsApp && <span className="bg-slate-200 text-slate-500 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">Locked</span>}
+                              </h5>
+                              <p className="text-xs text-slate-500">Enable WhatsApp messaging</p>
+                            </div>
+                            <div className={`relative inline-block w-10 h-5 ${!(config as any).planFlags?.allowWhatsApp ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                              <input
+                                type="checkbox"
+                                className="peer absolute w-full h-full opacity-0 cursor-pointer"
+                                checked={(config as any).whatsappEnabled ?? true}
+                                onChange={(e) => !(config as any).planFlags?.allowWhatsApp ? toast.error("Upgrade your plan to enable WhatsApp") : updateConfig({ whatsappEnabled: e.target.checked })}
+                                disabled={!(config as any).planFlags?.allowWhatsApp}
+                              />
+                              <span className={`block w-full h-full rounded-full transition ${(config as any).whatsappEnabled ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
+                              <span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).whatsappEnabled ? 'translate-x-5' : ''}`}></span>
+                            </div>
                           </div>
                           {(config as any).whatsappEnabled && (
                             <div className="pl-4 border-l-2 border-slate-200 ml-2">

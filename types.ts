@@ -120,4 +120,8 @@ export interface ISettings {
   locationFencingEnabled: boolean;
   distanceType: 'road' | 'displacement';
   blockSundays: boolean;
+  planFlags?: {
+    allowWhatsApp: boolean;
+    allowSundayBookings: boolean;
+  };
 }

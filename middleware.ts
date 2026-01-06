@@ -27,6 +27,14 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // Protect Master Routes
+  if (pathname.startsWith('/master')) {
+    if (!isAuth) return NextResponse.redirect(new URL('/login', req.url));
+    if ((token as any)?.role !== 'master') {
+      return NextResponse.redirect(new URL('/', req.url));
+    }
+  }
+
   return NextResponse.next();
 }
 
