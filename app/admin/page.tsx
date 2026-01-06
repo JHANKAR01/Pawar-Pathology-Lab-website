@@ -1223,7 +1223,6 @@ export default function AdminPage() {
               >
                 <div className="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-6 gap-4">
 
-                  {/* Status Tabs - ONLY for Bookings */}
                   {/* Context Badges for Two-Gate System */}
                   {activeTab === 'Approvals' ? (
                     <div className="flex bg-amber-50 p-2 rounded-xl border border-amber-100 items-center gap-2">
@@ -1242,32 +1241,40 @@ export default function AdminPage() {
                     </div>
                   )}
 
-                  <div className="relative w-full md:w-auto">
-                    <input
-                      type="text"
-                      placeholder="Search patient or ID..."
-                      className="pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm text-slate-900 focus:ring-2 focus:ring-clinical-rose/20 outline-none w-full md:w-80 transition-all"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    <div className="absolute left-3 top-3.5 text-slate-400">
-                      <RefreshCw size={16} />
-                    </div>
-                    <div className="relative">
-                      <select
-                        value={partnerFilter}
-                        onChange={(e) => setPartnerFilter(e.target.value)}
-                        className="appearance-none pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-xl font-bold text-sm text-slate-600 focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all shadow-sm cursor-pointer"
-                      >
-                        <option value="">All Partners</option>
-                        {partners.map(p => (
-                          <option key={p._id} value={p._id}>{p.name}</option>
-                        ))}
-                      </select>
-                      <div className="absolute right-3 top-3.5 text-slate-400 pointer-events-none">
-                        <HeartHandshake size={16} />
+                  {/* Search and Filter Controls */}
+                  <div className="flex items-center gap-3 w-full md:w-auto">
+                    {/* Search Input */}
+                    <div className="relative flex-1 md:flex-none">
+                      <input
+                        type="text"
+                        placeholder="Search patient or ID..."
+                        className="pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm text-slate-900 focus:ring-2 focus:ring-clinical-rose/20 outline-none w-full md:w-72 transition-all"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                      <div className="absolute left-3 top-3.5 text-slate-400">
+                        <RefreshCw size={16} />
                       </div>
                     </div>
+
+                    {/* Partner Filter - Only for Active and Completed Bookings */}
+                    {activeTab !== 'Approvals' && (
+                      <div className="relative">
+                        <select
+                          value={partnerFilter}
+                          onChange={(e) => setPartnerFilter(e.target.value)}
+                          className="appearance-none pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-xl font-bold text-sm text-slate-600 focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all shadow-sm cursor-pointer min-w-[140px]"
+                        >
+                          <option value="">All Partners</option>
+                          {partners.map(p => (
+                            <option key={p._id} value={p._id}>{p.name}</option>
+                          ))}
+                        </select>
+                        <div className="absolute right-3 top-3.5 text-slate-400 pointer-events-none">
+                          <HeartHandshake size={16} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
