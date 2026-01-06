@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { toast } from 'sonner';
 import {
   ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home, Loader2, Calendar, FileText, X, CheckCircle, XCircle, Ticket, MapPin, BellRing, Phone,
-  LayoutDashboard, HeartHandshake, Settings as SettingsIcon, Info, Lock as LockIcon
+  LayoutDashboard, HeartHandshake, Settings as SettingsIcon, Info, Lock as LockIcon, TestTube, Clock
 } from 'lucide-react';
 import { FlaskConical } from 'lucide-react';
 import { BookingStatus } from '@/types';
@@ -28,6 +28,7 @@ interface BookingType {
   status: string;
   tests: { title: string; category: string }[];
   assignedPartnerName?: string;
+  assignedPartnerId?: string;
   reportFileUrl?: string;
   reportStatus?: string;
   pathologistNotes?: string;
@@ -72,7 +73,8 @@ export default function AdminPage() {
     partnerName?: string;
   }>({ isOpen: false, type: 'assign', booking: null, targetPartnerId: '', partnerName: '' });
 
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed'>('all'); // Renamed/Adjusted from old logic if necessary
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed'>('all');
+  const [partnerFilter, setPartnerFilter] = useState(''); // New Partner Filter
 
   const [partners, setPartners] = useState<Partner[]>([]);
   const [newPartner, setNewPartner] = useState({ name: '', email: '', username: '', password: '' });
@@ -215,7 +217,8 @@ export default function AdminPage() {
         statusTab: activeTab === 'Approvals' ? 'approvals' :
           activeTab === 'Active Bookings' ? 'active' :
             activeTab === 'Completed Bookings' ? 'completed' : statusFilter,
-        search: searchQuery
+        search: searchQuery,
+        partnerId: partnerFilter
       });
       const res = await fetch(`/api/bookings?${query}`);
       if (res.ok) {
@@ -241,7 +244,7 @@ export default function AdminPage() {
     if ((activeTab === 'Active Bookings' || activeTab === 'Completed Bookings' || activeTab === 'Approvals') && status === 'authenticated') {
       fetchData();
     }
-  }, [currentPage, limit, activeTab, statusFilter]); // Trigger on status filter change
+  }, [currentPage, limit, activeTab, statusFilter, partnerFilter]); // Trigger on status filter change
 
   // Debounced Search Re-fetch
   useEffect(() => {
@@ -1250,10 +1253,21 @@ export default function AdminPage() {
                     <div className="absolute left-3 top-3.5 text-slate-400">
                       <RefreshCw size={16} />
                     </div>
-                    {/* Manual Filter Button Placeholder */}
-                    <button className="absolute right-2 top-2 p-2 bg-white text-slate-400 hover:text-clinical-rose rounded-lg border border-slate-100 shadow-sm transition-all" title="Advanced Filters">
-                      <Settings2 size={14} />
-                    </button>
+                    <div className="relative">
+                      <select
+                        value={partnerFilter}
+                        onChange={(e) => setPartnerFilter(e.target.value)}
+                        className="appearance-none pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-xl font-bold text-sm text-slate-600 focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all shadow-sm cursor-pointer"
+                      >
+                        <option value="">All Partners</option>
+                        {partners.map(p => (
+                          <option key={p._id} value={p._id}>{p.name}</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-3 top-3.5 text-slate-400 pointer-events-none">
+                        <HeartHandshake size={16} />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -1313,6 +1327,25 @@ export default function AdminPage() {
                           {activeTab === 'Active Bookings' && (
                             <div className="w-full border-t border-slate-100 mt-4 pt-4">
                               <StatusTracker status={booking.status} reportStatus={booking.reportStatus || 'pending_review'} />
+
+                              <div className="flex flex-wrap gap-2 mt-4 justify-start">
+                                {(booking.status === 'assigned' || booking.status === 'accepted' || booking.status === 'reached') && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleUpdateStatus(booking._id, 'sample_collected'); }}
+                                    className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all border border-blue-100 flex items-center gap-2 shadow-sm"
+                                  >
+                                    <TestTube size={14} /> Mark Specimen Taken
+                                  </button>
+                                )}
+                                {booking.status === 'sample_collected' && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleUpdateStatus(booking._id, 'processing'); }}
+                                    className="px-4 py-2 bg-purple-50 text-purple-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-100 transition-all border border-purple-100 flex items-center gap-2 shadow-sm"
+                                  >
+                                    <Clock size={14} /> Receive In Lab
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           )}
 

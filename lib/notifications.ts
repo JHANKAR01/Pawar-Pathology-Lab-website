@@ -4,7 +4,7 @@ import Settings from '@/models/Settings';
 import dbConnect from './dbConnect';
 
 // Notification Types
-export type NotificationType = 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'REPORT_READY' | 'COUPON_APPLIED' | 'STAFF_NEW_BOOKING' | 'OTP_VERIFICATION' | 'PARTNER_ASSIGNMENT';
+export type NotificationType = 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'REPORT_READY' | 'COUPON_APPLIED' | 'STAFF_NEW_BOOKING' | 'OTP_VERIFICATION' | 'PARTNER_ASSIGNMENT' | 'SAMPLE_COLLECTED' | 'LAB_RECEIVED';
 
 interface NotificationData {
     customerName?: string;
@@ -264,6 +264,34 @@ export async function sendSmartNotification(
           </div>
         `;
                 break;
+
+            case 'SAMPLE_COLLECTED':
+                subject = `Sample Collected - Booking #${bookingId}`;
+                waMessage = `Hi ${customerName}, your sample for booking #${bookingId} has been successfully collected. It is now on its way to the lab.`;
+                telegramMessage = `🧪 *Sample Collected* 🧪\nBooking #${bookingId}\nSample collected successfully.`;
+                emailHtml = `
+          <div style="font-family: sans-serif; padding: 20px;">
+             <h2>Sample Collected</h2>
+             <p>Dear ${customerName},</p>
+             <p>Your sample has been collected and is safely on its way to our lab for processing.</p>
+             ${LAB_FOOTER}
+          </div>
+        `;
+                break;
+
+            case 'LAB_RECEIVED':
+                subject = `Sample Received at Lab - Booking #${bookingId}`;
+                waMessage = `Update: Your sample for booking #${bookingId} has reached Pawar Pathology Lab. Testing will begin shortly.`;
+                telegramMessage = `🏥 *Sample in Lab* 🏥\nBooking #${bookingId}\nSample received at lab. Processing started.`;
+                emailHtml = `
+          <div style="font-family: sans-serif; padding: 20px;">
+             <h2>Sample Received</h2>
+             <p>Dear ${customerName},</p>
+             <p>Your sample has arrived at our lab. Our team has begun the testing process.</p>
+             ${LAB_FOOTER}
+          </div>
+        `;
+                break;
         }
 
         // C. Send Email (If enabled and content exists)
@@ -322,7 +350,7 @@ export async function sendSmartNotification(
             }
 
             // 3. User Alerts (Direct)
-            if (settings.telegramEnabledUser && (type === 'BOOKING_CONFIRMED' || type === 'REPORT_READY') && userTelegramChatId) {
+            if (settings.telegramEnabledUser && (type === 'BOOKING_CONFIRMED' || type === 'REPORT_READY' || type === 'SAMPLE_COLLECTED' || type === 'LAB_RECEIVED') && userTelegramChatId) {
                 await sendTelegram(userTelegramChatId, telegramMessage);
             }
         }

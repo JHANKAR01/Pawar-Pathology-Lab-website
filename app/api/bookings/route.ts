@@ -26,6 +26,7 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const statusTab = searchParams.get('statusTab'); // active, completed, specimens
     const search = searchParams.get('search') || '';
+    const partnerId = searchParams.get('partnerId'); // New Filter
     const skip = (page - 1) * limit;
 
     let filter: any = {};
@@ -35,6 +36,16 @@ export async function GET(request: Request) {
         filter = { userId: userId };
       } else if (email) {
         filter = { bookedByEmail: email };
+      }
+
+      // Partner Specific Logical Filter
+      // If the requester is a "partner", they should ONLY see their own assignments?
+      // Or is this the Admin filtering BY partner?
+      // Assuming Admin filtering.
+      // If requester is 'partner', we might want to enforce checking their own ID.
+      // But for now, let's just support the filter param.
+      if (partnerId) {
+        filter.assignedPartnerId = partnerId;
       }
     }
     // Patient/User can only see their own bookings

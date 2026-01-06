@@ -149,6 +149,32 @@ export async function PATCH(
         });
       }
 
+      // === WORKFLOW STATUS UPDATE NOTIFICATIONS ===
+
+      // Notify patient when sample is collected
+      if (updatedBooking.status === 'sample_collected' && oldBooking.status !== 'sample_collected') {
+        const contactEmail = updatedBooking.bookedByEmail !== 'guest' ? updatedBooking.bookedByEmail : updatedBooking.email;
+        sendSmartNotification('SAMPLE_COLLECTED', {
+          customerName: updatedBooking.patientName,
+          customerEmail: contactEmail,
+          customerPhone: updatedBooking.contactNumber,
+          bookingId: updatedBooking._id.toString(),
+          userTelegramChatId
+        });
+      }
+
+      // Notify patient when sample reaches the lab (processing)
+      if (updatedBooking.status === 'processing' && oldBooking.status !== 'processing') {
+        const contactEmail = updatedBooking.bookedByEmail !== 'guest' ? updatedBooking.bookedByEmail : updatedBooking.email;
+        sendSmartNotification('LAB_RECEIVED', {
+          customerName: updatedBooking.patientName,
+          customerEmail: contactEmail,
+          customerPhone: updatedBooking.contactNumber,
+          bookingId: updatedBooking._id.toString(),
+          userTelegramChatId
+        });
+      }
+
       // === PARTNER ASSIGNMENT NOTIFICATIONS ===
 
       // 1. Notify New Partner (Assignment or Re-assignment)

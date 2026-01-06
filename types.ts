@@ -11,6 +11,7 @@ export enum BookingStatus {
   ASSIGNED = 'assigned',
   REACHED = 'reached',
   SAMPLE_COLLECTED = 'sample_collected',
+  PROCESSING = 'processing',
   REPORT_UPLOADED = 'report_uploaded',
   COMPLETED = 'completed',
   DECLINED = 'declined',
