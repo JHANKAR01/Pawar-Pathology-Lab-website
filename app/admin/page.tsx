@@ -10,11 +10,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { toast } from 'sonner';
 import {
-  ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home, Loader2, Calendar, FileText, X, CheckCircle, XCircle, Ticket, MapPin, BellRing,
+  ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home, Loader2, Calendar, FileText, X, CheckCircle, XCircle, Ticket, MapPin, BellRing, Phone,
   LayoutDashboard, HeartHandshake, Settings as SettingsIcon, Info, Lock as LockIcon
 } from 'lucide-react';
 import { FlaskConical } from 'lucide-react';
 import { BookingStatus } from '@/types';
+import PaginationControls from '@/components/ui/PaginationControls';
+import CustomModal from '@/components/ui/CustomModal';
 
 interface BookingType {
   _id: string;
@@ -32,6 +34,9 @@ interface BookingType {
   couponCode?: string;
   collectionType?: string;
   createdAt?: string;
+  address?: string;
+  contactNumber?: string;
+  bookingDate?: string; // Legacy support or alias
 }
 
 interface Partner {
@@ -53,6 +58,10 @@ export default function AdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('Intelligence');
   const [bookings, setBookings] = useState<BookingType[]>([]);
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [paginationMeta, setPaginationMeta] = useState({ total: 0, totalPages: 1 });
   const [partners, setPartners] = useState<Partner[]>([]);
   const [newPartner, setNewPartner] = useState({ name: '', email: '', username: '', password: '' });
   const [loading, setLoading] = useState(true);
@@ -140,11 +149,42 @@ export default function AdminPage() {
     } catch (e) { console.error("Analytics fetch failed", e); }
   };
 
+  const handleAssignPartner = async (bookingId: string, partnerId: string) => {
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignedPartner: partnerId, status: 'assigned' })
+      });
+      if (res.ok) {
+        toast.success("Partner assigned successfully");
+        fetchData();
+      } else {
+        toast.error("Failed to assign partner");
+      }
+    } catch (e) {
+      toast.error("Error assigning partner");
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/bookings');
-      if (res.ok) setBookings(await res.json());
+      const query = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: limit.toString()
+      });
+      const res = await fetch(`/api/bookings?${query}`);
+      if (res.ok) {
+        const data = await res.json();
+        // Check if data is array (old) or object (new) - handling break
+        if (Array.isArray(data)) {
+          setBookings(data);
+        } else {
+          setBookings(data.bookings);
+          setPaginationMeta(data.metadata);
+        }
+      }
       else if (res.status === 401 || res.status === 403) router.push('/login');
     } catch (error) {
       console.error('Failed to load admin data', error);
@@ -152,6 +192,13 @@ export default function AdminPage() {
       setLoading(false);
     }
   };
+
+  // Re-fetch when items changed
+  useEffect(() => {
+    if (activeTab === 'Bookings' && status === 'authenticated') {
+      fetchData();
+    }
+  }, [currentPage, limit, activeTab]);
 
   const fetchPartners = async () => {
     try {
@@ -225,19 +272,22 @@ export default function AdminPage() {
     }
   };
 
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: '' });
   const handleDeleteBlackout = async (id: string) => {
-    if (!confirm('Are you sure you want to remove this blackout period?')) return;
+    // Logic moved to confirmation modal action
     try {
       const res = await fetch(`/api/settings/blackout-dates?id=${id}`, {
         method: 'DELETE',
       });
       if (res.ok) {
         fetchBlackoutDates();
+        setDeleteModal({ isOpen: false, id: '' });
+        toast.success("Blackout date removed");
       } else {
-        alert('Failed to delete blackout date.');
+        toast.error('Failed to delete blackout date.');
       }
     } catch (err) {
-      alert('An error occurred while deleting blackout date.');
+      toast.error('An error occurred while deleting blackout date.');
     }
   };
 
@@ -743,6 +793,7 @@ export default function AdminPage() {
                       </button>
                     ))}
                   </div>
+
                   {dateFilter === 'custom' && (
                     <div className="flex items-center gap-2">
                       <input type="date" className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold" onChange={(e) => setCustomRange(prev => ({ ...prev, start: e.target.value }))} />
@@ -1192,6 +1243,115 @@ export default function AdminPage() {
                     )}
                   </div>
                 </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence mode="wait">
+            {activeTab === 'Bookings' && (
+              <motion.div
+                key="Bookings"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={paginationMeta.totalPages}
+                  limit={limit}
+                  total={paginationMeta.total}
+                  onPageChange={setCurrentPage}
+                  onLimitChange={(l) => { setLimit(l); setCurrentPage(1); }}
+                />
+
+                <div className="space-y-6">
+                  {bookings.map((booking) => (
+                    <div key={booking._id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+                      <div className="flex flex-col md:flex-row gap-6 justify-between">
+                        <div className="flex-1 space-y-4">
+                          <div className="flex items-center gap-3">
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${booking.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                              booking.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                booking.status === 'cancelled' ? 'bg-red-50 text-red-600 border-red-100' :
+                                  'bg-blue-50 text-blue-600 border-blue-100'
+                              }`}>
+                              {booking.status}
+                            </span>
+                            <span className="text-xs font-bold text-slate-400">#{booking._id.slice(-6)}</span>
+                            <span className="text-xs font-medium text-slate-500">{booking.createdAt ? new Date(booking.createdAt).toLocaleString() : 'N/A'}</span>
+                          </div>
+
+                          <div>
+                            <h4 className="text-xl font-black text-slate-900 leading-tight">{booking.patientName}</h4>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {booking.tests && booking.tests.map((t: any, idx: number) => (
+                                <span key={idx} className="bg-slate-50 text-slate-600 px-2 py-1 rounded-lg text-xs font-bold border border-slate-100">
+                                  {t.title}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-slate-600">
+                            <p className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center"><MapPin size={10} /></div> {booking.address || 'Lab Visit'}</p>
+                            <p className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center"><Phone size={10} /></div> {booking.contactNumber}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-3 min-w-[200px]">
+                          {booking.status === 'pending' && (
+                            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                              <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">Assign Partner</label>
+                              <select
+                                className="w-full bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-clinical-rose"
+                                onChange={(e) => {
+                                  if (e.target.value) handleAssignPartner(booking._id, e.target.value);
+                                }}
+                                defaultValue=""
+                              >
+                                <option value="" disabled>Select Partner</option>
+                                {partners.map(p => (
+                                  <option key={p._id} value={p._id}>{p.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+
+                          {booking.status === 'report_uploaded' && (
+                            <button
+                              onClick={() => { setSelectedBookingForReview(booking); setReviewModalOpen(true); }}
+                              className="w-full py-3 bg-clinical-rose text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-rose-lg hover:bg-clinical-rose-dark transition-all flex items-center justify-center gap-2"
+                            >
+                              <FileText size={16} /> Review Report
+                            </button>
+                          )}
+
+                          {booking.status === 'assigned' && (
+                            <div className="text-center p-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold border border-blue-100">
+                              Assigned to Partner
+                            </div>
+                          )}
+
+                          <div className="flex gap-2 justify-end mt-auto">
+                            {booking.status !== 'cancelled' && booking.status !== 'completed' && (
+                              <button
+                                onClick={() => { setSelectedBookingForRejection(booking); setRejectionModalOpen(true); }}
+                                className="px-3 py-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                title="Reject Booking"
+                              >
+                                <XCircle size={20} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {bookings.length === 0 && (
+                    <div className="text-center py-12 text-slate-400 font-bold">No bookings found.</div>
+                  )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1918,6 +2078,15 @@ export default function AdminPage() {
           )
         }
       </AnimatePresence >
+      <CustomModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: '' })}
+        onConfirm={() => handleDeleteBlackout(deleteModal.id)}
+        title="Delete Blackout Date"
+        description="Are you sure you want to remove this blackout period? This will allow bookings during this time."
+        confirmText="Remove"
+        variant="danger"
+      />
     </div >
   );
 }

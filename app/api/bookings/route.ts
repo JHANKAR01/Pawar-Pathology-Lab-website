@@ -22,35 +22,50 @@ export async function GET(request: Request) {
     const userId = searchParams.get('userId');
 
     // Admin and Partner can see all bookings or filter by userId/email
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const skip = (page - 1) * limit;
+
+    let filter: any = {};
+
     if (role === 'admin' || role === 'partner') {
-      let filter = {};
       if (userId) {
         filter = { userId: userId };
       } else if (email) {
         filter = { bookedByEmail: email };
       }
-
-      const bookings = await Booking.find(filter).sort({ createdAt: -1 });
-      return NextResponse.json(bookings);
     }
-
     // Patient/User can only see their own bookings
-    if (role === 'patient' || role === 'user') {
+    else if (role === 'patient' || role === 'user') {
       if (userId && userId === authenticatedUserId) {
-        const bookings = await Booking.find({ userId: userId }).sort({ createdAt: -1 });
-        return NextResponse.json(bookings);
+        filter = { userId: userId };
       } else if (email) {
         // Allow patients to fetch by their own email
-        const bookings = await Booking.find({ bookedByEmail: email }).sort({ createdAt: -1 });
-        return NextResponse.json(bookings);
+        filter = { bookedByEmail: email };
       } else {
         // If no userId or email provided, return user's own bookings
-        const bookings = await Booking.find({ userId: authenticatedUserId }).sort({ createdAt: -1 });
-        return NextResponse.json(bookings);
+        filter = { userId: authenticatedUserId };
       }
+    } else {
+      return NextResponse.json({ error: 'Forbidden: Access denied' }, { status: 403 });
     }
 
-    return NextResponse.json({ error: 'Forbidden: Access denied' }, { status: 403 });
+    const total = await Booking.countDocuments(filter);
+    const bookings = await Booking.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    return NextResponse.json({
+      bookings,
+      metadata: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 });
   }

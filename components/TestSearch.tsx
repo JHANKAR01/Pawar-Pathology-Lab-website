@@ -14,8 +14,8 @@ const TestSearch: React.FC<TestSearchProps> = ({ tests, onSelect, selectedIds = 
   const [activeCategory, setActiveCategory] = useState('All');
 
   const filteredTests = tests.filter(test => {
-    const matchesQuery = test.title.toLowerCase().includes(query.toLowerCase()) || 
-                         test.category.toLowerCase().includes(query.toLowerCase());
+    const matchesQuery = test.title.toLowerCase().includes(query.toLowerCase()) ||
+      test.category.toLowerCase().includes(query.toLowerCase());
     const matchesCategory = activeCategory === 'All' || test.category === activeCategory;
     return matchesQuery && matchesCategory;
   });
@@ -30,7 +30,7 @@ const TestSearch: React.FC<TestSearchProps> = ({ tests, onSelect, selectedIds = 
         </div>
         <div className="hidden lg:flex flex-col items-end gap-6">
           <div className="flex -space-x-4">
-            {[1,2,3,4,5].map(i => <div key={i} className="w-14 h-14 md:w-16 md:h-16 rounded-full border-4 border-white bg-clinical-rose-light flex items-center justify-center font-bold text-clinical-rose text-sm shadow-soft">P{i}</div>)}
+            {[1, 2, 3, 4, 5].map(i => <div key={i} className="w-14 h-14 md:w-16 md:h-16 rounded-full border-4 border-white bg-clinical-rose-light flex items-center justify-center font-bold text-clinical-rose text-sm shadow-soft">P{i}</div>)}
           </div>
           <p className="text-xs font-black text-slate-500 uppercase tracking-[0.3em]">Accredited Processing Hub</p>
         </div>
@@ -40,9 +40,9 @@ const TestSearch: React.FC<TestSearchProps> = ({ tests, onSelect, selectedIds = 
         <div className="glass-pro p-4 md:p-5 rounded-3xl md:rounded-4xl shadow-large flex flex-col xl:flex-row gap-4 md:gap-5 border border-slate-200">
           <div className="relative flex-1">
             <Search className="absolute left-6 md:left-8 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 md:w-6 md:h-6" />
-            <input 
-              type="text" 
-              placeholder="Search by title, code or category..." 
+            <input
+              type="text"
+              placeholder="Search by title, code or category..."
               className="w-full pl-14 md:pl-20 pr-6 md:pr-10 py-5 md:py-6 bg-white border-2 border-slate-200 rounded-2xl md:rounded-3xl focus:ring-2 focus:ring-clinical-rose focus:border-clinical-rose outline-none transition-all font-bold text-slate-900 placeholder:text-slate-400 text-sm md:text-base"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -53,11 +53,10 @@ const TestSearch: React.FC<TestSearchProps> = ({ tests, onSelect, selectedIds = 
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-6 md:px-8 py-3 md:py-4 rounded-2xl text-xs md:text-sm font-black uppercase tracking-wider transition-all whitespace-nowrap ${
-                  activeCategory === cat 
-                    ? 'bg-clinical-rose text-white shadow-rose scale-105' 
-                    : 'text-slate-600 bg-slate-100 hover:bg-slate-200 hover:text-slate-900'
-                }`}
+                className={`px-6 md:px-8 py-3 md:py-4 rounded-2xl text-xs md:text-sm font-black uppercase tracking-wider transition-all whitespace-nowrap ${activeCategory === cat
+                  ? 'bg-clinical-rose text-white shadow-rose scale-105'
+                  : 'text-slate-600 bg-slate-100 hover:bg-slate-200 hover:text-slate-900'
+                  }`}
               >
                 {cat}
               </button>
@@ -76,9 +75,9 @@ const TestSearch: React.FC<TestSearchProps> = ({ tests, onSelect, selectedIds = 
           filteredTests.map(test => {
             const isSelected = selectedIds.includes(test._id);
             return (
-              <div key={test._id} className={`card-premium p-8 md:p-10 relative overflow-hidden ${isSelected ? 'ring-2 ring-success' : ''}`}>
+              <div key={test._id} className={`card-premium p-8 md:p-10 relative overflow-hidden flex flex-col h-full pb-8 ${isSelected ? 'ring-2 ring-success' : ''}`}>
                 <div className="absolute top-0 right-0 w-48 h-48 bg-clinical-rose-light rounded-full -mr-24 -mt-24 group-hover:scale-150 transition-transform duration-1000 opacity-30 pointer-events-none" />
-                
+
                 <div className="flex justify-between items-start mb-8 md:mb-10 relative z-10">
                   <div className="w-14 h-14 md:w-16 md:h-16 bg-clinical-rose-light text-clinical-rose rounded-2xl flex items-center justify-center transition-all duration-500 shadow-soft">
                     <Zap className="w-7 h-7 md:w-8 md:h-8" />
@@ -89,17 +88,16 @@ const TestSearch: React.FC<TestSearchProps> = ({ tests, onSelect, selectedIds = 
                   </div>
                 </div>
 
-                <h3 className="font-heading text-2xl md:text-3xl font-black text-slate-900 mb-4 md:mb-6 tracking-tight leading-[1.1] relative z-10">{test.title}</h3>
-                <p className="text-slate-600 text-sm md:text-base font-medium leading-relaxed mb-8 md:mb-10 h-16 md:h-20 overflow-hidden relative z-10">{test.description}</p>
-                
-                <button 
+                <h3 className="font-heading text-2xl md:text-3xl font-black text-slate-900 mb-4 md:mb-6 tracking-tight leading-[1.1] relative z-10 line-clamp-2">{test.title}</h3>
+                <p className="text-slate-600 text-sm md:text-base font-medium leading-relaxed mb-8 md:mb-10 h-20 overflow-hidden relative z-10 line-clamp-3">{test.description}</p>
+
+                <button
                   onClick={() => onSelect(test)}
                   disabled={isSelected}
-                  className={`w-full py-4 md:py-5 rounded-2xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-3 transition-all active:scale-95 ${
-                    isSelected 
-                      ? 'bg-success/10 text-success cursor-default border-2 border-success' 
-                      : 'bg-clinical-rose text-white hover:bg-clinical-rose-dark shadow-rose hover:shadow-rose-lg'
-                  }`}
+                  className={`w-full mt-auto py-4 md:py-5 rounded-2xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-3 transition-all active:scale-95 ${isSelected
+                    ? 'bg-success/10 text-success cursor-default border-2 border-success'
+                    : 'bg-clinical-rose text-white hover:bg-clinical-rose-dark shadow-rose hover:shadow-rose-lg'
+                    }`}
                 >
                   {isSelected ? (
                     <><CheckCircle className="w-5 h-5" /> Added to Cart</>

@@ -9,10 +9,16 @@ import {
 import { BookingStatus } from '@/types';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { toast } from 'sonner';
+import PaginationControls from '@/components/ui/PaginationControls';
+import CustomModal from '@/components/ui/CustomModal';
 
 export default function PartnerPage() {
   const router = useRouter();
   const [tasks, setTasks] = useState<any[]>([]);
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [paginationMeta, setPaginationMeta] = useState({ total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
@@ -66,11 +72,24 @@ export default function PartnerPage() {
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/bookings');
+      const query = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: limit.toString()
+      });
+      const res = await fetch(`/api/bookings?${query}`);
       if (res.ok) {
         const data = await res.json();
+        // Handle breaking change
+        let bookings = [];
+        if (Array.isArray(data)) {
+          bookings = data;
+        } else {
+          bookings = data.bookings;
+          setPaginationMeta(data.metadata);
+        }
+
         // For the demo, we show tasks assigned or in progress
-        setTasks(data.filter((b: any) =>
+        setTasks(bookings.filter((b: any) =>
           ['assigned', 'reached', 'sample_collected', 'report_uploaded', 'completed'].includes(b.status)
         ));
       } else if (res.status === 401 || res.status === 403) {
@@ -81,6 +100,12 @@ export default function PartnerPage() {
     }
     setLoading(false);
   };
+  // Re-fetch when items changed
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchBookings();
+    }
+  }, [currentPage, limit]);
 
   const handleUpdateStatus = async (id: string, newStatus: string, extraData: object = {}) => {
     const originalTasks = tasks;
@@ -109,10 +134,17 @@ export default function PartnerPage() {
     }
   };
 
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: '', type: '' }); // type: 'collect'
+
   const handleCollectSample = async (id: string) => {
-    if (window.confirm('Safety Check: Confirm specimen acquisition for this patient?')) {
-      handleUpdateStatus(id, 'sample_collected');
+    setConfirmModal({ isOpen: true, id, type: 'collect' });
+  };
+
+  const confirmAction = () => {
+    if (confirmModal.type === 'collect') {
+      handleUpdateStatus(confirmModal.id, 'sample_collected');
     }
+    setConfirmModal({ isOpen: false, id: '', type: '' });
   };
 
   const handleWalkInRegistration = async (e: React.FormEvent) => {
@@ -301,6 +333,15 @@ export default function PartnerPage() {
           </div>
         </div>
 
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={paginationMeta.totalPages}
+          limit={limit}
+          total={paginationMeta.total}
+          onPageChange={setCurrentPage}
+          onLimitChange={(l) => { setLimit(l); setCurrentPage(1); }}
+        />
+
         <div className="space-y-6">
           {filteredTasks.length === 0 ? (
             <div className="text-center py-24 bg-white rounded-3xl border-2 border-dashed border-slate-300 flex flex-col items-center">
@@ -445,6 +486,16 @@ export default function PartnerPage() {
           </div>
         </div>
       )}
+
+      <CustomModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, id: '', type: '' })}
+        onConfirm={confirmAction}
+        title="Confirm Action"
+        description="Are you sure you want to proceed with this action?"
+        confirmText="Confirm"
+        variant="default"
+      />
     </div>
   );
 }

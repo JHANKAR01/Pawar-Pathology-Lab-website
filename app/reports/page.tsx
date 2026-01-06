@@ -8,19 +8,26 @@ import { BookingStatus, IBooking } from '@/types';
 import {
   FlaskConical, LogOut, CheckCircle, Loader2,
   FileText, CalendarDays, ShieldX, ChevronDown,
-  User, MapPin, Phone, Edit2, X
+  User, MapPin, Phone, Edit2, X, Settings, Calendar, Clock, ChevronRight,
+  Menu, LifeBuoy, Stethoscope, AlertTriangle, Home
 } from 'lucide-react';
+import { toast } from 'sonner';
+import PaginationControls from '@/components/ui/PaginationControls';
+import CustomModal from '@/components/ui/CustomModal';
 
 type SortOption = 'newest' | 'oldest' | 'month' | 'year';
 
 import { Skeleton } from '@/components/ui/Skeleton';
-import { toast } from 'sonner';
 
 export default function ReportsPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [allBookings, setAllBookings] = useState<IBooking[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [bookings, setBookings] = useState<IBooking[]>([]);
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [paginationMeta, setPaginationMeta] = useState({ total: 0, totalPages: 1 });
+  const [loading, setLoading] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>('newest');
 
@@ -49,29 +56,47 @@ export default function ReportsPage() {
     }
   }, [status, session]);
 
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      const query = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: limit.toString(),
+        sort: sortOption, // Pass sort option to API
+        userId: currentUser?.id || '' // Ensure userId is passed if available
+      });
+      // Assuming GET /api/bookings handles user vs admin logic automatically via session
+      const res = await fetch(`/api/bookings?${query}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setBookings(data); // Fallback for non-paginated response
+          setPaginationMeta({ total: data.length, totalPages: 1 });
+        } else {
+          setBookings(data.bookings);
+          setPaginationMeta(data.metadata);
+        }
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to load history");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load history");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (isVerified && currentUser?.id) {
-      const fetchBookings = async () => {
-        setIsLoading(true);
-        try {
-          const response = await fetch(`/api/bookings?userId=${currentUser.id}`);
-          if (response.ok) {
-            const data = await response.json();
-            setAllBookings(data);
-          }
-        } catch (error) {
-          console.error("Failed to fetch user's bookings", error);
-          toast.error("Failed to fetch reports");
-        } finally {
-          setIsLoading(false);
-        }
-      };
       fetchBookings();
     }
-  }, [isVerified, currentUser]);
+  }, [isVerified, currentUser, currentPage, limit, sortOption]); // Added sortOption to dependencies
 
   const sortedBookings = useMemo(() => {
-    return [...allBookings].sort((a, b) => {
+    // Sorting is now handled by the API, but keeping this for potential client-side fallback or specific needs
+    return [...bookings].sort((a, b) => {
       const dateA = new Date(a.scheduledDate);
       const dateB = new Date(b.scheduledDate);
       switch (sortOption) {
@@ -86,14 +111,14 @@ export default function ReportsPage() {
           return dateB.getTime() - dateA.getTime();
       }
     });
-  }, [allBookings, sortOption]);
+  }, [bookings, sortOption]); // Changed allBookings to bookings
 
   const stats = useMemo(() => {
-    const total = allBookings.length;
-    const completed = allBookings.filter(b => b.status === BookingStatus.COMPLETED).length;
-    const active = total - completed - allBookings.filter(b => b.status === BookingStatus.CANCELLED).length;
+    const total = bookings.length; // Changed allBookings to bookings
+    const completed = bookings.filter(b => b.status === BookingStatus.COMPLETED).length; // Changed allBookings to bookings
+    const active = total - completed - bookings.filter(b => b.status === BookingStatus.CANCELLED).length; // Changed allBookings to bookings
     return { total, completed, active };
-  }, [allBookings]);
+  }, [bookings]); // Changed allBookings to bookings
 
   const handleLogout = () => {
     toast.success("Logged out successfully");
@@ -101,22 +126,31 @@ export default function ReportsPage() {
     signOut({ callbackUrl: '/login' });
   };
 
-  const handleCancel = async (bookingId: string) => {
-    if (!confirm("Are you sure you want to cancel this booking?")) return;
+  const [cancelModal, setCancelModal] = useState({ isOpen: false, id: '' });
+  const handleCancelClick = (id: string) => {
+    setCancelModal({ isOpen: true, id });
+  };
+
+  const handleConfirmCancel = async () => {
+    const bookingId = cancelModal.id;
+    setCancelModal({ isOpen: false, id: '' });
+
     try {
       const res = await fetch(`/api/bookings/${bookingId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'cancelled' })
+        body: JSON.stringify({ status: 'cancelled' }) // Cancel logic
       });
       if (res.ok) {
-        setAllBookings(prev => prev.map(b => b._id === bookingId ? { ...b, status: BookingStatus.CANCELLED } : b));
         toast.success("Booking cancelled successfully");
+        fetchBookings(); // Re-fetch bookings to update the list
       } else {
         const err = await res.json();
-        toast.error(err.error || "Failed to cancel");
+        toast.error(err.error || "Failed to cancel booking");
       }
-    } catch (e) { toast.error("Error cancelling booking"); }
+    } catch (e) {
+      toast.error("Error cancelling booking");
+    }
   };
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
@@ -204,6 +238,14 @@ export default function ReportsPage() {
             <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center"><FlaskConical className="text-white w-6 h-6" /></div>
             <h2 className="font-heading font-black text-2xl text-slate-900 tracking-tighter uppercase">PAWAR<span className="text-rose-600">LAB</span></h2>
           </Link>
+
+          {/* Restored Navigation Links */}
+          <div className="hidden md:flex items-center gap-8">
+            <Link href="/#directory" className="text-sm font-bold text-slate-600 hover:text-rose-600 uppercase tracking-widest transition-colors">Test Directory</Link>
+            <Link href="/#services" className="text-sm font-bold text-slate-600 hover:text-rose-600 uppercase tracking-widest transition-colors">Clinical Services</Link>
+            <Link href="/#support" className="text-sm font-bold text-slate-600 hover:text-rose-600 uppercase tracking-widest transition-colors">Help & Support</Link>
+          </div>
+
           <div className="flex items-center gap-4">
             <span className="hidden md:block text-xs font-black uppercase text-slate-500">Hi, {currentUser.name}</span>
             <button onClick={handleLogout} className="p-3 bg-white/5 border-2 border-slate-100 rounded-2xl text-slate-500 hover:text-rose-600 hover:border-rose-200 transition-all">
@@ -325,13 +367,13 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            {isLoading ? (
+            {loading ? (
               <div className="space-y-4">
                 {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 w-full rounded-2xl" />)}
               </div>
-            ) : sortedBookings.length > 0 ? (
+            ) : bookings.length > 0 ? (
               <div className="space-y-4">
-                {sortedBookings.map(booking => (
+                {bookings.map(booking => (
                   <div key={booking._id} className="group relative bg-white border border-slate-100 rounded-3xl p-6 transition-all hover:shadow-xl hover:border-slate-200 hover:-translate-y-1">
                     <div className="flex flex-col md:flex-row gap-6 items-center">
                       {/* Date Badge */}
@@ -348,7 +390,12 @@ export default function ReportsPage() {
                         <div className="mt-3 flex flex-col md:flex-row items-center gap-4">
                           <StatusTracker status={booking.status} />
                           {booking.status === 'pending' && (
-                            <button onClick={() => handleCancel(booking._id)} className="text-[10px] font-bold text-rose-500 uppercase hover:underline">Cancel Request</button>
+                            <button
+                              onClick={() => handleCancelClick(booking._id)}
+                              className="w-full py-4 rounded-xl font-black uppercase text-xs tracking-wider border-2 border-slate-200 text-slate-400 hover:border-rose-200 hover:text-rose-500 hover:bg-rose-50 transition-all mb-3"
+                            >
+                              Cancel Booking
+                            </button>
                           )}
                         </div>
                       </div>
@@ -361,8 +408,8 @@ export default function ReportsPage() {
                           rel="noopener noreferrer"
                           aria-disabled={!booking.reportFileUrl || booking.status !== BookingStatus.COMPLETED}
                           className={`h-12 w-12 md:w-auto md:px-6 md:h-12 rounded-xl flex items-center justify-center gap-2 font-bold uppercase text-[10px] tracking-widest transition-all ${(!booking.reportFileUrl || booking.status !== BookingStatus.COMPLETED)
-                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                              : 'bg-rose-600 text-white shadow-lg shadow-rose-200 hover:bg-rose-700'
+                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                            : 'bg-rose-600 text-white shadow-lg shadow-rose-200 hover:bg-rose-700'
                             }`}
                           onClick={(e) => {
                             if (!booking.reportFileUrl || booking.status !== BookingStatus.COMPLETED) {
@@ -378,6 +425,14 @@ export default function ReportsPage() {
                     </div>
                   </div>
                 ))}
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={paginationMeta.totalPages}
+                  limit={limit}
+                  total={paginationMeta.total}
+                  onPageChange={setCurrentPage}
+                  onLimitChange={(l) => { setLimit(l); setCurrentPage(1); }}
+                />
               </div>
             ) : (
               <div className="text-center py-24 px-8 border-2 border-dashed border-slate-100 rounded-3xl">
@@ -397,6 +452,16 @@ export default function ReportsPage() {
           <p>Betul, Madhya Pradesh</p>
         </div>
       </footer>
+
+      <CustomModal
+        isOpen={cancelModal.isOpen}
+        onClose={() => setCancelModal({ isOpen: false, id: '' })}
+        onConfirm={handleConfirmCancel}
+        title="Cancel Appointment"
+        description="Are you sure you want to cancel this booking? This action cannot be undone."
+        confirmText="Yes, Cancel"
+        variant="danger"
+      />
     </div>
   );
 }
