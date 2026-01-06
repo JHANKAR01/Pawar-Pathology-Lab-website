@@ -208,7 +208,6 @@ export default function PartnerPage() {
       setTasks(prev => prev.map(task => task._id === tempId ? createdBooking : task)); // Replace optimistic with real
       setIsRegisterOpen(false);
       setNewPatient({ name: '', phone: '', email: '', testTitle: 'CBC - Hematology Profile', totalAmount: 350, amountTaken: 0 });
-      setNewPatient({ name: '', phone: '', email: '', testTitle: 'CBC - Hematology Profile', totalAmount: 350, amountTaken: 0 });
       toast.success('Walk-in patient registered and specimen logged.');
     } catch (err) {
       console.error(err);
