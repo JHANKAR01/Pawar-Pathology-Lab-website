@@ -34,9 +34,9 @@ const StatusTracker: React.FC<StatusTrackerProps> = ({ status, reportStatus }) =
 
                 {/* Progress Line */}
                 <div
-                    className="absolute left-0 top-1/2 h-1 bg-slate-100 -z-10 rounded-full transition-all duration-500"
+                    className="absolute left-0 top-1/2 h-1 -z-10 rounded-full transition-all duration-500"
                     style={{
-                        width: `${Math.max(0, (currentStage / (stages.length - 1)) * 100)}%`,
+                        width: currentStage >= 0 ? `${((currentStage + 1) / stages.length) * 100}%` : '0%',
                         background: 'linear-gradient(90deg, #3b82f6, #a855f7)' // Blue to Purple
                     }}
                 ></div>

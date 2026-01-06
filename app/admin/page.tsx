@@ -1381,14 +1381,20 @@ export default function AdminPage() {
                               {/* Unified Assignment UI for Active Bookings */}
                               {booking.status !== 'pending' && booking.status !== 'rejected' && booking.status !== 'cancelled' && (
                                 <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 mt-2">
-                                  <label className="text-[10px] font-black uppercase text-slate-400 mb-1 flex justify-between items-center">
-                                    <span>Partner Assignment</span>
+                                  <label className="text-[10px] font-black uppercase text-slate-400 mb-2 flex justify-between items-center">
+                                    <span>
+                                      {booking.assignedPartnerName ? (
+                                        <>Assigned: <span className="text-blue-600 normal-case">{booking.assignedPartnerName}</span></>
+                                      ) : (
+                                        'Unassigned'
+                                      )}
+                                    </span>
                                     {booking.assignedPartnerName && (
                                       <button
                                         onClick={() => handlePartnerAction('unassign', booking)}
-                                        className="text-red-400 hover:text-red-500 text-[10px] underline"
+                                        className="text-red-400 hover:text-red-500 text-[10px] underline font-bold"
                                       >
-                                        Unassign
+                                        Remove
                                       </button>
                                     )}
                                   </label>
@@ -1414,7 +1420,7 @@ export default function AdminPage() {
                                         }
                                       }}
                                     >
-                                      <option value="" disabled>Select Partner</option>
+                                      <option value="" disabled>{booking.assignedPartnerName ? 'Change Partner...' : 'Select Partner...'}</option>
                                       {partners.map(p => (
                                         <option key={p._id} value={p._id}>{p.name}</option>
                                       ))}
@@ -1441,11 +1447,7 @@ export default function AdminPage() {
                                 </button>
                               )}
 
-                              {booking.status === 'assigned' && (
-                                <div className="text-center p-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold border border-blue-100">
-                                  Assigned to Partner
-                                </div>
-                              )}
+
 
                               {/* Rejection/Cancellation for non-completed items */}
                               {booking.status !== 'cancelled' && booking.status !== 'completed' && booking.status !== 'rejected' && activeTab !== 'Approvals' && (
