@@ -779,8 +779,11 @@ export default function AdminPage() {
                       return (
                         <div key={idx} className="flex-1 flex flex-col items-center gap-2 group relative">
                           <div
-                            className="w-full bg-clinical-rose/20 rounded-t-lg transition-all duration-500 hover:bg-clinical-rose"
-                            style={{ height: `${height}%` }}
+                            className="w-full bg-clinical-rose rounded-t-lg transition-all duration-500 hover:bg-clinical-rose-dark"
+                            style={{
+                              height: `${height}%`,
+                              minHeight: day.revenue > 0 ? '4px' : '0px'
+                            }}
                           ></div>
                           <span className="text-[10px] font-bold text-slate-400 rotate-0 truncate w-full text-center group-hover:text-clinical-rose">
                             {new Date(day.date).getDate()}

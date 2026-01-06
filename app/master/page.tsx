@@ -54,6 +54,28 @@ export default function MasterDashboard() {
         }
     };
 
+    const handleConfigUpdate = async (key: string, value: any) => {
+        // Optimistic Update
+        const newConfig = { ...config, [key]: value };
+        setConfig(newConfig);
+
+        setSaving(true);
+        try {
+            const res = await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ [key]: value })
+            });
+            if (!res.ok) throw new Error("Failed");
+            toast.success("Setting updated");
+        } catch (e) {
+            toast.error("Update failed");
+            fetchConfig(); // Revert
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
     if (!config) return null;
@@ -121,6 +143,54 @@ export default function MasterDashboard() {
                     </div>
                 </div>
 
+                <div className="mt-8 bg-slate-800 rounded-3xl p-8 border border-slate-700">
+                    <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                        System Defaults
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="p-4 bg-slate-700/50 rounded-xl border border-slate-600">
+                            <h3 className="font-bold text-lg mb-2">Service Radius (km)</h3>
+                            <input
+                                type="number"
+                                className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white"
+                                value={config.serviceRadius || 0}
+                                onChange={(e) => handleConfigUpdate('serviceRadius', parseFloat(e.target.value))}
+                            />
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-slate-700/50 rounded-xl border border-slate-600">
+                            <div>
+                                <h3 className="font-bold text-lg">SMS Enabled</h3>
+                                <p className="text-slate-400 text-sm">Global SMS Toggle</p>
+                            </div>
+                            <div className="relative inline-block w-14 h-8 transition duration-200 ease-in-out">
+                                <input
+                                    type="checkbox"
+                                    className="peer absolute left-0 top-0 w-full h-full opacity-0 z-10 cursor-pointer"
+                                    checked={config.smsEnabled ?? false}
+                                    onChange={(e) => handleConfigUpdate('smsEnabled', e.target.checked)}
+                                />
+                                <label className={`block w-full h-full rounded-full transition-colors duration-300 ease-in-out ${config.smsEnabled ? 'bg-emerald-500' : 'bg-slate-600'}`}></label>
+                                <div className={`absolute top-1 left-1 bg-white w-6 h-6 rounded-full transition-transform duration-300 ease-in-out shadow-sm ${config.smsEnabled ? 'translate-x-6' : '0'}`}></div>
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-slate-700/50 rounded-xl border border-slate-600">
+                            <div>
+                                <h3 className="font-bold text-lg text-red-400">Maintenance Mode</h3>
+                                <p className="text-slate-400 text-sm">Shut down booking system</p>
+                            </div>
+                            <div className="relative inline-block w-14 h-8 transition duration-200 ease-in-out">
+                                <input
+                                    type="checkbox"
+                                    className="peer absolute left-0 top-0 w-full h-full opacity-0 z-10 cursor-pointer"
+                                    checked={config.maintenanceMode ?? false}
+                                    onChange={(e) => handleConfigUpdate('maintenanceMode', e.target.checked)}
+                                />
+                                <label className={`block w-full h-full rounded-full transition-colors duration-300 ease-in-out ${config.maintenanceMode ? 'bg-red-500' : 'bg-slate-600'}`}></label>
+                                <div className={`absolute top-1 left-1 bg-white w-6 h-6 rounded-full transition-transform duration-300 ease-in-out shadow-sm ${config.maintenanceMode ? 'translate-x-6' : '0'}`}></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div className="mt-12 p-8 bg-slate-800 rounded-3xl border border-slate-700 text-center">
                     <p className="text-slate-400 mb-4">You are logged in as the System Master. Changes made here override all Admin settings.</p>
                     <button onClick={() => router.push('/admin')} className="px-6 py-3 bg-white text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-colors">

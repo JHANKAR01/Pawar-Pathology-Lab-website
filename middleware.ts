@@ -14,7 +14,8 @@ export async function middleware(req: NextRequest) {
   // 3. Protected Routes (Role-Based Access)
   if (pathname.startsWith('/admin')) {
     if (!isAuth) return NextResponse.redirect(new URL('/login', req.url));
-    if ((token as any)?.role !== 'admin') {
+    const role = (token as any)?.role;
+    if (role !== 'admin' && role !== 'master') {
       return NextResponse.redirect(new URL('/', req.url));
     }
   }
