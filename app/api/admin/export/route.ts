@@ -4,6 +4,8 @@ import dbConnect from '@/lib/dbConnect';
 import Booking from '@/models/Booking';
 import { authOptions } from '@/lib/next-auth-options';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
