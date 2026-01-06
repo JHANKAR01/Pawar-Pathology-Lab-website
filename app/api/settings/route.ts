@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
       if (pf.allowTelegram === false) { updates.telegramEnabled = false; updates.telegramEnabledAdmin = false; updates.telegramEnabledPartner = false; updates.telegramEnabledUser = false; }
       // Geofencing
       if (pf.allowGeofencing === false) updates.locationFencingEnabled = false;
+      // Coupons: if disallowed, disable the Admin toggle
+      if (pf.allowCoupons === false) updates.couponsEnabled = false;
     }
 
     // 2. ADMIN PROTECTION LOGIC - Prevent enabling features if Plan forbids
@@ -58,6 +60,8 @@ export async function POST(req: NextRequest) {
       if (pf?.allowWhatsApp === false && updates.whatsappEnabled === true) return NextResponse.json({ message: "Plan Restriction: WhatsApp not allowed" }, { status: 403 });
       if (pf?.allowTelegram === false && updates.telegramEnabled === true) return NextResponse.json({ message: "Plan Restriction: Telegram not allowed" }, { status: 403 });
       if (pf?.allowGeofencing === false && updates.locationFencingEnabled === true) return NextResponse.json({ message: "Plan Restriction: Geofencing not allowed" }, { status: 403 });
+      // Prevent Admin from enabling Coupons if Plan forbids it
+      if (pf?.allowCoupons === false && updates.couponsEnabled === true) return NextResponse.json({ message: "Plan Restriction: Coupons not allowed" }, { status: 403 });
       // Prevent Admin from modifying planFlags directly
       if (updates.planFlags) delete updates.planFlags;
     }

@@ -23,6 +23,7 @@ const SettingsSchema = new Schema<ISettings & Document>(
     locationFencingEnabled: { type: Boolean, default: false },
     distanceType: { type: String, enum: ['road', 'displacement'], default: 'displacement' }, // Added distanceType
     blockSundays: { type: Boolean, default: true },
+    couponsEnabled: { type: Boolean, default: true }, // Global toggle for Coupons feature
 
     // Detailed Maintenance
     maintenanceModeUser: { type: Boolean, default: false },

@@ -79,7 +79,7 @@ export default function AdminPage() {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [newPartner, setNewPartner] = useState({ name: '', email: '', username: '', password: '' });
   const [loading, setLoading] = useState(true);
-  const [config, setConfig] = useState({ requireVerification: true });
+  const [config, setConfig] = useState<any>({ requireVerification: true });
   const [isVerified, setIsVerified] = useState(false);
   const [blackoutDates, setBlackoutDates] = useState<BlackoutDateType[]>([]);
   const [newBlackout, setNewBlackout] = useState({ reason: '', startDate: '', endDate: '' });
@@ -790,7 +790,7 @@ export default function AdminPage() {
               { id: 'Config', icon: SettingsIcon },
               { id: 'Completed Bookings', icon: CheckCircle },
               { id: 'Partners', icon: HeartHandshake }
-            ].map(tab => (
+            ].filter(tab => tab.id !== 'Coupons' || config?.planFlags?.allowCoupons !== false).map(tab => (
               <button
                 key={tab.id}
                 onClick={() => {
@@ -1421,7 +1421,13 @@ export default function AdminPage() {
                                         }
                                       }}
                                     >
-                                      <option value="" disabled>{booking.assignedPartnerName ? 'Change Partner...' : 'Select Partner...'}</option>
+                                      <option value="" disabled>
+                                        {!config?.planFlags?.allowPartnerReassignment && booking.assignedPartnerName
+                                          ? '🔒 Assignment Locked'
+                                          : booking.assignedPartnerName
+                                            ? 'Change Partner...'
+                                            : 'Select Partner...'}
+                                      </option>
                                       {partners.map(p => (
                                         <option key={p._id} value={p._id}>{p.name}</option>
                                       ))}
