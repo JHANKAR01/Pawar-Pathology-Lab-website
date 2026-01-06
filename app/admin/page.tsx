@@ -176,7 +176,9 @@ export default function AdminPage() {
       const query = new URLSearchParams({
         page: currentPage.toString(),
         limit: limit.toString(),
-        statusTab: activeTab === 'Approvals' ? 'approvals' : statusFilter,
+        statusTab: activeTab === 'Approvals' ? 'approvals' :
+          activeTab === 'Active Bookings' ? 'active' :
+            activeTab === 'Completed Bookings' ? 'completed' : statusFilter,
         search: searchQuery
       });
       const res = await fetch(`/api/bookings?${query}`);
@@ -200,14 +202,14 @@ export default function AdminPage() {
 
   // Re-fetch when items/filters changed
   useEffect(() => {
-    if ((activeTab === 'Bookings' || activeTab === 'Approvals') && status === 'authenticated') {
+    if ((activeTab === 'Active Bookings' || activeTab === 'Completed Bookings' || activeTab === 'Approvals') && status === 'authenticated') {
       fetchData();
     }
   }, [currentPage, limit, activeTab, statusFilter]); // Trigger on status filter change
 
   // Debounced Search Re-fetch
   useEffect(() => {
-    if ((activeTab === 'Bookings' || activeTab === 'Approvals') && status === 'authenticated') {
+    if ((activeTab === 'Active Bookings' || activeTab === 'Completed Bookings' || activeTab === 'Approvals') && status === 'authenticated') {
       const timer = setTimeout(() => {
         setCurrentPage(1); // Reset page on search
         fetchData();
@@ -744,15 +746,19 @@ export default function AdminPage() {
             {[
               { id: 'Intelligence', icon: LayoutDashboard },
               { id: 'Approvals', icon: CheckCircle },
-              { id: 'Bookings', icon: FlaskConical },
-              { id: 'Specimens', icon: FlaskConical },
-              { id: 'Partners', icon: HeartHandshake },
+              { id: 'Active Bookings', icon: FlaskConical },
               { id: 'Coupons', icon: Ticket },
-              { id: 'Config', icon: SettingsIcon }
+              { id: 'Config', icon: SettingsIcon },
+              { id: 'Completed Bookings', icon: CheckCircle },
+              { id: 'Partners', icon: HeartHandshake }
             ].map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setCurrentPage(1);
+                  setSearchQuery('');
+                }}
                 className={`w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all ${activeTab === tab.id
                   ? 'bg-clinical-rose text-white shadow-rose-lg'
                   : 'text-slate-600 hover:text-clinical-rose hover:bg-clinical-rose-light'
@@ -1168,7 +1174,7 @@ export default function AdminPage() {
           </AnimatePresence>
 
           <AnimatePresence mode="wait">
-            {(activeTab === 'Bookings' || activeTab === 'Approvals') && (
+            {(activeTab === 'Active Bookings' || activeTab === 'Completed Bookings' || activeTab === 'Approvals') && (
               <motion.div
                 key={activeTab}
                 initial={{ opacity: 0 }}
@@ -1179,25 +1185,21 @@ export default function AdminPage() {
                 <div className="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-6 gap-4">
 
                   {/* Status Tabs - ONLY for Bookings */}
-                  {activeTab === 'Bookings' ? (
-                    <div className="flex bg-slate-100 p-1 rounded-xl">
-                      {(['all', 'active', 'completed'] as const).map(tab => (
-                        <button
-                          key={tab}
-                          onClick={() => { setStatusFilter(tab); setCurrentPage(1); }}
-                          className={`px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-wide transition-all ${statusFilter === tab
-                            ? 'bg-white text-clinical-rose shadow-md'
-                            : 'text-slate-500 hover:text-slate-700'
-                            }`}
-                        >
-                          {tab}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
+                  {/* Context Badges for Two-Gate System */}
+                  {activeTab === 'Approvals' ? (
                     <div className="flex bg-amber-50 p-2 rounded-xl border border-amber-100 items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
                       <span className="text-amber-700 font-bold text-xs uppercase tracking-wider">Pending Approvals</span>
+                    </div>
+                  ) : activeTab === 'Completed Bookings' ? (
+                    <div className="flex bg-emerald-50 p-2 rounded-xl border border-emerald-100 items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                      <span className="text-emerald-700 font-bold text-xs uppercase tracking-wider">Archive</span>
+                    </div>
+                  ) : (
+                    <div className="flex bg-blue-50 p-2 rounded-xl border border-blue-100 items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                      <span className="text-blue-700 font-bold text-xs uppercase tracking-wider">Live Operations</span>
                     </div>
                   )}
 
@@ -1212,6 +1214,10 @@ export default function AdminPage() {
                     <div className="absolute left-3 top-3.5 text-slate-400">
                       <RefreshCw size={16} />
                     </div>
+                    {/* Manual Filter Button Placeholder */}
+                    <button className="absolute right-2 top-2 p-2 bg-white text-slate-400 hover:text-clinical-rose rounded-lg border border-slate-100 shadow-sm transition-all" title="Advanced Filters">
+                      <Settings2 size={14} />
+                    </button>
                   </div>
                 </div>
 
@@ -1297,7 +1303,13 @@ export default function AdminPage() {
                                   <select
                                     className="w-full bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-clinical-rose cursor-pointer"
                                     onChange={(e) => {
-                                      if (e.target.value) handleAssignPartner(booking._id, e.target.value);
+                                      if (e.target.value) {
+                                        if (booking.assignedPartnerName) {
+                                          handleOpenPartnerReassign(booking, e.target.value);
+                                        } else {
+                                          handleAssignPartner(booking._id, e.target.value);
+                                        }
+                                      }
                                     }}
                                     defaultValue=""
                                   >
@@ -1315,6 +1327,15 @@ export default function AdminPage() {
                                   className="w-full py-3 bg-clinical-rose text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-rose-lg hover:bg-clinical-rose-dark transition-all flex items-center justify-center gap-2"
                                 >
                                   <FileText size={16} /> Review Report
+                                </button>
+                              )}
+
+                              {booking.status === 'completed' && (
+                                <button
+                                  onClick={() => window.open(booking.reportFileUrl || '#', '_blank')}
+                                  className="w-full py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-xs uppercase tracking-widest border-2 border-slate-200 hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
+                                >
+                                  <FileText size={16} /> View Report
                                 </button>
                               )}
 
