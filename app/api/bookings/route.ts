@@ -125,73 +125,89 @@ import Settings from '@/models/Settings';
 import { getDisplacement, getRoadDistance } from '@/lib/geospatial';
 import { sanitizeInput } from '@/lib/sanitize';
 
-// POST /api/bookings - Create a new booking (Patient Wizard)
+// POST /api/bookings - Create a new booking (Patient Wizard or Partner Walk-in)
 async function handler(request: Request) {
   await dbConnect();
+
+  // Get session for role check
+  const session = await getServerSession(authOptions);
+  const role = session?.user?.role?.toLowerCase();
+  const isPrivileged = role === 'admin' || role === 'partner' || role === 'master';
+
   try {
     const body = await request.json();
     const { tests, couponCode } = body;
 
-    // 1. Calculate Subtotal from Database
-    let serverSubtotal = 0;
-    // tests coming from frontend: [{ id, title, price, category }]
-    // We only trust the IDs
-    const testIds = tests.map((t: any) => t.id);
-    const dbTests = await Test.find({ _id: { $in: testIds } });
-
-    if (dbTests.length !== testIds.length) {
-      return NextResponse.json({ error: 'Invalid test IDs provided' }, { status: 400 });
-    }
-
-    // Sum up the real prices
-    for (const dbTest of dbTests) {
-      serverSubtotal += dbTest.price;
-    }
-
-    // 2. Validate Coupon & Calculate Discount
+    let serverTotal = 0;
     let discountAmount = 0;
     let usedCoupon: any = null;
 
-    if (couponCode) {
-      usedCoupon = await Coupon.findOne({ code: couponCode.toUpperCase().trim() });
+    // Check if tests have IDs (standard flow) or not (walk-in/manual entry)
+    const hasManualTests = tests.some((t: any) => !t.id);
 
-      if (!usedCoupon) {
-        return NextResponse.json({ error: 'Invalid coupon code' }, { status: 400 });
+    if (hasManualTests) {
+      // Walk-in / Manual Entry Flow
+      if (!isPrivileged) {
+        return NextResponse.json({ error: 'Manual test entry is not allowed for patients.' }, { status: 403 });
+      }
+      // Trust the client's total for privileged users
+      serverTotal = body.totalAmount;
+    } else {
+      // Standard Validation Flow (Patient Booking)
+      // 1. Calculate Subtotal from Database
+      let serverSubtotal = 0;
+      const testIds = tests.map((t: any) => t.id);
+      const dbTests = await Test.find({ _id: { $in: testIds } });
+
+      if (dbTests.length !== testIds.length) {
+        return NextResponse.json({ error: 'Invalid test IDs provided' }, { status: 400 });
       }
 
-      if (!usedCoupon.isActive) {
-        return NextResponse.json({ error: 'Coupon is inactive' }, { status: 400 });
+      for (const dbTest of dbTests) {
+        serverSubtotal += dbTest.price;
       }
 
-      if (new Date(usedCoupon.expiryDate) < new Date()) {
-        return NextResponse.json({ error: 'Coupon has expired' }, { status: 400 });
+      // 2. Validate Coupon & Calculate Discount
+      if (couponCode) {
+        usedCoupon = await Coupon.findOne({ code: couponCode.toUpperCase().trim() });
+
+        if (!usedCoupon) {
+          return NextResponse.json({ error: 'Invalid coupon code' }, { status: 400 });
+        }
+
+        if (!usedCoupon.isActive) {
+          return NextResponse.json({ error: 'Coupon is inactive' }, { status: 400 });
+        }
+
+        if (new Date(usedCoupon.expiryDate) < new Date()) {
+          return NextResponse.json({ error: 'Coupon has expired' }, { status: 400 });
+        }
+
+        if (usedCoupon.usageLimit && usedCoupon.usedCount >= usedCoupon.usageLimit) {
+          return NextResponse.json({ error: 'Coupon usage limit reached' }, { status: 400 });
+        }
+
+        if (usedCoupon.discountType === 'percentage') {
+          discountAmount = (serverSubtotal * usedCoupon.value) / 100;
+        } else {
+          discountAmount = usedCoupon.value;
+        }
       }
 
-      if (usedCoupon.usageLimit && usedCoupon.usedCount >= usedCoupon.usageLimit) {
-        return NextResponse.json({ error: 'Coupon usage limit reached' }, { status: 400 });
-      }
+      // 3. Final Verification
+      serverTotal = Math.max(0, serverSubtotal - discountAmount);
 
-      if (usedCoupon.discountType === 'percentage') {
-        discountAmount = (serverSubtotal * usedCoupon.value) / 100;
-      } else {
-        discountAmount = usedCoupon.value;
+      if (Math.abs(serverTotal - body.totalAmount) > 1) {
+        console.error(`Price Mismatch! Server: ${serverTotal}, Client: ${body.totalAmount}`);
+        return NextResponse.json({ error: 'Price integrity check failed.' }, { status: 400 });
       }
     }
 
-    // 3. Final Verification
-    const serverTotal = Math.max(0, serverSubtotal - discountAmount);
-
-    if (Math.abs(serverTotal - body.totalAmount) > 1) {
-      console.error(`Price Mismatch! Server: ${serverTotal}, Client: ${body.totalAmount}`);
-      return NextResponse.json({ error: 'Price integrity check failed.' }, { status: 400 });
-    }
-
-    // --- Geofencing & Logistics Logic ---
+    // --- Geofencing & Logistics Logic (skip for walk-ins with no coordinates) ---
     let distanceFromLab = 0;
     const settings = await Settings.getSingleton();
 
     if (body.collectionType === 'home' && body.coordinates) {
-      // Server-side distance calculation for trust
       if (settings.distanceType === 'road') {
         distanceFromLab = await getRoadDistance(body.coordinates.lat, body.coordinates.lng);
       } else {
@@ -220,7 +236,9 @@ async function handler(request: Request) {
       discountAmount,
       couponCode: couponCode ? couponCode.toUpperCase().trim() : undefined,
       balanceAmount: (serverTotal - (body.amountTaken || 0)),
-      distanceFromLab // Save calculated distance
+      distanceFromLab,
+      // For privileged walk-ins, use their email
+      bookedByEmail: hasManualTests && isPrivileged ? (session?.user?.email || 'partner-direct') : body.bookedByEmail
     };
 
     const newBooking = await Booking.create(finalBookingData);
@@ -231,19 +249,19 @@ async function handler(request: Request) {
     }
 
     // 6. Trigger Smart Notifications (Async - don't block response)
-    // 6. Trigger Smart Notifications (Async - don't block response)
     sendSmartNotification('STAFF_NEW_BOOKING', {
       customerName: newBooking.patientName,
       customerEmail: newBooking.bookedByEmail !== 'guest' ? newBooking.bookedByEmail : newBooking.email,
       customerPhone: newBooking.contactNumber,
-      bookingId: newBooking.id, // Use friendly ID
+      bookingId: newBooking.id,
       testNames: newBooking.tests.map((t: any) => t.title),
       totalAmount: newBooking.totalAmount,
       scheduledDate: newBooking.scheduledDate,
       collectionType: newBooking.collectionType
     });
 
-    return NextResponse.json({ message: 'Booking created successfully', bookingId: newBooking._id }, { status: 201 });
+    // Return the full booking object so Partner Dashboard can update immediately
+    return NextResponse.json(newBooking, { status: 201 });
   } catch (error) {
     console.error("Booking Creation Error:", error);
     return NextResponse.json({ error: 'Failed to create booking' }, { status: 400 });
