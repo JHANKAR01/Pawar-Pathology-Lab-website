@@ -123,7 +123,8 @@ export interface ISettings {
   blockSundays: boolean;
   planFlags?: {
     allowVerification: boolean;
-    allowSmsEmail: boolean;
+    allowSms: boolean;
+    allowEmail: boolean;
     allowSundayBookings: boolean;
     allowMaintenanceConfig: boolean;
     allowWhatsApp: boolean;

@@ -41,7 +41,8 @@ const SettingsSchema = new Schema<ISettings & Document>(
     // Plan Flags for SaaS Gating
     planFlags: {
       allowVerification: { type: Boolean, default: true },
-      allowSmsEmail: { type: Boolean, default: true },
+      allowSms: { type: Boolean, default: true },
+      allowEmail: { type: Boolean, default: true },
       allowSundayBookings: { type: Boolean, default: false },
       allowMaintenanceConfig: { type: Boolean, default: true },
       allowWhatsApp: { type: Boolean, default: false },

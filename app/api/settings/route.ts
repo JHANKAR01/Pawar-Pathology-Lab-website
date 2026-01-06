@@ -31,7 +31,10 @@ export async function POST(req: NextRequest) {
       // Verification
       if (pf.allowVerification === false) updates.requireVerification = false;
       // SMS/Email
-      if (pf.allowSmsEmail === false) { updates.smsEnabled = false; updates.emailEnabled = false; }
+      // SMS
+      if (pf.allowSms === false) updates.smsEnabled = false;
+      // Email
+      if (pf.allowEmail === false) updates.emailEnabled = false;
       // Sunday Bookings (inverse: disallowing = force block)
       if (pf.allowSundayBookings === false) updates.blockSundays = true;
       // Maintenance Config
@@ -48,7 +51,8 @@ export async function POST(req: NextRequest) {
     if (session.user.role === 'admin') {
       const pf = settings.planFlags;
       if (pf?.allowVerification === false && updates.requireVerification === true) return NextResponse.json({ message: "Plan Restriction: Verification not allowed" }, { status: 403 });
-      if (pf?.allowSmsEmail === false && (updates.smsEnabled === true || updates.emailEnabled === true)) return NextResponse.json({ message: "Plan Restriction: SMS/Email not allowed" }, { status: 403 });
+      if (pf?.allowSms === false && updates.smsEnabled === true) return NextResponse.json({ message: "Plan Restriction: SMS not allowed" }, { status: 403 });
+      if (pf?.allowEmail === false && updates.emailEnabled === true) return NextResponse.json({ message: "Plan Restriction: Email not allowed" }, { status: 403 });
       if (pf?.allowSundayBookings === false && updates.blockSundays === false) return NextResponse.json({ message: "Plan Restriction: Sunday bookings not allowed" }, { status: 403 });
       if (pf?.allowMaintenanceConfig === false && (updates.maintenanceModeUser === true || updates.maintenanceModePartner === true)) return NextResponse.json({ message: "Plan Restriction: Maintenance config not allowed" }, { status: 403 });
       if (pf?.allowWhatsApp === false && updates.whatsappEnabled === true) return NextResponse.json({ message: "Plan Restriction: WhatsApp not allowed" }, { status: 403 });

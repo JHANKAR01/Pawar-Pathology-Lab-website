@@ -8,7 +8,8 @@ import { toast } from 'sonner';
 
 const PERMISSION_FLAGS = [
     { key: 'allowVerification', label: 'Patient Verification', description: 'OTP-based signup control' },
-    { key: 'allowSmsEmail', label: 'SMS & Email Notifications', description: 'Gateway access for SMS/Email' },
+    { key: 'allowSms', label: 'SMS Notification Gateway', description: 'Gateway access for SMS' },
+    { key: 'allowEmail', label: 'Email Notification Gateway', description: 'Gateway access for Email' },
     { key: 'allowSundayBookings', label: 'Sunday Operations', description: 'Enable/disable Sunday bookings' },
     { key: 'allowMaintenanceConfig', label: 'Maintenance Config', description: 'Portal lockdown controls' },
     { key: 'allowWhatsApp', label: 'WhatsApp Integration', description: 'WhatsApp messaging features' },

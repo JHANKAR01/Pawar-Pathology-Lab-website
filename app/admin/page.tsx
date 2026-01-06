@@ -1246,7 +1246,7 @@ export default function AdminPage() {
 
                       {/* SMS Notifications */}
                       <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 relative overflow-hidden">
-                        {!(config as any).planFlags?.allowSmsEmail && (session?.user?.role as any) !== 'master' && (
+                        {!(config as any).planFlags?.allowSms && (session?.user?.role as any) !== 'master' && (
                           <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
                             <LockIcon className="text-slate-400 mb-2" size={20} />
                             <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Locked</p>
@@ -1264,7 +1264,7 @@ export default function AdminPage() {
                               className="peer absolute left-0 top-0 w-full h-full opacity-0 z-10 cursor-pointer"
                               checked={(config as any).smsEnabled ?? true}
                               onChange={(e) => updateConfig({ smsEnabled: e.target.checked })}
-                              disabled={!(config as any).planFlags?.allowSmsEmail && (session?.user?.role as any) !== 'master'}
+                              disabled={!(config as any).planFlags?.allowSms && (session?.user?.role as any) !== 'master'}
                             />
                             <label
                               htmlFor="sms-toggle"
@@ -1277,7 +1277,7 @@ export default function AdminPage() {
 
                       {/* Email Notifications */}
                       <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 relative overflow-hidden">
-                        {!(config as any).planFlags?.allowSmsEmail && (session?.user?.role as any) !== 'master' && (
+                        {!(config as any).planFlags?.allowEmail && (session?.user?.role as any) !== 'master' && (
                           <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
                             <LockIcon className="text-slate-400 mb-2" size={20} />
                             <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Locked</p>
@@ -1295,7 +1295,7 @@ export default function AdminPage() {
                               className="peer absolute left-0 top-0 w-full h-full opacity-0 z-10 cursor-pointer"
                               checked={(config as any).emailEnabled ?? true}
                               onChange={(e) => updateConfig({ emailEnabled: e.target.checked })}
-                              disabled={!(config as any).planFlags?.allowSmsEmail && (session?.user?.role as any) !== 'master'}
+                              disabled={!(config as any).planFlags?.allowEmail && (session?.user?.role as any) !== 'master'}
                             />
                             <label
                               htmlFor="email-toggle"
