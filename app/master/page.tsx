@@ -17,6 +17,8 @@ const PERMISSION_FLAGS = [
     { key: 'allowDriveInfrastructure', label: 'Google Drive Sync', description: 'Report storage infrastructure' },
     { key: 'allowGeofencing', label: 'Geographic Fencing', description: 'Location-based booking radius' },
     { key: 'allowBlackoutManagement', label: 'Clinical Calendar', description: 'Blackout date management' },
+    { key: 'allowCoupons', label: 'Coupon Management', description: 'Create and manage discount coupons' },
+    { key: 'allowPartnerReassignment', label: 'Partner Reassignment', description: 'Change partners after booking assignment' },
 ];
 
 export default function MasterDashboard() {

@@ -133,5 +133,7 @@ export interface ISettings {
     allowDriveInfrastructure: boolean;
     allowGeofencing: boolean;
     allowBlackoutManagement: boolean;
+    allowCoupons: boolean;
+    allowPartnerReassignment: boolean;
   };
 }

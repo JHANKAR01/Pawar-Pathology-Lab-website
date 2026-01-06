@@ -1406,8 +1406,9 @@ export default function AdminPage() {
                                       className={`w-full appearance-none pl-9 pr-4 py-2 text-xs font-bold rounded-xl border outline-none cursor-pointer transition-all ${booking.assignedPartnerName
                                         ? 'bg-blue-50 border-blue-200 text-blue-700'
                                         : 'bg-white border-slate-200 text-slate-500'
-                                        }`}
+                                        } ${(!config?.planFlags?.allowPartnerReassignment && booking.assignedPartnerName) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                       value={booking.assignedPartnerId || ""}
+                                      disabled={!config?.planFlags?.allowPartnerReassignment && !!booking.assignedPartnerName}
                                       onChange={(e) => {
                                         if (e.target.value) {
                                           if (booking.assignedPartnerName) {

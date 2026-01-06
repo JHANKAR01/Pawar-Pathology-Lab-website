@@ -49,7 +49,9 @@ const SettingsSchema = new Schema<ISettings & Document>(
       allowTelegram: { type: Boolean, default: false },
       allowDriveInfrastructure: { type: Boolean, default: false },
       allowGeofencing: { type: Boolean, default: true },
-      allowBlackoutManagement: { type: Boolean, default: false }
+      allowBlackoutManagement: { type: Boolean, default: false },
+      allowCoupons: { type: Boolean, default: true },
+      allowPartnerReassignment: { type: Boolean, default: true }
     }
   },
   { timestamps: true }
