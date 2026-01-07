@@ -806,7 +806,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row font-sans p-4 lg:p-8 gap-8 bg-slate-50">
+    <div
+      className="min-h-screen flex flex-col lg:flex-row font-sans p-4 lg:p-8 gap-8 bg-slate-50"
+    >
       <aside className="w-full lg:w-80 lg:sticky lg:top-8 lg:h-[calc(100vh-4rem)] bg-white rounded-3xl p-8 flex flex-col relative z-20 shadow-large border border-slate-200">
         <div className="flex items-center gap-4 mb-10 border-b-2 border-slate-200 pb-10">
           <div className="w-14 h-14 bg-clinical-rose rounded-2xl flex items-center justify-center shadow-rose">
@@ -1568,22 +1570,7 @@ export default function AdminPage() {
                           </div>
                         </div>
                       </div>
-                    ))}
-                  {bookings.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border-2 border-dashed border-slate-200 text-center">
-                      <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                        <LayoutDashboard className="text-slate-300 w-10 h-10" />
-                      </div>
-                      <h4 className="text-lg font-black text-slate-900">No records found</h4>
-                      <p className="text-slate-500 font-bold max-w-md mx-auto mt-2">
-                        {activeTab === 'Approvals'
-                          ? "Great job! All pending requests have been processed."
-                          : activeTab === 'Review Report'
-                            ? "No reports awaiting review. All reports are either approved or pending."
-                            : "No bookings match your current filter criteria."}
-                      </p>
-                    </div>
-                  )}
+                    )))}
                 </div>
 
                 <div className="mt-8">
