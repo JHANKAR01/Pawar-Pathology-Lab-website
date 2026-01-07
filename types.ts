@@ -122,6 +122,7 @@ export interface ISettings {
   locationFencingEnabled: boolean;
   distanceType: 'road' | 'displacement';
   blockSundays: boolean;
+  couponsEnabled: boolean;
   planFlags?: {
     allowVerification: boolean;
     allowSms: boolean;
