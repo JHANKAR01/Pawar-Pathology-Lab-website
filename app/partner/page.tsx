@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { toast } from 'sonner';
 import PaginationControls from '@/components/ui/PaginationControls';
 import CustomModal from '@/components/ui/CustomModal';
+import BookingSkeleton from '@/components/skeletons/BookingSkeleton';
 
 export default function PartnerPage() {
   const router = useRouter();
@@ -268,7 +269,7 @@ export default function PartnerPage() {
             </div>
           </div>
           {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-64 w-full rounded-3xl" />
+            <BookingSkeleton key={i} />
           ))}
         </main>
       </div>

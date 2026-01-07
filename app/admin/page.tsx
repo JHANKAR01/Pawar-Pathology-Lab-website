@@ -13,6 +13,7 @@ import {
   ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home, Loader2, Calendar, FileText, X, CheckCircle, XCircle, Ticket, MapPin, BellRing, Phone,
   LayoutDashboard, HeartHandshake, Settings as SettingsIcon, Info, Lock as LockIcon, TestTube, Clock, LayoutList
 } from 'lucide-react';
+import BookingSkeleton from '@/components/skeletons/BookingSkeleton';
 import { FlaskConical } from 'lucide-react';
 import { BookingStatus } from '@/types';
 import PaginationControls from '@/components/ui/PaginationControls';
@@ -1373,194 +1374,201 @@ export default function AdminPage() {
                 />
 
                 <div className="space-y-6 mt-6">
-                  {bookings.map((booking) => (
-                    <div key={booking._id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
-                      <div className="flex flex-col md:flex-row gap-6 justify-between">
-                        <div className="flex-1 space-y-4">
-                          <div className="flex items-center gap-3">
-                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${booking.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                              booking.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                booking.status === 'cancelled' ? 'bg-red-50 text-red-600 border-red-100' :
-                                  'bg-blue-50 text-blue-600 border-blue-100'
-                              }`}>
-                              {booking.status}
-                            </span>
-                            <span className="text-xs font-bold text-slate-400">#{booking._id.slice(-6)}</span>
-                            <span className="text-xs font-medium text-slate-500">{booking.createdAt ? new Date(booking.createdAt).toLocaleString() : 'N/A'}</span>
-                          </div>
-
-                          <div>
-                            <h4 className="text-xl font-black text-slate-900 leading-tight">{booking.patientName}</h4>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {booking.tests && booking.tests.map((t: any, idx: number) => (
-                                <span key={idx} className="bg-slate-50 text-slate-600 px-2 py-1 rounded-lg text-xs font-bold border border-slate-100">
-                                  {t.title}
-                                </span>
-                              ))}
+                  {loading ? (
+                    Array(6).fill(null).map((_, i) => <BookingSkeleton key={i} />)
+                  ) : bookings.length === 0 ? (
+                    <div className="p-12 text-center bg-slate-50 rounded-3xl border border-slate-200">
+                      <p className="text-slate-500 font-bold">No bookings found matching your criteria.</p>
+                    </div>
+                  ) : (
+                    bookings.map((booking) => (
+                      <div key={booking._id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+                        <div className="flex flex-col md:flex-row gap-6 justify-between">
+                          <div className="flex-1 space-y-4">
+                            <div className="flex items-center gap-3">
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${booking.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                booking.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                  booking.status === 'cancelled' ? 'bg-red-50 text-red-600 border-red-100' :
+                                    'bg-blue-50 text-blue-600 border-blue-100'
+                                }`}>
+                                {booking.status}
+                              </span>
+                              <span className="text-xs font-bold text-slate-400">#{booking._id.slice(-6)}</span>
+                              <span className="text-xs font-medium text-slate-500">{booking.createdAt ? new Date(booking.createdAt).toLocaleString() : 'N/A'}</span>
                             </div>
-                          </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-slate-600">
-                            <p className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center"><MapPin size={10} /></div> {booking.address || 'Lab Visit'}</p>
-                            <p className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center"><Phone size={10} /></div> {booking.contactNumber}</p>
-                          </div>
-
-                          {/* Financials Block - Restored */}
-                          <div className="flex gap-4 text-slate-900 border-t border-slate-100 pt-4 w-full max-w-sm">
-                            <div className="flex-1">
-                              <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">Total</p>
-                              <p className="font-bold text-lg">₹{booking.totalAmount}</p>
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">Balance</p>
-                              <p className="font-bold text-lg text-clinical-rose">₹{booking.balanceAmount}</p>
-                            </div>
-                          </div>
-                          {activeTab === 'Active Bookings' && (
-                            <div className="w-full border-t border-slate-100 mt-4 pt-4">
-                              <StatusTracker status={booking.status} reportStatus={booking.reportStatus || 'pending_review'} />
-
-                              <div className="flex flex-wrap gap-2 mt-4 justify-start">
-                                {(booking.status === 'assigned' || booking.status === 'accepted' || booking.status === 'reached') && (
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleUpdateStatus(booking._id, 'sample_collected'); }}
-                                    className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all border border-blue-100 flex items-center gap-2 shadow-sm"
-                                  >
-                                    <TestTube size={14} /> Mark Specimen Taken
-                                  </button>
-                                )}
-                                {booking.status === 'sample_collected' && (
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleUpdateStatus(booking._id, 'processing'); }}
-                                    className="px-4 py-2 bg-purple-50 text-purple-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-100 transition-all border border-purple-100 flex items-center gap-2 shadow-sm"
-                                  >
-                                    <Clock size={14} /> Receive In Lab
-                                  </button>
-                                )}
+                            <div>
+                              <h4 className="text-xl font-black text-slate-900 leading-tight">{booking.patientName}</h4>
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {booking.tests && booking.tests.map((t: any, idx: number) => (
+                                  <span key={idx} className="bg-slate-50 text-slate-600 px-2 py-1 rounded-lg text-xs font-bold border border-slate-100">
+                                    {t.title}
+                                  </span>
+                                ))}
                               </div>
                             </div>
-                          )}
 
-                        </div>
-
-                        <div className="flex flex-col gap-3 min-w-[200px] justify-center">
-                          {activeTab === 'Approvals' && booking.status === 'pending' ? (
-                            /* Approvals Workflow Buttons */
-                            <div className="flex flex-col gap-3">
-                              <button
-                                onClick={() => handleUpdateStatus(booking._id, 'accepted')}
-                                className="w-full bg-success text-white px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-success/90 transition-all shadow-lg flex items-center justify-center gap-2"
-                              >
-                                <CheckCircle size={18} /> Approve Quest
-                              </button>
-                              <button
-                                onClick={() => handleOpenRejection(booking)}
-                                className="w-full bg-white text-clinical-rose border-2 border-clinical-rose px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-clinical-rose-light transition-all shadow-sm flex items-center justify-center gap-2"
-                              >
-                                <XCircle size={18} /> Reject
-                              </button>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-slate-600">
+                              <p className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center"><MapPin size={10} /></div> {booking.address || 'Lab Visit'}</p>
+                              <p className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center"><Phone size={10} /></div> {booking.contactNumber}</p>
                             </div>
-                          ) : (
-                            /* Standard/Active Booking Actions */
-                            <>
-                              {/* Unified Assignment UI for Active Bookings */}
-                              {booking.status !== 'pending' && booking.status !== 'rejected' && booking.status !== 'cancelled' && activeTab !== 'Review Report' && activeTab !== 'Completed Bookings' && (
-                                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 mt-2">
-                                  <label className="text-[10px] font-black uppercase text-slate-400 mb-2 flex justify-between items-center">
-                                    <span>
-                                      {booking.assignedPartnerName ? (
-                                        <>Assigned: <span className="text-blue-600 normal-case">{booking.assignedPartnerName}</span></>
-                                      ) : (
-                                        'Unassigned'
-                                      )}
-                                    </span>
-                                    {booking.assignedPartnerName && (
-                                      <button
-                                        onClick={() => handlePartnerAction('unassign', booking)}
-                                        className="text-red-400 hover:text-red-500 text-[10px] underline font-bold"
-                                      >
-                                        Remove
-                                      </button>
-                                    )}
-                                  </label>
-                                  <div className="relative">
-                                    <div className={`absolute inset-y-0 left-3 flex items-center pointer-events-none ${booking.assignedPartnerName ? 'text-blue-500' : 'text-slate-400'}`}>
-                                      <HeartHandshake size={14} />
-                                    </div>
-                                    <select
-                                      className={`w-full appearance-none pl-9 pr-4 py-2 text-xs font-bold rounded-xl border outline-none cursor-pointer transition-all ${booking.assignedPartnerName
-                                        ? 'bg-blue-50 border-blue-200 text-blue-700'
-                                        : 'bg-white border-slate-200 text-slate-500'
-                                        } ${(!config?.planFlags?.allowPartnerReassignment && !!booking.assignedPartnerId) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                      value={booking.assignedPartnerId || ""}
-                                      disabled={!config?.planFlags?.allowPartnerReassignment && !!booking.assignedPartnerId}
-                                      onChange={(e) => {
-                                        if (e.target.value) {
-                                          if (booking.assignedPartnerId) {
-                                            // Re-assign
-                                            handlePartnerAction('reassign', booking, e.target.value);
-                                          } else {
-                                            // New Assign
-                                            handlePartnerAction('assign', booking, e.target.value);
-                                          }
-                                        }
-                                      }}
+
+                            {/* Financials Block - Restored */}
+                            <div className="flex gap-4 text-slate-900 border-t border-slate-100 pt-4 w-full max-w-sm">
+                              <div className="flex-1">
+                                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">Total</p>
+                                <p className="font-bold text-lg">₹{booking.totalAmount}</p>
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">Balance</p>
+                                <p className="font-bold text-lg text-clinical-rose">₹{booking.balanceAmount}</p>
+                              </div>
+                            </div>
+                            {activeTab === 'Active Bookings' && (
+                              <div className="w-full border-t border-slate-100 mt-4 pt-4">
+                                <StatusTracker status={booking.status} reportStatus={booking.reportStatus || 'pending_review'} />
+
+                                <div className="flex flex-wrap gap-2 mt-4 justify-start">
+                                  {(booking.status === 'assigned' || booking.status === 'accepted' || booking.status === 'reached') && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); handleUpdateStatus(booking._id, 'sample_collected'); }}
+                                      className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all border border-blue-100 flex items-center gap-2 shadow-sm"
                                     >
-                                      <option value="" disabled>
-                                        {!config?.planFlags?.allowPartnerReassignment && !!booking.assignedPartnerId
-                                          ? '🔒 Assignment Locked'
-                                          : booking.assignedPartnerName
-                                            ? 'Change Partner...'
-                                            : 'Select Partner...'}
-                                      </option>
-                                      {partners.map(p => (
-                                        <option key={p._id} value={p._id}>{p.name}</option>
-                                      ))}
-                                    </select>
+                                      <TestTube size={14} /> Mark Specimen Taken
+                                    </button>
+                                  )}
+                                  {booking.status === 'sample_collected' && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); handleUpdateStatus(booking._id, 'processing'); }}
+                                      className="px-4 py-2 bg-purple-50 text-purple-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-100 transition-all border border-purple-100 flex items-center gap-2 shadow-sm"
+                                    >
+                                      <Clock size={14} /> Receive In Lab
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                          </div>
+
+                          <div className="flex flex-col gap-3 min-w-[200px] justify-center">
+                            {activeTab === 'Approvals' && booking.status === 'pending' ? (
+                              /* Approvals Workflow Buttons */
+                              <div className="flex flex-col gap-3">
+                                <button
+                                  onClick={() => handleUpdateStatus(booking._id, 'accepted')}
+                                  className="w-full bg-success text-white px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-success/90 transition-all shadow-lg flex items-center justify-center gap-2"
+                                >
+                                  <CheckCircle size={18} /> Approve Quest
+                                </button>
+                                <button
+                                  onClick={() => handleOpenRejection(booking)}
+                                  className="w-full bg-white text-clinical-rose border-2 border-clinical-rose px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-clinical-rose-light transition-all shadow-sm flex items-center justify-center gap-2"
+                                >
+                                  <XCircle size={18} /> Reject
+                                </button>
+                              </div>
+                            ) : (
+                              /* Standard/Active Booking Actions */
+                              <>
+                                {/* Unified Assignment UI for Active Bookings */}
+                                {booking.status !== 'pending' && booking.status !== 'rejected' && booking.status !== 'cancelled' && activeTab !== 'Review Report' && activeTab !== 'Completed Bookings' && (
+                                  <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 mt-2">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 mb-2 flex justify-between items-center">
+                                      <span>
+                                        {booking.assignedPartnerName ? (
+                                          <>Assigned: <span className="text-blue-600 normal-case">{booking.assignedPartnerName}</span></>
+                                        ) : (
+                                          'Unassigned'
+                                        )}
+                                      </span>
+                                      {booking.assignedPartnerName && (
+                                        <button
+                                          onClick={() => handlePartnerAction('unassign', booking)}
+                                          className="text-red-400 hover:text-red-500 text-[10px] underline font-bold"
+                                        >
+                                          Remove
+                                        </button>
+                                      )}
+                                    </label>
+                                    <div className="relative">
+                                      <div className={`absolute inset-y-0 left-3 flex items-center pointer-events-none ${booking.assignedPartnerName ? 'text-blue-500' : 'text-slate-400'}`}>
+                                        <HeartHandshake size={14} />
+                                      </div>
+                                      <select
+                                        className={`w-full appearance-none pl-9 pr-4 py-2 text-xs font-bold rounded-xl border outline-none cursor-pointer transition-all ${booking.assignedPartnerName
+                                          ? 'bg-blue-50 border-blue-200 text-blue-700'
+                                          : 'bg-white border-slate-200 text-slate-500'
+                                          } ${(!config?.planFlags?.allowPartnerReassignment && !!booking.assignedPartnerId) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        value={booking.assignedPartnerId || ""}
+                                        disabled={!config?.planFlags?.allowPartnerReassignment && !!booking.assignedPartnerId}
+                                        onChange={(e) => {
+                                          if (e.target.value) {
+                                            if (booking.assignedPartnerId) {
+                                              // Re-assign
+                                              handlePartnerAction('reassign', booking, e.target.value);
+                                            } else {
+                                              // New Assign
+                                              handlePartnerAction('assign', booking, e.target.value);
+                                            }
+                                          }
+                                        }}
+                                      >
+                                        <option value="" disabled>
+                                          {!config?.planFlags?.allowPartnerReassignment && !!booking.assignedPartnerId
+                                            ? '🔒 Assignment Locked'
+                                            : booking.assignedPartnerName
+                                              ? 'Change Partner...'
+                                              : 'Select Partner...'}
+                                        </option>
+                                        {partners.map(p => (
+                                          <option key={p._id} value={p._id}>{p.name}</option>
+                                        ))}
+                                      </select>
+                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                )}
 
-                              {/* Review Report Tab: Show Review & Approve Button */}
-                              {activeTab === 'Review Report' && booking.status === 'report_uploaded' && (
-                                <button
-                                  onClick={() => { setSelectedBookingForReview(booking); setReviewModalOpen(true); }}
-                                  className="w-full py-3 bg-clinical-rose text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-rose-lg hover:bg-clinical-rose-dark transition-all flex items-center justify-center gap-2"
-                                >
-                                  <FileText size={16} /> Review & Approve
-                                </button>
-                              )}
-
-                              {/* Completed Bookings Tab: Show View Final Report Button */}
-                              {activeTab === 'Completed Bookings' && booking.status === 'completed' && (
-                                <button
-                                  onClick={() => window.open(booking.reportFileUrl || '#', '_blank')}
-                                  className="w-full py-3 bg-emerald-50 text-emerald-700 rounded-xl font-bold text-xs uppercase tracking-widest border-2 border-emerald-200 hover:bg-emerald-100 transition-all flex items-center justify-center gap-2"
-                                >
-                                  <FileText size={16} /> View Final Report
-                                </button>
-                              )}
-
-
-
-                              {/* Rejection/Cancellation for non-completed items */}
-                              {booking.status !== 'cancelled' && booking.status !== 'completed' && booking.status !== 'rejected' && activeTab !== 'Approvals' && activeTab !== 'Review Report' && (
-                                <div className="flex gap-2 justify-end mt-2">
+                                {/* Review Report Tab: Show Review & Approve Button */}
+                                {activeTab === 'Review Report' && booking.status === 'report_uploaded' && (
                                   <button
-                                    onClick={() => { setSelectedBookingForRejection(booking); setRejectionModalOpen(true); }}
-                                    className="px-3 py-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all text-xs font-bold uppercase tracking-wider flex items-center gap-1"
-                                    title="Reject Booking"
+                                    onClick={() => { setSelectedBookingForReview(booking); setReviewModalOpen(true); }}
+                                    className="w-full py-3 bg-clinical-rose text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-rose-lg hover:bg-clinical-rose-dark transition-all flex items-center justify-center gap-2"
                                   >
-                                    <XCircle size={16} /> Cancel
+                                    <FileText size={16} /> Review & Approve
                                   </button>
-                                </div>
-                              )}
-                            </>
-                          )}
+                                )}
+
+                                {/* Completed Bookings Tab: Show View Final Report Button */}
+                                {activeTab === 'Completed Bookings' && booking.status === 'completed' && (
+                                  <button
+                                    onClick={() => window.open(booking.reportFileUrl || '#', '_blank')}
+                                    className="w-full py-3 bg-emerald-50 text-emerald-700 rounded-xl font-bold text-xs uppercase tracking-widest border-2 border-emerald-200 hover:bg-emerald-100 transition-all flex items-center justify-center gap-2"
+                                  >
+                                    <FileText size={16} /> View Final Report
+                                  </button>
+                                )}
+
+
+
+                                {/* Rejection/Cancellation for non-completed items */}
+                                {booking.status !== 'cancelled' && booking.status !== 'completed' && booking.status !== 'rejected' && activeTab !== 'Approvals' && activeTab !== 'Review Report' && (
+                                  <div className="flex gap-2 justify-end mt-2">
+                                    <button
+                                      onClick={() => { setSelectedBookingForRejection(booking); setRejectionModalOpen(true); }}
+                                      className="px-3 py-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all text-xs font-bold uppercase tracking-wider flex items-center gap-1"
+                                      title="Reject Booking"
+                                    >
+                                      <XCircle size={16} /> Cancel
+                                    </button>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                   {bookings.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border-2 border-dashed border-slate-200 text-center">
                       <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
@@ -1913,6 +1921,121 @@ export default function AdminPage() {
                               {provisioningStatus === 'loading' ? <Loader2 className="animate-spin" /> : 'Provision Next Month'}
                             </button>
                             {provisioningStatus === 'success' && <p className="text-xs text-green-600 font-bold mt-2 text-center">✓ {provisionResult}</p>}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* System Maintenance & Broadcast Hub */}
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 md:col-span-2 relative overflow-hidden">
+                        {/* Locked Overlay */}
+                        {!(config as any).planFlags?.allowMaintenanceConfig && (session?.user?.role as any) !== 'master' && (
+                          <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
+                            <LockIcon className="text-slate-400 mb-2" size={32} />
+                            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Maintenance Controls Locked</p>
+                            <p className="text-[10px] text-slate-400 font-bold mt-1">Upgrade your SaaS Plan</p>
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-3 mb-6">
+                          <div className="p-3 bg-indigo-100 rounded-xl text-indigo-600"><Settings2 size={24} /></div>
+                          <div>
+                            <h4 className="font-bold text-slate-900">Operational Controls</h4>
+                            <p className="text-xs text-slate-500">Manage site availability and announcements</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Broadcast Hub */}
+                          <div className="p-5 bg-white rounded-xl border border-slate-200 shadow-sm">
+                            <div className="flex justify-between items-center mb-4">
+                              <div>
+                                <h5 className="font-bold text-sm text-slate-800 flex items-center gap-2">
+                                  Global Broadcast <Info size={12} className="text-slate-400" />
+                                </h5>
+                                <p className="text-[10px] text-slate-500">Homepage Banner</p>
+                              </div>
+                              <div className="relative inline-block w-10 h-5">
+                                <input
+                                  type="checkbox"
+                                  className="peer absolute w-full h-full opacity-0 cursor-pointer"
+                                  checked={(config as any).broadcastEnabled ?? false}
+                                  onChange={(e) => updateConfig({ broadcastEnabled: e.target.checked })}
+                                  disabled={!(config as any).planFlags?.allowMaintenanceConfig && (session?.user?.role as any) !== 'master'}
+                                />
+                                <span className={`block w-full h-full rounded-full transition-colors ${(config as any).broadcastEnabled ? 'bg-clinical-rose' : 'bg-slate-300'}`}></span>
+                                <span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition-transform ${(config as any).broadcastEnabled ? 'translate-x-5' : ''}`}></span>
+                              </div>
+                            </div>
+                            <AnimatePresence>
+                              {(config as any).broadcastEnabled && (
+                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
+                                  <textarea
+                                    value={(config as any).broadcastMessage || ''}
+                                    onChange={e => updateConfig({ broadcastMessage: e.target.value })}
+                                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg resize-none outline-none focus:border-clinical-rose bg-slate-50 focus:bg-white transition-colors"
+                                    rows={3}
+                                    placeholder="Enter announcement text..."
+                                  />
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+
+                          {/* Maintenance Mode */}
+                          <div className="p-5 bg-white rounded-xl border border-slate-200 shadow-sm space-y-5">
+                            {/* Patient Lock */}
+                            <div>
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="text-sm font-bold text-slate-800">Patient Lock (Maintenance)</span>
+                                <div className="relative inline-block w-10 h-5">
+                                  <input
+                                    type="checkbox"
+                                    className="peer absolute w-full h-full opacity-0 cursor-pointer"
+                                    checked={(config as any).maintenanceModeUser ?? false}
+                                    onChange={(e) => updateConfig({ maintenanceModeUser: e.target.checked })}
+                                    disabled={!(config as any).planFlags?.allowMaintenanceConfig && (session?.user?.role as any) !== 'master'}
+                                  />
+                                  <span className={`block w-full h-full rounded-full transition-colors ${(config as any).maintenanceModeUser ? 'bg-indigo-600' : 'bg-slate-300'}`}></span>
+                                  <span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition-transform ${(config as any).maintenanceModeUser ? 'translate-x-5' : ''}`}></span>
+                                </div>
+                              </div>
+                              {(config as any).maintenanceModeUser && (
+                                <input
+                                  type="text"
+                                  value={(config as any).maintenanceMessageUser || ''}
+                                  onChange={e => updateConfig({ maintenanceMessageUser: e.target.value })}
+                                  className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-500 bg-slate-50 focus:bg-white"
+                                  placeholder="Message for patients..."
+                                />
+                              )}
+                            </div>
+
+                            {/* Partner Lock */}
+                            <div className="pt-4 border-t border-slate-100">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="text-sm font-bold text-slate-800">Partner Portal Lock</span>
+                                <div className="relative inline-block w-10 h-5">
+                                  <input
+                                    type="checkbox"
+                                    className="peer absolute w-full h-full opacity-0 cursor-pointer"
+                                    checked={(config as any).maintenanceModePartner ?? false}
+                                    onChange={(e) => updateConfig({ maintenanceModePartner: e.target.checked })}
+                                    disabled={!(config as any).planFlags?.allowMaintenanceConfig && (session?.user?.role as any) !== 'master'}
+                                  />
+                                  <span className={`block w-full h-full rounded-full transition-colors ${(config as any).maintenanceModePartner ? 'bg-indigo-600' : 'bg-slate-300'}`}></span>
+                                  <span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition-transform ${(config as any).maintenanceModePartner ? 'translate-x-5' : ''}`}></span>
+                                </div>
+                              </div>
+                              {(config as any).maintenanceModePartner && (
+                                <input
+                                  type="text"
+                                  value={(config as any).maintenanceMessagePartner || ''}
+                                  onChange={e => updateConfig({ maintenanceMessagePartner: e.target.value })}
+                                  className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-500 bg-slate-50 focus:bg-white"
+                                  placeholder="Message for partners..."
+                                />
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>

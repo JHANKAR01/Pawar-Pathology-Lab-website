@@ -28,6 +28,12 @@ const SettingsSchema = new Schema<ISettings & Document>(
     // Detailed Maintenance
     maintenanceModeUser: { type: Boolean, default: false },
     maintenanceModePartner: { type: Boolean, default: false },
+    maintenanceMessageUser: { type: String, default: '' },
+    maintenanceMessagePartner: { type: String, default: '' },
+
+    // Global Broadcast
+    broadcastEnabled: { type: Boolean, default: false },
+    broadcastMessage: { type: String, default: '' },
 
     // Smart Notification Hub
     whatsappEnabled: { type: Boolean, default: true },

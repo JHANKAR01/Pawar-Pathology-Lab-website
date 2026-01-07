@@ -11,7 +11,7 @@ import {
   Award, Zap, Globe, Instagram, Facebook, Clock,
   CheckCircle, FileDown, LayoutDashboard, ChevronRight,
   ClipboardList, Navigation, ShieldCheck, UserCheck, LogOut, X,
-  FileText, CalendarDays, Loader2
+  FileText, CalendarDays, Loader2, Megaphone
 } from 'lucide-react';
 import TestSearch from '@/components/TestSearch';
 import BookingWizard from '@/components/BookingWizard';
@@ -32,6 +32,7 @@ export default function Home() {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [broadcast, setBroadcast] = useState<{ enabled: boolean; message: string } | null>(null); // Broadcast State
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.needsProfileCompletion === true) {
@@ -40,21 +41,33 @@ export default function Home() {
   }, [session, status, router]);
 
   useEffect(() => {
+    // Fetch Tests
     const fetchTests = async () => {
       try {
         const response = await fetch('/api/tests');
         if (response.ok) {
           const data = await response.json();
           setTests(data);
-        } else {
-          console.error('Failed to fetch tests');
         }
-      } catch (error) {
-        console.error('An error occurred while fetching tests:', error);
-      }
+      } catch (error) { console.error(error); }
+    };
+
+    // Fetch Broadcast & Status
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch('/api/maintenance/status');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.broadcastEnabled) {
+            setBroadcast({ enabled: true, message: data.broadcastMessage });
+          }
+        }
+      } catch (e) { console.error("Broadcast check failed", e); }
     };
 
     fetchTests();
+    fetchStatus();
+
     const handleScroll = () => setIsScrolled(window.scrollY > 40);
     window.addEventListener('scroll', handleScroll);
 
@@ -176,6 +189,24 @@ export default function Home() {
 
       <main className="flex-1 bg-white">
         <section className="section-mask relative h-[90vh] md:h-screen w-full overflow-hidden bg-gradient-to-br from-white via-slate-50 to-rose-50/30">
+          {/* Broadcast Box */}
+          {broadcast?.enabled && (
+            <div className="absolute top-24 md:top-32 left-0 w-full z-40 px-4">
+              <motion.div
+                initial={{ y: -50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="max-w-3xl mx-auto glass-pro bg-white/60 p-6 rounded-2xl border border-clinical-rose/20 shadow-xl flex items-start gap-4"
+              >
+                <div className="p-3 bg-clinical-rose/10 rounded-full">
+                  <Megaphone className="text-clinical-rose w-6 h-6 animate-pulse" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 uppercase text-xs tracking-widest mb-1">Clinic Announcement</h4>
+                  <p className="text-slate-700 font-medium text-sm leading-relaxed">{broadcast.message}</p>
+                </div>
+              </motion.div>
+            </div>
+          )}
           <Hero3DContainer />
         </section>
 

@@ -106,6 +106,10 @@ export interface ISettings {
   maintenanceMode: boolean;
   maintenanceModeUser: boolean;
   maintenanceModePartner: boolean;
+  maintenanceMessageUser?: string;
+  maintenanceMessagePartner?: string;
+  broadcastEnabled: boolean;
+  broadcastMessage?: string;
   announcement?: string;
   smsEnabled: boolean;
   emailEnabled: boolean;
