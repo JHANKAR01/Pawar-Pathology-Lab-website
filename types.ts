@@ -143,5 +143,6 @@ export interface ISettings {
     allowRecurringTests: boolean;
     enforceZeroBalanceForReports: boolean;
     requireCancellationReason: boolean;
+    allowBalanceEnforcement?: boolean;
   };
 }

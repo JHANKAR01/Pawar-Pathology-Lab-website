@@ -61,7 +61,8 @@ const SettingsSchema = new Schema<ISettings & Document>(
       allowPartnerReassignment: { type: Boolean, default: true },
       allowRecurringTests: { type: Boolean, default: false },
       enforceZeroBalanceForReports: { type: Boolean, default: false },
-      requireCancellationReason: { type: Boolean, default: false }
+      requireCancellationReason: { type: Boolean, default: false },
+      allowBalanceEnforcement: { type: Boolean, default: true } // Permission to toggle balance enforcement
     }
   },
   { timestamps: true }

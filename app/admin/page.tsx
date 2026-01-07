@@ -40,6 +40,9 @@ interface BookingType {
   address?: string;
   contactNumber?: string;
   bookingDate?: string; // Legacy support or alias
+  bookedByEmail?: string;
+  email?: string;
+  discountAmount?: number;
 }
 
 interface Partner {
@@ -1768,26 +1771,7 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {/* Detailed Maintenance */}
-                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 md:col-span-2 relative overflow-hidden">
-                        {!(config as any).planFlags?.allowMaintenanceConfig && (session?.user?.role as any) !== 'master' && (
-                          <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
-                            <LockIcon className="text-slate-400 mb-2" size={24} />
-                            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Maintenance Config Locked</p>
-                          </div>
-                        )}
-                        <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2"><ShieldCheck size={18} /> System Maintenance</h4>
-                        <div className="grid md:grid-cols-2 gap-6">
-                          <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                            <div><h5 className="font-bold text-xs uppercase tracking-wide text-slate-700">Patient Portal</h5><p className="text-[10px] text-slate-500">Block patient access</p></div>
-                            <div className="relative inline-block w-10 h-5"><input type="checkbox" className="peer absolute w-full h-full opacity-0 cursor-pointer" checked={(config as any).maintenanceModeUser ?? false} onChange={(e) => updateConfig({ maintenanceModeUser: e.target.checked })} disabled={!(config as any).planFlags?.allowMaintenanceConfig && (session?.user?.role as any) !== 'master'} /><span className={`block w-full h-full rounded-full transition ${(config as any).maintenanceModeUser ? 'bg-rose-500' : 'bg-slate-300'}`}></span><span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).maintenanceModeUser ? 'translate-x-5' : ''}`}></span></div>
-                          </div>
-                          <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                            <div><h5 className="font-bold text-xs uppercase tracking-wide text-slate-700">Partner Portal</h5><p className="text-[10px] text-slate-500">Block partner access</p></div>
-                            <div className="relative inline-block w-10 h-5"><input type="checkbox" className="peer absolute w-full h-full opacity-0 cursor-pointer" checked={(config as any).maintenanceModePartner ?? false} onChange={(e) => updateConfig({ maintenanceModePartner: e.target.checked })} disabled={!(config as any).planFlags?.allowMaintenanceConfig && (session?.user?.role as any) !== 'master'} /><span className={`block w-full h-full rounded-full transition ${(config as any).maintenanceModePartner ? 'bg-rose-500' : 'bg-slate-300'}`}></span><span className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition transform ${(config as any).maintenanceModePartner ? 'translate-x-5' : ''}`}></span></div>
-                          </div>
-                        </div>
-                      </div>
+
 
                       {/* Smart Notification Hub */}
                       <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 md:col-span-2">
@@ -2023,6 +2007,45 @@ export default function AdminPage() {
                                 />
                               )}
                             </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Financial Controls: Balance Enforcement */}
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 md:col-span-2 relative overflow-hidden">
+                        {/* Premium Lock Overlay for Balance Enforcement */}
+                        {!(config as any).planFlags?.allowBalanceEnforcement && (session?.user?.role as any) !== 'master' && (
+                          <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
+                            <LockIcon className="text-slate-400 mb-2" size={24} />
+                            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Balance Control Locked</p>
+                          </div>
+                        )}
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                          <div className="flex-1">
+                            <div className="flex justify-between items-center mb-2">
+                              <h4 className="font-bold text-slate-900">Enforce Zero Balance for Reports</h4>
+                              <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out">
+                                <input
+                                  type="checkbox"
+                                  id="balance-toggle"
+                                  className="peer absolute left-0 top-0 w-full h-full opacity-0 z-10 cursor-pointer"
+                                  checked={(config as any).planFlags?.enforceZeroBalanceForReports ?? false}
+                                  onChange={(e) => updateConfig({
+                                    planFlags: {
+                                      ...(config as any).planFlags,
+                                      enforceZeroBalanceForReports: e.target.checked
+                                    }
+                                  })}
+                                  disabled={!(config as any).planFlags?.allowBalanceEnforcement && (session?.user?.role as any) !== 'master'}
+                                />
+                                <label
+                                  htmlFor="balance-toggle"
+                                  className={`block w-full h-full rounded-full transition-colors duration-300 ease-in-out ${(config as any).planFlags?.enforceZeroBalanceForReports ? 'bg-clinical-rose' : 'bg-slate-300'}`}
+                                ></label>
+                                <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ease-in-out shadow-sm ${(config as any).planFlags?.enforceZeroBalanceForReports ? 'translate-x-6' : '0'}`}></div>
+                              </div>
+                            </div>
+                            <p className="text-xs text-slate-500">Block report access and delivery if the patient has any outstanding balance.</p>
                           </div>
                         </div>
                       </div>

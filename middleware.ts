@@ -31,8 +31,16 @@ export async function middleware(req: NextRequest) {
   }
 
   // --- 3. SaaS Maintenance Mode Check ---
+  // --- 3. SaaS Maintenance Mode Check ---
   // Only check if NOT accessing maintenance page, api (except status), or static
-  if (!pathname.startsWith('/maintenance') && !pathname.startsWith('/api') && !pathname.startsWith('/_next') && !pathname.startsWith('/static')) {
+  // EXEMPTION: Login and Signup paths must always be accessible (Step 1 of Refinement)
+  if (!pathname.startsWith('/maintenance') &&
+    !pathname.startsWith('/api') &&
+    !pathname.startsWith('/_next') &&
+    !pathname.startsWith('/static') &&
+    !pathname.startsWith('/login') &&
+    !pathname.startsWith('/signup')) {
+
     try {
       // Lightweight status check
       const statusRes = await fetch(new URL('/api/maintenance/status', req.url));
@@ -40,12 +48,16 @@ export async function middleware(req: NextRequest) {
         const { user: userLock, partner: partnerLock } = await statusRes.json();
         const isPrivileged = role === 'admin' || role === 'master';
 
-        // Patient Lock
-        if (userLock && !isPrivileged && role !== 'partner') { // Partners not blocked by user lock? User requirement A says "Patient Lock". Assuming partners are separate unless partner lock is on.
+        // Patient Lock: Kicks out generic users/patients, but allows Partners/Admins/Masters
+        // Refinement: Redirect only if user is NOT logged in OR has the role patient.
+        if (userLock && !isPrivileged && role !== 'partner') {
+          // If NOT logged in, they are "public/guest", so they get locked.
+          // If logged in as "patient", they get locked.
           return NextResponse.redirect(new URL('/maintenance?type=patient', req.url));
         }
 
-        // Partner Lock - Specifically for /partner routes
+        // Partner Lock: Only locks /partner routes for actual partners
+        // Refinement: Redirect only when attempting to access /partner/* routes.
         if (partnerLock && !isPrivileged && pathname.startsWith('/partner')) {
           return NextResponse.redirect(new URL('/maintenance?type=partner', req.url));
         }

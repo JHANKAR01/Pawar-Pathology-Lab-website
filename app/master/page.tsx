@@ -19,6 +19,7 @@ const PERMISSION_FLAGS = [
     { key: 'allowBlackoutManagement', label: 'Clinical Calendar', description: 'Blackout date management' },
     { key: 'allowCoupons', label: 'Coupon Management', description: 'Create and manage discount coupons' },
     { key: 'allowPartnerReassignment', label: 'Partner Reassignment', description: 'Change partners after booking assignment' },
+    { key: 'allowBalanceEnforcement', label: 'Balance Enforcement', description: 'Block report delivery if balance due' },
 ];
 
 export default function MasterDashboard() {
