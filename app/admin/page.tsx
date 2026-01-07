@@ -790,23 +790,27 @@ export default function AdminPage() {
               { id: 'Config', icon: SettingsIcon },
               { id: 'Completed Bookings', icon: CheckCircle },
               { id: 'Partners', icon: HeartHandshake }
-            ].filter(tab => tab.id !== 'Coupons' || config?.planFlags?.allowCoupons !== false).map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  setCurrentPage(1);
-                  setSearchQuery('');
-                }}
-                className={`w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all ${activeTab === tab.id
-                  ? 'bg-clinical-rose text-white shadow-rose-lg'
-                  : 'text-slate-600 hover:text-clinical-rose hover:bg-clinical-rose-light'
-                  }`}
-              >
-                <tab.icon className="w-5 h-5" />
-                {tab.id}
-              </button>
-            ))}
+            ].map(tab => {
+              const isLocked = tab.id === 'Coupons' && !config?.planFlags?.allowCoupons && session?.user?.role !== 'master';
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setCurrentPage(1);
+                    setSearchQuery('');
+                  }}
+                  className={`w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all ${activeTab === tab.id
+                    ? 'bg-clinical-rose text-white shadow-rose-lg'
+                    : 'text-slate-600 hover:text-clinical-rose hover:bg-clinical-rose-light'
+                    }`}
+                >
+                  <tab.icon className="w-5 h-5" />
+                  <span className="flex-1 text-left">{tab.id}</span>
+                  {isLocked && <LockIcon className="w-4 h-4" />}
+                </button>
+              );
+            })}
           </nav>
         </div>
 
@@ -1081,133 +1085,152 @@ export default function AdminPage() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+                className="relative"
               >
-                <motion.div
-                  className="card-premium p-12"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <h3 className="text-2xl font-black text-slate-900 mb-8">Create New Coupon</h3>
-                  <form onSubmit={handleAddCoupon} className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-2">Coupon Code</label>
-                      <input
-                        className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all placeholder:text-slate-400 uppercase"
-                        placeholder="SAVE10"
-                        value={newCoupon.code}
-                        onChange={e => setNewCoupon({ ...newCoupon, code: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-2">Discount Type</label>
-                      <select
-                        className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all"
-                        value={newCoupon.discountType}
-                        onChange={e => setNewCoupon({ ...newCoupon, discountType: e.target.value as 'percentage' | 'fixed' })}
-                        required
-                      >
-                        <option value="percentage">Percentage (%)</option>
-                        <option value="fixed">Fixed Amount (₹)</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-2">
-                        {newCoupon.discountType === 'percentage' ? 'Discount Percentage (0-100)' : 'Discount Amount (₹)'}
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        max={newCoupon.discountType === 'percentage' ? 100 : undefined}
-                        className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all placeholder:text-slate-400"
-                        placeholder={newCoupon.discountType === 'percentage' ? '10' : '100'}
-                        value={newCoupon.value || ''}
-                        onChange={e => setNewCoupon({ ...newCoupon, value: parseFloat(e.target.value) || 0 })}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-2">Expiry Date</label>
-                      <input
-                        type="date"
-                        className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all"
-                        value={newCoupon.expiryDate}
-                        onChange={e => setNewCoupon({ ...newCoupon, expiryDate: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-2">Usage Limit (Optional)</label>
-                      <input
-                        type="number"
-                        min="1"
-                        className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all placeholder:text-slate-400"
-                        placeholder="Leave empty for unlimited"
-                        value={newCoupon.usageLimit}
-                        onChange={e => setNewCoupon({ ...newCoupon, usageLimit: e.target.value })}
-                      />
-                    </div>
-                    <button type="submit" className="w-full bg-clinical-rose text-white py-4 rounded-2xl font-black uppercase text-sm tracking-widest shadow-rose-lg hover:bg-clinical-rose-dark transition-all">Create Coupon</button>
-                  </form>
-                </motion.div>
-                <motion.div
-                  className="card-premium p-12"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <h3 className="text-2xl font-black text-slate-900 mb-8">Active Coupons</h3>
-                  <div className="space-y-4">
-                    {coupons.length > 0 ? (
-                      coupons.map(coupon => (
-                        <div key={coupon._id} className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border-2 border-slate-200">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <p className="font-black text-lg text-slate-900">{coupon.code}</p>
-                              {new Date(coupon.expiryDate) < new Date() && (
-                                <span className="text-xs font-bold text-clinical-rose uppercase">Expired</span>
-                              )}
-                              {!coupon.isActive && (
-                                <span className="text-xs font-bold text-slate-500 uppercase">Inactive</span>
-                              )}
-                            </div>
-                            <p className="text-sm text-slate-600 font-bold">
-                              {coupon.discountType === 'percentage'
-                                ? `${coupon.value}% off`
-                                : `₹${coupon.value} off`}
-                            </p>
-                            <p className="text-xs text-slate-500 mt-1">
-                              Expires: {new Date(coupon.expiryDate).toLocaleDateString()}
-                              {coupon.usageLimit && ` • Used: ${coupon.usedCount}/${coupon.usageLimit}`}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 ml-4">
-                            <button
-                              onClick={() => handleCheckUsage(coupon.code)}
-                              className="p-2 hover:bg-clinical-rose-light rounded-lg transition-colors"
-                              title="Check Usage"
-                            >
-                              <UserCheck className="text-slate-500 hover:text-clinical-rose" size={20} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteCoupon(coupon._id)}
-                              className="p-2 hover:bg-clinical-rose-light rounded-lg transition-colors"
-                              title="Delete Coupon"
-                            >
-                              <Trash2 className="text-slate-500 hover:text-clinical-rose" size={20} />
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-8 text-slate-500">
-                        <p>No coupons created yet</p>
+                {/* Lock and Blur Overlay */}
+                {!config?.planFlags?.allowCoupons && session?.user?.role !== 'master' && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.4 }}
+                    className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/40 backdrop-blur-md rounded-3xl"
+                  >
+                    <LockIcon size={64} className="text-slate-400 mb-4" />
+                    <h3 className="text-2xl font-black text-slate-900 mb-2">Feature Locked</h3>
+                    <p className="text-slate-600 text-center max-w-md px-4 font-medium">
+                      Coupon Management is a premium feature. Please contact your Master Admin to upgrade your plan.
+                    </p>
+                  </motion.div>
+                )}
+
+                {/* Content with conditional blur */}
+                <div className={`grid grid-cols-1 lg:grid-cols-2 gap-8 ${!config?.planFlags?.allowCoupons && session?.user?.role !== 'master' ? 'opacity-20 blur-sm pointer-events-none select-none' : ''}`}>
+                  <motion.div
+                    className="card-premium p-12"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <h3 className="text-2xl font-black text-slate-900 mb-8">Create New Coupon</h3>
+                    <form onSubmit={handleAddCoupon} className="space-y-6">
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Coupon Code</label>
+                        <input
+                          className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all placeholder:text-slate-400 uppercase"
+                          placeholder="SAVE10"
+                          value={newCoupon.code}
+                          onChange={e => setNewCoupon({ ...newCoupon, code: e.target.value })}
+                          required
+                        />
                       </div>
-                    )}
-                  </div>
-                </motion.div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Discount Type</label>
+                        <select
+                          className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all"
+                          value={newCoupon.discountType}
+                          onChange={e => setNewCoupon({ ...newCoupon, discountType: e.target.value as 'percentage' | 'fixed' })}
+                          required
+                        >
+                          <option value="percentage">Percentage (%)</option>
+                          <option value="fixed">Fixed Amount (₹)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                          {newCoupon.discountType === 'percentage' ? 'Discount Percentage (0-100)' : 'Discount Amount (₹)'}
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          max={newCoupon.discountType === 'percentage' ? 100 : undefined}
+                          className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all placeholder:text-slate-400"
+                          placeholder={newCoupon.discountType === 'percentage' ? '10' : '100'}
+                          value={newCoupon.value || ''}
+                          onChange={e => setNewCoupon({ ...newCoupon, value: parseFloat(e.target.value) || 0 })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Expiry Date</label>
+                        <input
+                          type="date"
+                          className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all"
+                          value={newCoupon.expiryDate}
+                          onChange={e => setNewCoupon({ ...newCoupon, expiryDate: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Usage Limit (Optional)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          className="w-full bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-clinical-rose focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all placeholder:text-slate-400"
+                          placeholder="Leave empty for unlimited"
+                          value={newCoupon.usageLimit}
+                          onChange={e => setNewCoupon({ ...newCoupon, usageLimit: e.target.value })}
+                        />
+                      </div>
+                      <button type="submit" className="w-full bg-clinical-rose text-white py-4 rounded-2xl font-black uppercase text-sm tracking-widest shadow-rose-lg hover:bg-clinical-rose-dark transition-all">Create Coupon</button>
+                    </form>
+                  </motion.div>
+                  <motion.div
+                    className="card-premium p-12"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <h3 className="text-2xl font-black text-slate-900 mb-8">Active Coupons</h3>
+                    <div className="space-y-4">
+                      {coupons.length > 0 ? (
+                        coupons.map(coupon => (
+                          <div key={coupon._id} className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border-2 border-slate-200">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <p className="font-black text-lg text-slate-900">{coupon.code}</p>
+                                {new Date(coupon.expiryDate) < new Date() && (
+                                  <span className="text-xs font-bold text-clinical-rose uppercase">Expired</span>
+                                )}
+                                {!coupon.isActive && (
+                                  <span className="text-xs font-bold text-slate-500 uppercase">Inactive</span>
+                                )}
+                              </div>
+                              <p className="text-sm text-slate-600 font-bold">
+                                {coupon.discountType === 'percentage'
+                                  ? `${coupon.value}% off`
+                                  : `₹${coupon.value} off`}
+                              </p>
+                              <p className="text-xs text-slate-500 mt-1">
+                                Expires: {new Date(coupon.expiryDate).toLocaleDateString()}
+                                {coupon.usageLimit && ` • Used: ${coupon.usedCount}/${coupon.usageLimit}`}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 ml-4">
+                              <button
+                                onClick={() => handleCheckUsage(coupon.code)}
+                                className="p-2 hover:bg-clinical-rose-light rounded-lg transition-colors"
+                                title="Check Usage"
+                              >
+                                <UserCheck className="text-slate-500 hover:text-clinical-rose" size={20} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCoupon(coupon._id)}
+                                className="p-2 hover:bg-clinical-rose-light rounded-lg transition-colors"
+                                title="Delete Coupon"
+                              >
+                                <Trash2 className="text-slate-500 hover:text-clinical-rose" size={20} />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-slate-500">
+                          <p>No coupons created yet</p>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1649,6 +1672,37 @@ export default function AdminPage() {
                               className={`block w-full h-full rounded-full transition-colors duration-300 ease-in-out ${(config as any).blockSundays !== false ? 'bg-clinical-rose' : 'bg-slate-300'}`}
                             ></label>
                             <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ease-in-out shadow-sm ${(config as any).blockSundays !== false ? 'translate-x-6' : '0'}`}></div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Coupons Feature */}
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 relative overflow-hidden">
+                        {!(config as any).planFlags?.allowCoupons && (session?.user?.role as any) !== 'master' && (
+                          <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-4">
+                            <LockIcon className="text-slate-400 mb-2" size={20} />
+                            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Locked</p>
+                          </div>
+                        )}
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h4 className="font-bold text-slate-900">Coupon Management</h4>
+                            <p className="text-xs text-slate-500 mt-1">Enable discount coupons for users</p>
+                          </div>
+                          <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out">
+                            <input
+                              type="checkbox"
+                              id="coupons-toggle"
+                              className="peer absolute left-0 top-0 w-full h-full opacity-0 z-10 cursor-pointer"
+                              checked={(config as any).couponsEnabled ?? true}
+                              onChange={(e) => updateConfig({ couponsEnabled: e.target.checked })}
+                              disabled={!(config as any).planFlags?.allowCoupons && (session?.user?.role as any) !== 'master'}
+                            />
+                            <label
+                              htmlFor="coupons-toggle"
+                              className={`block w-full h-full rounded-full transition-colors duration-300 ease-in-out ${(config as any).couponsEnabled !== false ? 'bg-clinical-rose' : 'bg-slate-300'}`}
+                            ></label>
+                            <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ease-in-out shadow-sm ${(config as any).couponsEnabled !== false ? 'translate-x-6' : '0'}`}></div>
                           </div>
                         </div>
                       </div>
