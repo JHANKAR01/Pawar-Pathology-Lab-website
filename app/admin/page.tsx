@@ -216,7 +216,8 @@ export default function AdminPage() {
         limit: limit.toString(),
         statusTab: activeTab === 'Approvals' ? 'approvals' :
           activeTab === 'Active Bookings' ? 'active' :
-            activeTab === 'Completed Bookings' ? 'completed' : statusFilter,
+            activeTab === 'Review Report' ? 'review' :
+              activeTab === 'Completed Bookings' ? 'completed' : statusFilter,
         search: searchQuery,
         partnerId: partnerFilter
       });
@@ -241,14 +242,14 @@ export default function AdminPage() {
 
   // Re-fetch when items/filters changed
   useEffect(() => {
-    if ((activeTab === 'Active Bookings' || activeTab === 'Completed Bookings' || activeTab === 'Approvals') && status === 'authenticated') {
+    if ((activeTab === 'Active Bookings' || activeTab === 'Completed Bookings' || activeTab === 'Approvals' || activeTab === 'Review Report') && status === 'authenticated') {
       fetchData();
     }
   }, [currentPage, limit, activeTab, statusFilter, partnerFilter]); // Trigger on status filter change
 
   // Debounced Search Re-fetch
   useEffect(() => {
-    if ((activeTab === 'Active Bookings' || activeTab === 'Completed Bookings' || activeTab === 'Approvals') && status === 'authenticated') {
+    if ((activeTab === 'Active Bookings' || activeTab === 'Completed Bookings' || activeTab === 'Approvals' || activeTab === 'Review Report') && status === 'authenticated') {
       const timer = setTimeout(() => {
         setCurrentPage(1); // Reset page on search
         fetchData();
@@ -786,12 +787,13 @@ export default function AdminPage() {
               { id: 'Intelligence', icon: LayoutDashboard },
               { id: 'Approvals', icon: CheckCircle },
               { id: 'Active Bookings', icon: FlaskConical },
+              { id: 'Review Report', icon: FileText },
               { id: 'Coupons', icon: Ticket },
               { id: 'Config', icon: SettingsIcon },
               { id: 'Completed Bookings', icon: CheckCircle },
               { id: 'Partners', icon: HeartHandshake }
             ].map(tab => {
-              const isLocked = tab.id === 'Coupons' && !config?.planFlags?.allowCoupons && session?.user?.role !== 'master';
+              const isLocked = tab.id === 'Coupons' && !config?.planFlags?.allowCoupons && (session?.user?.role as any) !== 'master';
               return (
                 <button
                   key={tab.id}
@@ -1088,7 +1090,7 @@ export default function AdminPage() {
                 className="relative"
               >
                 {/* Lock and Blur Overlay */}
-                {!config?.planFlags?.allowCoupons && session?.user?.role !== 'master' && (
+                {!config?.planFlags?.allowCoupons && (session?.user?.role as any) !== 'master' && (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -1104,7 +1106,7 @@ export default function AdminPage() {
                 )}
 
                 {/* Content with conditional blur */}
-                <div className={`grid grid-cols-1 lg:grid-cols-2 gap-8 ${!config?.planFlags?.allowCoupons && session?.user?.role !== 'master' ? 'opacity-20 blur-sm pointer-events-none select-none' : ''}`}>
+                <div className={`grid grid-cols-1 lg:grid-cols-2 gap-8 ${!config?.planFlags?.allowCoupons && (session?.user?.role as any) !== 'master' ? 'opacity-20 blur-sm pointer-events-none select-none' : ''}`}>
                   <motion.div
                     className="card-premium p-12"
                     initial={{ opacity: 0, y: 20 }}
@@ -1236,7 +1238,7 @@ export default function AdminPage() {
           </AnimatePresence>
 
           <AnimatePresence mode="wait">
-            {(activeTab === 'Active Bookings' || activeTab === 'Completed Bookings' || activeTab === 'Approvals') && (
+            {(activeTab === 'Active Bookings' || activeTab === 'Completed Bookings' || activeTab === 'Approvals' || activeTab === 'Review Report') && (
               <motion.div
                 key={activeTab}
                 initial={{ opacity: 0 }}
@@ -1251,6 +1253,11 @@ export default function AdminPage() {
                     <div className="flex bg-amber-50 p-2 rounded-xl border border-amber-100 items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
                       <span className="text-amber-700 font-bold text-xs uppercase tracking-wider">Pending Approvals</span>
+                    </div>
+                  ) : activeTab === 'Review Report' ? (
+                    <div className="flex bg-amber-50 p-2 rounded-xl border border-amber-100 items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+                      <span className="text-amber-700 font-bold text-xs uppercase tracking-wider">Awaiting Pathologist Sign-off</span>
                     </div>
                   ) : activeTab === 'Completed Bookings' ? (
                     <div className="flex bg-emerald-50 p-2 rounded-xl border border-emerald-100 items-center gap-2">
@@ -1402,7 +1409,7 @@ export default function AdminPage() {
                             /* Standard/Active Booking Actions */
                             <>
                               {/* Unified Assignment UI for Active Bookings */}
-                              {booking.status !== 'pending' && booking.status !== 'rejected' && booking.status !== 'cancelled' && (
+                              {booking.status !== 'pending' && booking.status !== 'rejected' && booking.status !== 'cancelled' && activeTab !== 'Review Report' && activeTab !== 'Completed Bookings' && (
                                 <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 mt-2">
                                   <label className="text-[10px] font-black uppercase text-slate-400 mb-2 flex justify-between items-center">
                                     <span>
@@ -1459,28 +1466,30 @@ export default function AdminPage() {
                                 </div>
                               )}
 
-                              {booking.status === 'report_uploaded' && (
+                              {/* Review Report Tab: Show Review & Approve Button */}
+                              {activeTab === 'Review Report' && booking.status === 'report_uploaded' && (
                                 <button
                                   onClick={() => { setSelectedBookingForReview(booking); setReviewModalOpen(true); }}
                                   className="w-full py-3 bg-clinical-rose text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-rose-lg hover:bg-clinical-rose-dark transition-all flex items-center justify-center gap-2"
                                 >
-                                  <FileText size={16} /> Review Report
+                                  <FileText size={16} /> Review & Approve
                                 </button>
                               )}
 
-                              {booking.status === 'completed' && (
+                              {/* Completed Bookings Tab: Show View Final Report Button */}
+                              {activeTab === 'Completed Bookings' && booking.status === 'completed' && (
                                 <button
                                   onClick={() => window.open(booking.reportFileUrl || '#', '_blank')}
-                                  className="w-full py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-xs uppercase tracking-widest border-2 border-slate-200 hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
+                                  className="w-full py-3 bg-emerald-50 text-emerald-700 rounded-xl font-bold text-xs uppercase tracking-widest border-2 border-emerald-200 hover:bg-emerald-100 transition-all flex items-center justify-center gap-2"
                                 >
-                                  <FileText size={16} /> View Report
+                                  <FileText size={16} /> View Final Report
                                 </button>
                               )}
 
 
 
                               {/* Rejection/Cancellation for non-completed items */}
-                              {booking.status !== 'cancelled' && booking.status !== 'completed' && booking.status !== 'rejected' && activeTab !== 'Approvals' && (
+                              {booking.status !== 'cancelled' && booking.status !== 'completed' && booking.status !== 'rejected' && activeTab !== 'Approvals' && activeTab !== 'Review Report' && (
                                 <div className="flex gap-2 justify-end mt-2">
                                   <button
                                     onClick={() => { setSelectedBookingForRejection(booking); setRejectionModalOpen(true); }}
@@ -1506,7 +1515,9 @@ export default function AdminPage() {
                       <p className="text-slate-500 font-bold max-w-md mx-auto mt-2">
                         {activeTab === 'Approvals'
                           ? "Great job! All pending requests have been processed."
-                          : "No bookings match your current filter criteria."}
+                          : activeTab === 'Review Report'
+                            ? "No reports awaiting review. All reports are either approved or pending."
+                            : "No bookings match your current filter criteria."}
                       </p>
                     </div>
                   )}

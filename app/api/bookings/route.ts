@@ -78,10 +78,13 @@ export async function GET(request: Request) {
           filter.status = 'pending';
           break;
         case 'active':
-          filter.status = { $in: ['accepted', 'assigned', 'reached', 'sample_collected'] };
+          filter.status = { $in: ['accepted', 'assigned', 'reached', 'sample_collected', 'processing'] };
+          break;
+        case 'review':
+          filter.status = 'report_uploaded';
           break;
         case 'completed':
-          filter.status = { $in: ['report_uploaded', 'completed'] };
+          filter.status = 'completed';
           break;
         case 'all':
           // No status filter
