@@ -41,6 +41,9 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
     referredBy: 'Self'
   });
 
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringFrequency, setRecurringFrequency] = useState<'monthly' | 'weekly'>('monthly');
+
   const { data: session } = useSession();
   const currentUser = session?.user;
 
@@ -179,7 +182,8 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
   const [settings, setSettings] = useState<any>({
     locationFencingEnabled: false,
     serviceRadius: 10,
-    blockSundays: true
+    blockSundays: true,
+    planFlags: { allowRecurringTests: false }
   });
 
   useEffect(() => {
@@ -341,7 +345,8 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
       paymentStatus: finalPaymentStatus,
       distanceFromLab: dist, // Save calculated distance
       couponCode: promoCode || undefined,
-      discountAmount: discount
+      discountAmount: discount,
+      recurring: isRecurring ? { frequency: recurringFrequency } : undefined
     });
   };
 
@@ -577,6 +582,53 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                     <span className="font-bold text-sm text-slate-600">Balance Due:</span>
                     <span className="font-black text-clinical-rose text-xl">₹{balanceAmount}</span>
                   </div>
+                </div>
+              )}
+
+              {/* Recurring Booking Option - Master Controlled */}
+              {settings.planFlags?.allowRecurringTests && (
+                <div className="p-6 bg-blue-50 rounded-2xl border-2 border-blue-200 text-left">
+                  <div className="flex items-center gap-3 mb-4">
+                    <input
+                      type="checkbox"
+                      className="w-5 h-5 accent-blue-600 cursor-pointer"
+                      checked={isRecurring}
+                      onChange={(e) => setIsRecurring(e.target.checked)}
+                      id="recurring-check"
+                    />
+                    <label htmlFor="recurring-check" className="text-sm font-black uppercase text-blue-900 cursor-pointer select-none">
+                      Schedule as Recurring Test
+                    </label>
+                  </div>
+
+                  {isRecurring && (
+                    <div className="pl-8 animate-in slide-in-from-top-2">
+                      <p className="text-xs text-blue-700 mb-2 font-bold">Repeat this booking:</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setRecurringFrequency('monthly')}
+                          className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all ${recurringFrequency === 'monthly'
+                            ? 'bg-blue-600 text-white shadow-md'
+                            : 'bg-white text-blue-600 border border-blue-200'
+                            }`}
+                        >
+                          Monthly
+                        </button>
+                        <button
+                          onClick={() => setRecurringFrequency('weekly')}
+                          className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all ${recurringFrequency === 'weekly'
+                            ? 'bg-blue-600 text-white shadow-md'
+                            : 'bg-white text-blue-600 border border-blue-200'
+                            }`}
+                        >
+                          Weekly
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-blue-500 mt-2 font-medium">
+                        * Next booking will be created automatically on this day {recurringFrequency}.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 

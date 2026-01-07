@@ -1436,12 +1436,12 @@ export default function AdminPage() {
                                       className={`w-full appearance-none pl-9 pr-4 py-2 text-xs font-bold rounded-xl border outline-none cursor-pointer transition-all ${booking.assignedPartnerName
                                         ? 'bg-blue-50 border-blue-200 text-blue-700'
                                         : 'bg-white border-slate-200 text-slate-500'
-                                        } ${(!config?.planFlags?.allowPartnerReassignment && booking.assignedPartnerName) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        } ${(!config?.planFlags?.allowPartnerReassignment && !!booking.assignedPartnerId) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                       value={booking.assignedPartnerId || ""}
-                                      disabled={!config?.planFlags?.allowPartnerReassignment && !!booking.assignedPartnerName}
+                                      disabled={!config?.planFlags?.allowPartnerReassignment && !!booking.assignedPartnerId}
                                       onChange={(e) => {
                                         if (e.target.value) {
-                                          if (booking.assignedPartnerName) {
+                                          if (booking.assignedPartnerId) {
                                             // Re-assign
                                             handlePartnerAction('reassign', booking, e.target.value);
                                           } else {
@@ -1452,7 +1452,7 @@ export default function AdminPage() {
                                       }}
                                     >
                                       <option value="" disabled>
-                                        {!config?.planFlags?.allowPartnerReassignment && booking.assignedPartnerName
+                                        {!config?.planFlags?.allowPartnerReassignment && !!booking.assignedPartnerId
                                           ? '🔒 Assignment Locked'
                                           : booking.assignedPartnerName
                                             ? 'Change Partner...'
@@ -2048,7 +2048,7 @@ export default function AdminPage() {
                   {/* Reject Notes Input */}
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">
-                      Rejection Notes (Required for Reject)
+                      Rejection Notes {config?.planFlags?.requireCancellationReason ? '(Required)' : '(Optional)'}
                     </label>
                     <textarea
                       value={rejectNotes}
@@ -2081,7 +2081,7 @@ export default function AdminPage() {
                     </button>
                     <button
                       onClick={handleRejectReport}
-                      disabled={isProcessingReview || !rejectNotes.trim()}
+                      disabled={isProcessingReview || (!!config?.planFlags?.requireCancellationReason && !rejectNotes.trim())}
                       className="flex-1 bg-clinical-rose text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-clinical-rose-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       {isProcessingReview ? (
@@ -2175,7 +2175,7 @@ export default function AdminPage() {
                   </button>
                   <button
                     onClick={handleConfirmRejection}
-                    disabled={isProcessingReview || !rejectNotes.trim()}
+                    disabled={isProcessingReview || (!!config?.planFlags?.requireCancellationReason && !rejectNotes.trim())}
                     className="flex-1 bg-clinical-rose text-white px-6 py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-clinical-rose-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {isProcessingReview ? <Loader2 className="animate-spin" /> : <XCircle size={18} />}

@@ -2,8 +2,16 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Booking from '@/models/Booking';
+import Test from '@/models/Test';
+import Coupon from '@/models/Coupon';
+import Settings from '@/models/Settings';
+import RecurringBooking from '@/models/RecurringBooking';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/next-auth-options';
+import { withRateLimit } from '@/lib/withRateLimit';
+import { sanitizeInput } from '@/lib/sanitize';
+import { sendSmartNotification } from '@/lib/notifications';
+import { getRoadDistance, getDisplacement } from '@/lib/geospatial';
 
 // GET /api/bookings - Fetch all bookings (Admin/Partner view) or user's own bookings (Patient/User)
 export async function GET(request: Request) {
@@ -100,7 +108,21 @@ export async function GET(request: Request) {
     const bookings = await Booking.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
+
+    // Security: Redact Report URL if balance exists and flag enabled
+    if (role !== 'admin' && role !== 'partner' && role !== 'master') {
+      const settings = await Settings.findOne().lean();
+      if (settings?.planFlags?.enforceZeroBalanceForReports) {
+        bookings.forEach((b: any) => {
+          if (b.balanceAmount > 0) {
+            b.reportFileUrl = null;
+            b.isReportBlocked = true;
+          }
+        });
+      }
+    }
 
     return NextResponse.json({
       bookings,
@@ -118,15 +140,7 @@ export async function GET(request: Request) {
 }
 
 // POST /api/bookings - Create a new booking (Patient Wizard)
-import Coupon from '@/models/Coupon';
-import Test from '@/models/Test';
-import { sendSmartNotification } from '@/lib/notifications';
-
 // POST /api/bookings - Create a new booking (Patient Wizard)
-import { withRateLimit } from '@/lib/withRateLimit';
-import Settings from '@/models/Settings';
-import { getDisplacement, getRoadDistance } from '@/lib/geospatial';
-import { sanitizeInput } from '@/lib/sanitize';
 
 // POST /api/bookings - Create a new booking (Patient Wizard or Partner Walk-in)
 async function handler(request: Request) {
@@ -246,9 +260,42 @@ async function handler(request: Request) {
 
     const newBooking = await Booking.create(finalBookingData);
 
-    // 5. Update Coupon Usage if applicable
     if (usedCoupon) {
       await Coupon.findByIdAndUpdate(usedCoupon._id, { $inc: { usedCount: 1 } });
+    }
+
+    // --- Create Recurring Schedule if Requested ---
+    if (body.recurring && settings.planFlags?.allowRecurringTests) {
+      const now = new Date();
+      let nextRun = new Date(now);
+
+      if (body.recurring.frequency === 'weekly') {
+        nextRun.setDate(now.getDate() + 7);
+      } else {
+        // Monthly
+        nextRun.setMonth(now.getMonth() + 1);
+      }
+
+      await RecurringBooking.create({
+        userId: session?.user?.id, // Optional, might be null for guests
+        patientName: finalBookingData.patientName,
+        contactNumber: finalBookingData.contactNumber,
+        email: finalBookingData.email,
+        bookedByEmail: finalBookingData.bookedByEmail,
+        tests: finalBookingData.tests.map((t: any) => ({
+          id: t.id,
+          title: t.title,
+          price: t.price,
+          category: t.category
+        })),
+        frequency: body.recurring.frequency,
+        dayOfMonth: now.getDate(),
+        dayOfWeek: now.getDay(),
+        nextRunDate: nextRun,
+        status: 'active',
+        address: finalBookingData.address,
+        coordinates: finalBookingData.coordinates
+      });
     }
 
     // 6. Trigger Smart Notifications (Async - don't block response)

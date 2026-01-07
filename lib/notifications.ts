@@ -19,6 +19,7 @@ interface NotificationData {
     otpCode?: string;
     partnerTelegramChatId?: string;
     userTelegramChatId?: string;
+    reason?: string;
 }
 
 // Global Footer for all emails
@@ -254,12 +255,13 @@ export async function sendSmartNotification(
 
             case 'BOOKING_CANCELLED':
                 subject = `Booking Cancelled #${bookingId}`;
-                waMessage = `Your booking #${bookingId} has been cancelled as requested.`;
-                telegramMessage = `❌ *Booking Cancelled* ❌\nBooking #${bookingId} has been cancelled.`;
+                waMessage = `Your booking #${bookingId} has been cancelled.${data.reason ? ` Reason: ${data.reason}` : ''}`;
+                telegramMessage = `❌ *Booking Cancelled* ❌\nBooking #${bookingId} has been cancelled.${data.reason ? `\nReason: ${data.reason}` : ''}`;
                 emailHtml = `
           <div style="font-family: sans-serif; padding: 20px;">
              <h2>Booking Cancelled</h2>
              <p>Your booking #${bookingId} was cancelled.</p>
+             ${data.reason ? `<p><strong>Reason:</strong> ${data.reason}</p>` : ''}
              ${LAB_FOOTER}
           </div>
         `;

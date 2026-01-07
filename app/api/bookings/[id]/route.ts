@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Booking from '@/models/Booking';
 import User from '@/models/User';
+import Settings from '@/models/Settings';
 import { BookingStatus } from '@/types';
 import { uploadReportToDrive } from '@/lib/googleDrive';
 import { Buffer } from 'buffer';
@@ -103,6 +104,20 @@ export async function PATCH(
         }
       }
 
+      // Check Plan Limits for Partner Re-assignment
+      if (updateData.assignedPartnerId && oldBooking.assignedPartnerId &&
+        oldBooking.assignedPartnerId.toString() !== updateData.assignedPartnerId) {
+        // This is a re-assignment
+        if (role !== 'master') {
+          const settings = await Settings.findOne().lean();
+          if (settings && settings.planFlags && !settings.planFlags.allowPartnerReassignment) {
+            return NextResponse.json({
+              error: 'Partner reassignment is locked for your current plan. Please upgrade to unlock this feature.'
+            }, { status: 403 });
+          }
+        }
+      }
+
       // Sanitize user inputs before update (XSS Protection)
       if (updateData.patientName) updateData.patientName = sanitizeInput(updateData.patientName);
       if (updateData.address) updateData.address = sanitizeInput(updateData.address);
@@ -145,7 +160,8 @@ export async function PATCH(
           customerEmail: contactEmail,
           customerPhone: updatedBooking.contactNumber,
           bookingId: updatedBooking._id.toString(),
-          userTelegramChatId // Pass user's Telegram ID
+          userTelegramChatId, // Pass user's Telegram ID
+          reason: updatedBooking.pathologistNotes
         });
       }
 
@@ -214,15 +230,25 @@ export async function PATCH(
       // Logic for Notifications on Verification
       if (updatedBooking.status === 'completed' && oldBooking.status !== 'completed') {
         const contactEmail = updatedBooking.bookedByEmail !== 'guest' ? updatedBooking.bookedByEmail : updatedBooking.email;
-        sendSmartNotification('REPORT_READY', {
-          customerName: updatedBooking.patientName,
-          customerEmail: contactEmail,
-          customerPhone: updatedBooking.contactNumber,
-          bookingId: updatedBooking._id.toString(),
-          testNames: updatedBooking.tests.map((t: any) => t.title),
-          reportLink: updatedBooking.reportFileUrl || '#',
-          userTelegramChatId // Pass user's Telegram ID
-        });
+
+        // Check for Balance Enforcement
+        const settings = await Settings.findOne().lean();
+        const shouldBlockReport = settings?.planFlags?.enforceZeroBalanceForReports && updatedBooking.balanceAmount > 0;
+
+        if (shouldBlockReport) {
+          console.log(`Report Ready notification suppressed due to outstanding balance: ${updatedBooking.balanceAmount}`);
+          // Optionally notify user they need to pay? For now just suppress.
+        } else {
+          sendSmartNotification('REPORT_READY', {
+            customerName: updatedBooking.patientName,
+            customerEmail: contactEmail,
+            customerPhone: updatedBooking.contactNumber,
+            bookingId: updatedBooking._id.toString(),
+            testNames: updatedBooking.tests.map((t: any) => t.title),
+            reportLink: updatedBooking.reportFileUrl || '#',
+            userTelegramChatId // Pass user's Telegram ID
+          });
+        }
       }
 
       // Logic for Notifications on Cancellation
@@ -232,7 +258,8 @@ export async function PATCH(
           customerName: updatedBooking.patientName,
           customerEmail: contactEmail,
           customerPhone: updatedBooking.contactNumber,
-          bookingId: updatedBooking._id.toString()
+          bookingId: updatedBooking._id.toString(),
+          reason: updatedBooking.pathologistNotes
         });
       }
 

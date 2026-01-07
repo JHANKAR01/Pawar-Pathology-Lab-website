@@ -136,5 +136,8 @@ export interface ISettings {
     allowBlackoutManagement: boolean;
     allowCoupons: boolean;
     allowPartnerReassignment: boolean;
+    allowRecurringTests: boolean;
+    enforceZeroBalanceForReports: boolean;
+    requireCancellationReason: boolean;
   };
 }

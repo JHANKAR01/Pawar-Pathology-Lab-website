@@ -52,7 +52,10 @@ const SettingsSchema = new Schema<ISettings & Document>(
       allowGeofencing: { type: Boolean, default: true },
       allowBlackoutManagement: { type: Boolean, default: false },
       allowCoupons: { type: Boolean, default: true },
-      allowPartnerReassignment: { type: Boolean, default: true }
+      allowPartnerReassignment: { type: Boolean, default: true },
+      allowRecurringTests: { type: Boolean, default: false },
+      enforceZeroBalanceForReports: { type: Boolean, default: false },
+      requireCancellationReason: { type: Boolean, default: false }
     }
   },
   { timestamps: true }
