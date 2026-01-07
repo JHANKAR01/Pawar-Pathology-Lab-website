@@ -4,7 +4,7 @@ import Settings from '@/models/Settings';
 import dbConnect from './dbConnect';
 
 // Notification Types
-export type NotificationType = 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'REPORT_READY' | 'COUPON_APPLIED' | 'STAFF_NEW_BOOKING' | 'OTP_VERIFICATION' | 'PARTNER_ASSIGNMENT' | 'SAMPLE_COLLECTED' | 'LAB_RECEIVED';
+export type NotificationType = 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'REPORT_READY' | 'COUPON_APPLIED' | 'STAFF_NEW_BOOKING' | 'OTP_VERIFICATION' | 'PARTNER_ASSIGNMENT' | 'SAMPLE_COLLECTED' | 'LAB_RECEIVED' | 'REPORT_PAYMENT_DUE';
 
 interface NotificationData {
     customerName?: string;
@@ -246,6 +246,34 @@ export async function sendSmartNotification(
                 <a href="${getWhatsAppLink(customerPhone || '', 'Hi, I have a question about my report #' + bookingId)}" 
                    style="color: #25D366; font-weight: bold; text-decoration: none;">
                    Chat on WhatsApp
+                </a>
+            </div>
+            ${LAB_FOOTER}
+          </div>
+        `;
+                break;
+
+            case 'REPORT_PAYMENT_DUE':
+                subject = `Payment Pending for Report #${bookingId}`;
+                waMessage = `Hello ${customerName}, your report for booking #${bookingId} is ready but a balance of ₹${data.totalAmount} is pending. Please complete payment to receive the link.`;
+                telegramMessage = `💰 *Payment Pending* 💰\nHi ${customerName}, report for #${bookingId} is withheld due to pending balance of ₹${data.totalAmount}.`;
+                emailHtml = `
+          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; max-width: 600px; margin: 0 auto; border-top: 4px solid #f59e0b;">
+            <h2 style="color: #b45309; text-align: center;">Payment Required</h2>
+            <p>Dear <strong>${customerName}</strong>,</p>
+            <p>Your report for booking <strong>#${bookingId}</strong> is ready. However, we noticed a pending balance of <strong>₹${data.totalAmount}</strong>.</p>
+            
+            <div style="background-color: #fffbeb; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #fcd34d; text-align: center;">
+                <p style="color: #92400e; font-weight: bold; margin: 0;">Outstanding Balance: ₹${data.totalAmount}</p>
+            </div>
+
+            <p style="text-align: center; color: #64748b;">Please complete your payment at the lab or via UPI to receive your digital report link immediately.</p>
+            
+            <br/>
+            <div style="text-align: center;">
+                <a href="${getWhatsAppLink(customerPhone || '', 'Hi, I want to clear pending payment for booking #' + bookingId)}" 
+                   style="background-color: #25D366; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                   Clear Due via WhatsApp
                 </a>
             </div>
             ${LAB_FOOTER}

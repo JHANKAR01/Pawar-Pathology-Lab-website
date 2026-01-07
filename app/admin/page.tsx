@@ -2404,8 +2404,9 @@ export default function AdminPage() {
                           <tr>
                             <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 rounded-l-lg">Date</th>
                             <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500">Patient</th>
-                            <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500">Tests</th>
-                            <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 text-right rounded-r-lg">Total</th>
+                            <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500">Contact</th>
+                            <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500">Financials</th>
+                            <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 text-right rounded-r-lg">Paid</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -2416,9 +2417,18 @@ export default function AdminPage() {
                                   day: '2-digit', month: 'short', year: 'numeric'
                                 })}
                               </td>
-                              <td className="p-3 font-bold text-slate-900">{match.patientName}</td>
-                              <td className="p-3 font-bold text-slate-500 text-xs">
-                                {match.tests?.map(t => t.title).join(', ') || '-'}
+                              <td className="p-3 font-bold text-slate-900">
+                                <div>{match.patientName}</div>
+                                <div className="text-[10px] text-slate-400 font-medium">{match.bookedByEmail || match.email}</div>
+                              </td>
+                              <td className="p-3">
+                                <div className="text-xs font-bold text-slate-700">{match.contactNumber}</div>
+                              </td>
+                              <td className="p-3">
+                                <div className="flex flex-col text-xs">
+                                  <span className="text-slate-400 line-through">₹{match.totalAmount + (match.discountAmount || 0)}</span>
+                                  <span className="text-success font-bold">-₹{match.discountAmount}</span>
+                                </div>
                               </td>
                               <td className="p-3 font-bold text-slate-900 text-right">₹{match.totalAmount}</td>
                             </tr>

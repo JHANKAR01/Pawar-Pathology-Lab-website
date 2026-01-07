@@ -105,15 +105,21 @@ export async function PATCH(
       }
 
       // Check Plan Limits for Partner Re-assignment
-      if (updateData.assignedPartnerId && oldBooking.assignedPartnerId &&
-        oldBooking.assignedPartnerId.toString() !== updateData.assignedPartnerId) {
-        // This is a re-assignment
-        if (role !== 'master') {
-          const settings = await Settings.findOne().lean();
-          if (settings && settings.planFlags && !settings.planFlags.allowPartnerReassignment) {
-            return NextResponse.json({
-              error: 'Partner reassignment is locked for your current plan. Please upgrade to unlock this feature.'
-            }, { status: 403 });
+      // STRICT CHECK: If allowPartnerReassignment is FALSE, prevent ANY change to assignedPartnerId
+      if (updateData.assignedPartnerId !== undefined) {
+        const isReassigning = oldBooking.assignedPartnerId && oldBooking.assignedPartnerId.toString() !== updateData.assignedPartnerId;
+        const isUnassigning = oldBooking.assignedPartnerId && !updateData.assignedPartnerId;
+        const isNewAssign = !oldBooking.assignedPartnerId && updateData.assignedPartnerId;
+
+        // We only care if they are changing an EXISTING assignment (Reassign or Unassign)
+        if (isReassigning || isUnassigning) {
+          if (role !== 'master') {
+            const settings = await Settings.findOne().lean();
+            if (settings && settings.planFlags && !settings.planFlags.allowPartnerReassignment) {
+              return NextResponse.json({
+                error: 'Partner reassignment is locked for your current plan. Please upgrade to unlock this feature.'
+              }, { status: 403 });
+            }
           }
         }
       }
@@ -227,7 +233,7 @@ export async function PATCH(
         }
       }
 
-      // Logic for Notifications on Verification
+      // Logic for Notifications on Verification and Report Release
       if (updatedBooking.status === 'completed' && oldBooking.status !== 'completed') {
         const contactEmail = updatedBooking.bookedByEmail !== 'guest' ? updatedBooking.bookedByEmail : updatedBooking.email;
 
@@ -236,8 +242,17 @@ export async function PATCH(
         const shouldBlockReport = settings?.planFlags?.enforceZeroBalanceForReports && updatedBooking.balanceAmount > 0;
 
         if (shouldBlockReport) {
-          console.log(`Report Ready notification suppressed due to outstanding balance: ${updatedBooking.balanceAmount}`);
-          // Optionally notify user they need to pay? For now just suppress.
+          console.log(`Report notification redirected to PAYMENT_DUE due to balance: ${updatedBooking.balanceAmount}`);
+
+          sendSmartNotification('REPORT_PAYMENT_DUE', {
+            customerName: updatedBooking.patientName,
+            customerEmail: contactEmail,
+            customerPhone: updatedBooking.contactNumber,
+            bookingId: updatedBooking._id.toString(),
+            totalAmount: updatedBooking.balanceAmount, // Showing balance as amount due
+            userTelegramChatId // Pass user's Telegram ID
+          });
+
         } else {
           sendSmartNotification('REPORT_READY', {
             customerName: updatedBooking.patientName,

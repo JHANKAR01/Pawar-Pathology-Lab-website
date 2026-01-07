@@ -347,7 +347,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
       balanceAmount: finalCalculatedBalance,
       paymentStatus: finalPaymentStatus,
       distanceFromLab: dist, // Save calculated distance
-      couponCode: promoCode || undefined,
+      couponCode: (promoCode && discount > 0) ? promoCode : undefined,
       discountAmount: discount,
       recurring: isRecurring ? { frequency: recurringFrequency } : undefined
     });

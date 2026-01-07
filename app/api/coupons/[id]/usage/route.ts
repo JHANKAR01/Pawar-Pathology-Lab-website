@@ -36,7 +36,7 @@ export async function GET(
 
         const total = await Booking.countDocuments(query);
         const bookings = await Booking.find(query)
-            .select('patientName totalAmount discountAmount createdAt tests status')
+            .select('patientName totalAmount discountAmount createdAt tests status email contactNumber bookedByEmail')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
