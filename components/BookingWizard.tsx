@@ -43,6 +43,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
 
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringFrequency, setRecurringFrequency] = useState<'monthly' | 'weekly'>('monthly');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: session } = useSession();
   const currentUser = session?.user;
@@ -124,7 +125,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
       } else {
         setDiscount(0);
         setError(data.error || 'Invalid coupon code');
-        setPromoCode('');
+        // Do not clear promo code so user can fix typo
       }
     } catch (err) {
       console.error('Coupon validation error:', err);
@@ -315,6 +316,8 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
   const prevStep = () => setStep(s => s - 1);
 
   const handleSubmit = () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     let finalPaymentStatus;
     let finalAmountTakenForSubmit = amountTaken;
     let finalCalculatedBalance = finalTotal - finalAmountTakenForSubmit;
@@ -561,6 +564,9 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
                   )}
                 </button>
               </div>
+              {error && (
+                <p className="text-red-500 font-bold text-xs mt-2">{error}</p>
+              )}
 
               {currentUser?.role !== 'patient' && (
                 <div className="p-6 bg-slate-50 rounded-2xl text-left space-y-4 border-2 border-slate-200">
@@ -651,7 +657,14 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ selectedTests, onComplete
           {step < 4 ? (
             <button onClick={nextStep} className="bg-clinical-rose text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-rose-lg hover:bg-clinical-rose-dark transition-all">Continue</button>
           ) : (
-            <button onClick={handleSubmit} className="bg-clinical-rose text-white px-16 py-6 rounded-2xl font-black text-base uppercase tracking-wider shadow-rose-lg hover:bg-clinical-rose-dark transition-all">Confirm Booking</button>
+            <button onClick={handleSubmit} disabled={isSubmitting} className="bg-clinical-rose text-white px-16 py-6 rounded-2xl font-black text-base uppercase tracking-wider shadow-rose-lg hover:bg-clinical-rose-dark transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2">
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="animate-spin w-5 h-5" />
+                  Processing...
+                </>
+              ) : 'Confirm Booking'}
+            </button>
           )}
         </div>
       </div>

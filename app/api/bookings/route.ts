@@ -104,15 +104,28 @@ export async function GET(request: Request) {
       }
     }
 
+    // --- Sorting Logic ---
+    const sortBy = searchParams.get('sortBy') || 'createdAt_desc';
+    let sortOptions: any = { createdAt: -1 };
+
+    switch (sortBy) {
+      case 'createdAt_asc': sortOptions = { createdAt: 1 }; break;
+      case 'patientName_asc': sortOptions = { patientName: 1 }; break;
+      case 'patientName_desc': sortOptions = { patientName: -1 }; break;
+      case 'totalAmount_asc': sortOptions = { totalAmount: 1 }; break;
+      case 'totalAmount_desc': sortOptions = { totalAmount: -1 }; break;
+      default: sortOptions = { createdAt: -1 };
+    }
+
     const total = await Booking.countDocuments(filter);
     const bookings = await Booking.find(filter)
-      .sort({ createdAt: -1 })
+      .sort(sortOptions)
       .skip(skip)
       .limit(limit)
       .lean();
 
     // Security: Redact Report URL if balance exists and flag enabled
-    if (role !== 'admin' && role !== 'partner' && role !== 'master') {
+    if (role !== 'admin' && role !== 'partner' && (role as string) !== 'master') {
       const settings = await Settings.findOne().lean();
       if (settings?.planFlags?.enforceZeroBalanceForReports) {
         bookings.forEach((b: any) => {
@@ -243,7 +256,7 @@ async function handler(request: Request) {
     const sanitizedPatientName = sanitizeInput(body.patientName || '');
     const sanitizedAddress = sanitizeInput(body.address || '');
 
-    // 4. Create Booking
+    // 4. Construct Booking Data
     const finalBookingData = {
       ...body,
       patientName: sanitizedPatientName,
@@ -258,44 +271,81 @@ async function handler(request: Request) {
       bookedByEmail: hasManualTests && isPrivileged ? (session?.user?.email || 'partner-direct') : body.bookedByEmail
     };
 
-    const newBooking = await Booking.create(finalBookingData);
+    // --- Transaction Wrapper ---
+    const mongoose = await dbConnect();
+    const dbSession = await mongoose.startSession();
+    dbSession.startTransaction();
 
-    if (usedCoupon) {
-      await Coupon.findByIdAndUpdate(usedCoupon._id, { $inc: { usedCount: 1 } });
-    }
+    let newBooking;
 
-    // --- Create Recurring Schedule if Requested ---
-    if (body.recurring && settings.planFlags?.allowRecurringTests) {
-      const now = new Date();
-      let nextRun = new Date(now);
+    try {
+      // 4. Create Booking ( Atomic )
+      const bookings = await Booking.create([finalBookingData], { session: dbSession });
+      newBooking = bookings[0];
 
-      if (body.recurring.frequency === 'weekly') {
-        nextRun.setDate(now.getDate() + 7);
-      } else {
-        // Monthly
-        nextRun.setMonth(now.getMonth() + 1);
+      if (usedCoupon) {
+        // Re-verify limit atomically using Atomic Update pattern with Query Filter
+        // If usageLimit is defined, ensure usedCount < usageLimit
+        const couponUpdateFilter: any = { _id: usedCoupon._id };
+        if (usedCoupon.usageLimit) {
+          couponUpdateFilter.$expr = { $lt: ["$usedCount", "$usageLimit"] };
+        }
+
+        const updatedCoupon = await Coupon.findOneAndUpdate(
+          couponUpdateFilter,
+          { $inc: { usedCount: 1 } },
+          { session: dbSession, new: true }
+        );
+
+        if (!updatedCoupon) {
+          throw new Error('COUPON_LIMIT_REACHED');
+        }
       }
 
-      await RecurringBooking.create({
-        userId: session?.user?.id, // Optional, might be null for guests
-        patientName: finalBookingData.patientName,
-        contactNumber: finalBookingData.contactNumber,
-        email: finalBookingData.email,
-        bookedByEmail: finalBookingData.bookedByEmail,
-        tests: finalBookingData.tests.map((t: any) => ({
-          id: t.id,
-          title: t.title,
-          price: t.price,
-          category: t.category
-        })),
-        frequency: body.recurring.frequency,
-        dayOfMonth: now.getDate(),
-        dayOfWeek: now.getDay(),
-        nextRunDate: nextRun,
-        status: 'active',
-        address: finalBookingData.address,
-        coordinates: finalBookingData.coordinates
-      });
+      // --- Create Recurring Schedule if Requested ---
+      if (body.recurring && settings.planFlags?.allowRecurringTests) {
+        const now = new Date();
+        let nextRun = new Date(now);
+
+        if (body.recurring.frequency === 'weekly') {
+          nextRun.setDate(now.getDate() + 7);
+        } else {
+          // Monthly
+          nextRun.setMonth(now.getMonth() + 1);
+        }
+
+        await RecurringBooking.create([{
+          userId: session?.user?.id,
+          patientName: finalBookingData.patientName,
+          contactNumber: finalBookingData.contactNumber,
+          email: finalBookingData.email,
+          bookedByEmail: finalBookingData.bookedByEmail,
+          tests: finalBookingData.tests.map((t: any) => ({
+            id: t.id,
+            title: t.title,
+            price: t.price,
+            category: t.category
+          })),
+          frequency: body.recurring.frequency,
+          dayOfMonth: now.getDate(),
+          dayOfWeek: now.getDay(),
+          nextRunDate: nextRun,
+          status: 'active',
+          address: finalBookingData.address,
+          coordinates: finalBookingData.coordinates
+        }], { session: dbSession });
+      }
+
+      await dbSession.commitTransaction();
+    } catch (error: any) {
+      await dbSession.abortTransaction();
+      console.error("Transaction Aborted:", error);
+      if (error.message === 'COUPON_LIMIT_REACHED') {
+        return NextResponse.json({ error: 'This coupon has just reached its usage limit by another user.' }, { status: 409 });
+      }
+      throw error; // Re-throw to outer catch
+    } finally {
+      dbSession.endSession();
     }
 
     // 6. Trigger Smart Notifications (Async - don't block response)

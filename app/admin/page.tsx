@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { toast } from 'sonner';
 import {
   ShieldCheck, LogOut, RefreshCw, Trash2, UserCheck, Settings2, Home, Loader2, Calendar, FileText, X, CheckCircle, XCircle, Ticket, MapPin, BellRing, Phone,
-  LayoutDashboard, HeartHandshake, Settings as SettingsIcon, Info, Lock as LockIcon, TestTube, Clock
+  LayoutDashboard, HeartHandshake, Settings as SettingsIcon, Info, Lock as LockIcon, TestTube, Clock, LayoutList
 } from 'lucide-react';
 import { FlaskConical } from 'lucide-react';
 import { BookingStatus } from '@/types';
@@ -74,7 +74,8 @@ export default function AdminPage() {
   }>({ isOpen: false, type: 'assign', booking: null, targetPartnerId: '', partnerName: '' });
 
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed'>('all');
-  const [partnerFilter, setPartnerFilter] = useState(''); // New Partner Filter
+  const [partnerFilter, setPartnerFilter] = useState('');
+  const [sortBy, setSortBy] = useState('createdAt_desc');
 
   const [partners, setPartners] = useState<Partner[]>([]);
   const [newPartner, setNewPartner] = useState({ name: '', email: '', username: '', password: '' });
@@ -219,7 +220,8 @@ export default function AdminPage() {
             activeTab === 'Review Report' ? 'review' :
               activeTab === 'Completed Bookings' ? 'completed' : statusFilter,
         search: searchQuery,
-        partnerId: partnerFilter
+        partnerId: partnerFilter,
+        sortBy
       });
       const res = await fetch(`/api/bookings?${query}`);
       if (res.ok) {
@@ -245,7 +247,7 @@ export default function AdminPage() {
     if ((activeTab === 'Active Bookings' || activeTab === 'Completed Bookings' || activeTab === 'Approvals' || activeTab === 'Review Report') && status === 'authenticated') {
       fetchData();
     }
-  }, [currentPage, limit, activeTab, statusFilter, partnerFilter]); // Trigger on status filter change
+  }, [currentPage, limit, activeTab, statusFilter, partnerFilter, sortBy]); // Trigger on status filter change
 
   // Debounced Search Re-fetch
   useEffect(() => {
@@ -455,18 +457,52 @@ export default function AdminPage() {
   // Coupon Usage Logic
   const [couponUsageModal, setCouponUsageModal] = useState<{
     isOpen: boolean;
+    couponId: string;
     couponCode: string;
     matches: BookingType[];
-  }>({ isOpen: false, couponCode: '', matches: [] });
+    isLoading: boolean;
+    pagination: { page: number; totalPages: number; total: number; limit: number };
+  }>({
+    isOpen: false,
+    couponId: '',
+    couponCode: '',
+    matches: [],
+    isLoading: false,
+    pagination: { page: 1, totalPages: 1, total: 0, limit: 10 }
+  });
 
-  const handleCheckUsage = (code: string) => {
-    // Client-side filtering for now as per plan
-    const matches = bookings.filter(b => b.couponCode === code);
+  const fetchCouponUsage = async (id: string, page: number = 1) => {
+    setCouponUsageModal(prev => ({ ...prev, isLoading: true }));
+    try {
+      const res = await fetch(`/api/coupons/${id}/usage?page=${page}&limit=10`);
+      if (res.ok) {
+        const data = await res.json();
+        setCouponUsageModal(prev => ({
+          ...prev,
+          matches: data.matches,
+          pagination: data.metadata,
+          isLoading: false
+        }));
+      } else {
+        toast.error("Failed to load usage data");
+        setCouponUsageModal(prev => ({ ...prev, isLoading: false }));
+      }
+    } catch (e) {
+      console.error(e);
+      setCouponUsageModal(prev => ({ ...prev, isLoading: false }));
+    }
+  };
+
+  const handleCheckUsage = (id: string, code: string) => {
     setCouponUsageModal({
       isOpen: true,
+      couponId: id,
       couponCode: code,
-      matches
+      matches: [],
+      isLoading: true,
+      pagination: { page: 1, totalPages: 1, total: 0, limit: 10 }
     });
+    fetchCouponUsage(id, 1);
   };
 
   const handleRejectReport = async () => {
@@ -1209,7 +1245,7 @@ export default function AdminPage() {
                             </div>
                             <div className="flex items-center gap-2 ml-4">
                               <button
-                                onClick={() => handleCheckUsage(coupon.code)}
+                                onClick={() => handleCheckUsage(coupon._id, coupon.code)}
                                 className="p-2 hover:bg-clinical-rose-light rounded-lg transition-colors"
                                 title="Check Usage"
                               >
@@ -1305,6 +1341,25 @@ export default function AdminPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Sorting Dropdown */}
+                    <div className="relative">
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="appearance-none pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-xl font-bold text-sm text-slate-600 focus:ring-2 focus:ring-clinical-rose/20 outline-none transition-all shadow-sm cursor-pointer min-w-[160px]"
+                      >
+                        <option value="createdAt_desc">Newest First</option>
+                        <option value="createdAt_asc">Oldest First</option>
+                        <option value="patientName_asc">Name (A-Z)</option>
+                        <option value="patientName_desc">Name (Z-A)</option>
+                        <option value="totalAmount_desc">Amount (High-Low)</option>
+                        <option value="totalAmount_asc">Amount (Low-High)</option>
+                      </select>
+                      <div className="absolute right-3 top-3.5 text-slate-400 pointer-events-none">
+                        <LayoutList size={16} />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -2212,7 +2267,7 @@ export default function AdminPage() {
                       Coupon Usage: {couponUsageModal.couponCode}
                     </h2>
                     <p className="text-sm text-slate-500 font-bold mt-1">
-                      Used {couponUsageModal.matches.length} times
+                      Total Bookings: {couponUsageModal.pagination?.total || 0}
                     </p>
                   </div>
                   <button
@@ -2224,37 +2279,66 @@ export default function AdminPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6">
-                  {couponUsageModal.matches.length === 0 ? (
+                  {couponUsageModal.isLoading ? (
+                    <div className="flex justify-center items-center h-48">
+                      <Loader2 className="animate-spin text-clinical-rose w-8 h-8" />
+                    </div>
+                  ) : couponUsageModal.matches.length === 0 ? (
                     <div className="text-center py-12 text-slate-400">
                       <p>No usages found for this coupon.</p>
                     </div>
                   ) : (
-                    <table className="w-full text-left">
-                      <thead className="bg-slate-50 sticky top-0">
-                        <tr>
-                          <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 rounded-l-lg">Date</th>
-                          <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500">Patient</th>
-                          <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500">Tests</th>
-                          <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 text-right rounded-r-lg">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {couponUsageModal.matches.map(match => (
-                          <tr key={match._id} className="hover:bg-slate-50 transition-colors">
-                            <td className="p-3 font-bold text-slate-600 text-sm">
-                              {new Date(match.createdAt || '').toLocaleDateString('en-GB', {
-                                day: '2-digit', month: 'short', year: 'numeric'
-                              })}
-                            </td>
-                            <td className="p-3 font-bold text-slate-900">{match.patientName}</td>
-                            <td className="p-3 font-bold text-slate-500 text-xs">
-                              {match.tests?.map(t => t.title).join(', ') || '-'}
-                            </td>
-                            <td className="p-3 font-bold text-slate-900 text-right">₹{match.totalAmount}</td>
+                    <>
+                      <table className="w-full text-left">
+                        <thead className="bg-slate-50 sticky top-0">
+                          <tr>
+                            <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 rounded-l-lg">Date</th>
+                            <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500">Patient</th>
+                            <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500">Tests</th>
+                            <th className="p-3 text-xs font-black uppercase tracking-widest text-slate-500 text-right rounded-r-lg">Total</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {couponUsageModal.matches.map(match => (
+                            <tr key={match._id} className="hover:bg-slate-50 transition-colors">
+                              <td className="p-3 font-bold text-slate-600 text-sm">
+                                {new Date(match.createdAt || '').toLocaleDateString('en-GB', {
+                                  day: '2-digit', month: 'short', year: 'numeric'
+                                })}
+                              </td>
+                              <td className="p-3 font-bold text-slate-900">{match.patientName}</td>
+                              <td className="p-3 font-bold text-slate-500 text-xs">
+                                {match.tests?.map(t => t.title).join(', ') || '-'}
+                              </td>
+                              <td className="p-3 font-bold text-slate-900 text-right">₹{match.totalAmount}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      {/* Pagination for Modal */}
+                      <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-100">
+                        <span className="text-xs font-bold text-slate-500">
+                          Page {couponUsageModal.pagination.page} of {couponUsageModal.pagination.totalPages}
+                        </span>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => fetchCouponUsage(couponUsageModal.couponId, couponUsageModal.pagination.page - 1)}
+                            disabled={couponUsageModal.pagination.page <= 1}
+                            className="px-3 py-1 rounded-lg border border-slate-200 text-xs font-bold disabled:opacity-50 hover:bg-slate-50"
+                          >
+                            Prev
+                          </button>
+                          <button
+                            onClick={() => fetchCouponUsage(couponUsageModal.couponId, couponUsageModal.pagination.page + 1)}
+                            disabled={couponUsageModal.pagination.page >= couponUsageModal.pagination.totalPages}
+                            className="px-3 py-1 rounded-lg border border-slate-200 text-xs font-bold disabled:opacity-50 hover:bg-slate-50"
+                          >
+                            Next
+                          </button>
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
               </motion.div>
